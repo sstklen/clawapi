@@ -130,7 +130,7 @@ export async function startCommand(args: ParsedArgs): Promise<void> {
   await startForeground(options);
 }
 
-/** 前台啟動流程 */
+/** 前台啟動流程 — 真正初始化所有組件並啟動 HTTP Server */
 async function startForeground(options: StartOptions): Promise<void> {
   const configDir = join(homedir(), '.clawapi');
   const port = options.port ?? 4141;
@@ -145,82 +145,89 @@ async function startForeground(options: StartOptions): Promise<void> {
       pid: process.pid,
       vps: !options.noVps,
     });
-    return;
   }
 
-  // 啟動步驟顯示
-  blank();
-  box([
-    `ClawAPI Engine v${CLAWAPI_VERSION}`,
-    `啟動中...`,
-  ], 'ClawAPI');
-  blank();
-
-  // 步驟 1：載入設定
-  print(`${color.cyan('[1/7]')} 載入設定 (${configDir}/config.yaml)`);
-
-  // 步驟 2：初始化 Master Key
-  const masterKeyPath = join(configDir, 'master.key');
-  if (existsSync(masterKeyPath)) {
-    print(`${color.cyan('[2/7]')} Master Key 已就緒`);
-  } else {
-    print(`${color.cyan('[2/7]')} 產生新的 Master Key`);
-  }
-
-  // 步驟 3：開啟 DB + 自動遷移
-  print(`${color.cyan('[3/7]')} 開啟資料庫 (data.db)`);
-
-  // 步驟 4：初始化 auth.token
-  const tokenPath = join(configDir, 'auth.token');
-  if (existsSync(tokenPath)) {
-    print(`${color.cyan('[4/7]')} auth.token 已就緒`);
-  } else {
-    print(`${color.cyan('[4/7]')} 產生新的 auth.token`);
-  }
-
-  // 步驟 5：VPS 連線
-  if (options.noVps) {
-    print(`${color.cyan('[5/7]')} VPS 連線：${color.yellow('已停用 (--no-vps)')}`);
-  } else {
-    print(`${color.cyan('[5/7]')} 連接 VPS`);
-  }
-
-  // 步驟 6：偵測本機環境
-  print(`${color.cyan('[6/7]')} 偵測本機環境（Ollama）`);
-
-  // 步驟 7：啟動 HTTP Server
-  print(`${color.cyan('[7/7]')} 啟動 HTTP Server`);
-
-  blank();
-  success(`引擎啟動完成！`);
-  print(`  位址：${color.bold(`http://${host}:${port}`)}`);
-  print(`  PID：${process.pid}`);
-
-  if (options.verbose) {
-    print(`  模式：${options.noVps ? '離線' : '線上'}`);
-    print(`  設定：${configDir}/config.yaml`);
-  }
-
-  blank();
-  print(`按 ${color.bold('Ctrl+C')} 安全關機`);
-  blank();
-
-  // 寫入 PID
-  writePid(process.pid);
-
-  // 註冊優雅關機
-  const shutdown = async () => {
+  // 顯示啟動橫幅
+  if (!isJsonMode()) {
     blank();
-    print(color.yellow('收到關機信號，開始優雅關機...'));
-    print('  等待進行中請求完成（最多 30 秒）...');
-    // 實際關機由 server.ts 處理
-    removePid();
-    success('已安全關機');
-    process.exit(0);
-  };
+    box([
+      `ClawAPI Engine v${CLAWAPI_VERSION}`,
+      `啟動中...`,
+    ], 'ClawAPI');
+    blank();
+  }
 
-  process.once('SIGTERM', shutdown);
-  process.once('SIGINT', shutdown);
+  // 呼叫真正的引擎啟動流程（初始化所有組件 + 啟動 Bun.serve）
+  // 路徑：cli/commands/start.ts → ../../index.ts（引擎入口）
+  const engineModule = await import('../../index');
+  const start = engineModule.start;
+  const stop = engineModule.stop;
+
+  try {
+    if (!isJsonMode()) {
+      print(`${color.cyan('[1/3]')} 初始化引擎組件...`);
+    }
+
+    const server = await start({
+      port,
+      host,
+      dataDir: configDir,
+      noVps: options.noVps,
+      verbose: options.verbose,
+    });
+
+    // 寫入 PID
+    writePid(process.pid);
+
+    if (!isJsonMode()) {
+      print(`${color.cyan('[2/3]')} HTTP Server 已啟動`);
+      print(`${color.cyan('[3/3]')} 引擎就緒`);
+      blank();
+      success(`引擎啟動完成！`);
+      print(`  位址：${color.bold(`http://${host}:${port}`)}`);
+      print(`  PID：${process.pid}`);
+      print(`  模式：${options.noVps ? '離線' : '線上'}`);
+      blank();
+      print(`按 ${color.bold('Ctrl+C')} 安全關機`);
+      blank();
+    }
+
+    if (isJsonMode()) {
+      jsonOutput({
+        status: 'running',
+        port,
+        host,
+        pid: process.pid,
+        vps: !options.noVps,
+      });
+    }
+
+    // 註冊優雅關機
+    const shutdown = async () => {
+      if (!isJsonMode()) {
+        blank();
+        print(color.yellow('收到關機信號，開始優雅關機...'));
+      }
+      await stop();
+      removePid();
+      if (!isJsonMode()) {
+        success('已安全關機');
+      }
+      process.exit(0);
+    };
+
+    process.once('SIGTERM', shutdown);
+    process.once('SIGINT', shutdown);
+
+  } catch (err) {
+    removePid();
+    if (isJsonMode()) {
+      jsonOutput({ status: 'error', error: String(err) });
+    } else {
+      error(`引擎啟動失敗：${err}`);
+    }
+    process.exit(1);
+  }
 }
 
 /** Daemon 模式啟動 */

@@ -137,11 +137,8 @@ export class ClawEngineServer implements EngineServer {
 
     this.running = true;
 
-    // 顯示啟動資訊
-    this.printStartupInfo();
-
-    // 註冊信號處理器
-    this.registerSignalHandlers();
+    // 啟動資訊由 CLI start.ts 負責顯示，這裡不重複印
+    // 信號處理由 CLI 層或直接呼叫 stop() 負責
   }
 
   /** 停止 Server（優雅關機） */

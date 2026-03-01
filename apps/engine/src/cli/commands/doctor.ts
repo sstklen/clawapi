@@ -126,14 +126,14 @@ async function checkVpsReachable(): Promise<CheckResult> {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 5000);
 
-    const response = await fetch('https://api.clawapi.com/v1/health', {
+    const response = await fetch('https://clawapi.washinmura.jp/health', {
       signal: controller.signal,
     });
 
     clearTimeout(timeoutId);
 
     if (response.ok) {
-      return { name: 'VPS 可達', pass: true, detail: 'api.clawapi.com' };
+      return { name: 'VPS 可達', pass: true, detail: 'clawapi.washinmura.jp' };
     }
     return { name: 'VPS 可達', pass: false, detail: `HTTP ${response.status}` };
   } catch (err) {
@@ -143,21 +143,26 @@ async function checkVpsReachable(): Promise<CheckResult> {
 
 /** 4. Adapter 完整 */
 function checkAdapters(): CheckResult {
-  // 檢查內建 adapter 是否都存在
-  const requiredAdapters = ['openai', 'anthropic', 'groq', 'google', 'mistral', 'ollama'];
-  // 實際檢查由 AdapterLoader 負責，這裡檢查檔案是否存在
-  const adapterDir = join(__dirname, '..', '..', 'adapters');
+  // 檢查內建 adapter YAML 定義是否存在
+  const requiredAdapters = ['openai', 'anthropic', 'groq', 'gemini', 'deepseek', 'ollama'];
+  // Adapter YAML 檔案在 adapters/schemas/ 目錄
+  // doctor.ts 在 cli/commands/ → 要往上兩層到 src/adapters/schemas/
+  const schemaDir = join(import.meta.dir, '..', '..', 'adapters', 'schemas');
+
+  if (!existsSync(schemaDir)) {
+    return { name: 'Adapter 完整', pass: false, detail: `Adapter 目錄不存在：${schemaDir}` };
+  }
 
   const missing: string[] = [];
   for (const name of requiredAdapters) {
-    const adapterPath = join(adapterDir, `${name}.ts`);
-    if (!existsSync(adapterPath)) {
+    const yamlPath = join(schemaDir, `${name}.yaml`);
+    if (!existsSync(yamlPath)) {
       missing.push(name);
     }
   }
 
   if (missing.length === 0) {
-    return { name: 'Adapter 完整', pass: true, detail: `${requiredAdapters.length} 個內建 Adapter` };
+    return { name: 'Adapter 完整', pass: true, detail: `${requiredAdapters.length} 個核心 Adapter 就緒` };
   }
 
   return {
