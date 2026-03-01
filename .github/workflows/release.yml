@@ -45,7 +45,7 @@ jobs:
 
     steps:
       - name: 取得程式碼
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: 安裝 Bun
         uses: oven-sh/setup-bun@v2
@@ -80,7 +80,7 @@ jobs:
 
     steps:
       - name: 取得程式碼
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       # 下載所有平台的構建產物
       - name: 下載所有構建產物
@@ -110,7 +110,7 @@ jobs:
 
     steps:
       - name: 取得程式碼
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: 設定 Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -152,7 +152,7 @@ jobs:
 
     steps:
       - name: 取得程式碼
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: 安裝 Bun
         uses: oven-sh/setup-bun@v2
