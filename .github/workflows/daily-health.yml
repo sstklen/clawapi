@@ -24,7 +24,7 @@ jobs:
 
     steps:
       - name: 取得程式碼
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       # ─── 檢查 VPS 健康狀態 ───
       - name: 檢查 VPS 健康狀態
