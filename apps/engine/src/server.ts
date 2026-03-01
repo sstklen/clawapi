@@ -114,6 +114,23 @@ export class ClawEngineServer implements EngineServer {
     this.app = this.buildApp();
   }
 
+  // ===== 公開 Getter（供 MCP Server 等外部模組使用） =====
+
+  /** 取得 Router（MCP Server 需要） */
+  getRouter(): Router {
+    return this.router;
+  }
+
+  /** 取得 KeyPool（MCP Server 需要） */
+  getKeyPool(): KeyPool {
+    return this.keyPool;
+  }
+
+  /** 取得 Adapters Map（MCP Server 需要） */
+  getAdapters(): Map<string, AdapterConfig> {
+    return this.adapters;
+  }
+
   // ===== 公開方法 =====
 
   /** 啟動 Server */

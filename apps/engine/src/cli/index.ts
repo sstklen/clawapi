@@ -180,6 +180,7 @@ function printHelp(): void {
   print(`  version            ${t('help.misc.version')}`);
   print(`  setup              ${t('help.misc.setup')}`);
   print(`  doctor             ${t('help.misc.doctor')}`);
+  print(`  mcp                啟動 MCP Server（供 Claude Code 等 AI 工具使用）`);
   blank();
   print(color.bold(t('help.section.global_options')));
   print(`  --plain            ${t('help.options.plain')}`);
@@ -250,6 +251,10 @@ async function route(parsed: ParsedArgs): Promise<void> {
     case 'doctor': {
       const { doctorCommand } = await import('./commands/doctor');
       return doctorCommand(parsed);
+    }
+    case 'mcp': {
+      const { mcpCommand } = await import('./commands/mcp');
+      return mcpCommand(parsed);
     }
     case 'version':
     case '-v':
