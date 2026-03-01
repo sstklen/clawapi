@@ -14,8 +14,8 @@ COPY package.json bun.lock ./
 COPY packages/protocol/package.json packages/protocol/
 COPY apps/vps/package.json apps/vps/
 
-# 安裝生產依賴（frozen-lockfile 確保一致性）
-RUN bun install --frozen-lockfile --production
+# 安裝依賴（frozen-lockfile 確保一致性，不加 --production 以避免 lockfile 不一致）
+RUN bun install --frozen-lockfile
 
 # 複製全部原始碼
 COPY packages/protocol/ packages/protocol/
