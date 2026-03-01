@@ -1,10 +1,12 @@
-// doctor 命令 — 診斷工具（6 項檢查）
+// doctor 命令 — 診斷工具（6+2 項檢查）
 // 1. DB 可寫
 // 2. master.key 存在
 // 3. VPS 可達
 // 4. Adapter 完整
 // 5. Key 健康
 // 6. port 可用
+// 7. config.yaml 存在
+// 8. MCP 可用（--mcp 旗標時才跑，需要 ~15 秒）
 
 import { homedir } from 'node:os';
 import { join } from 'node:path';
@@ -45,6 +47,14 @@ export async function doctorCommand(args: ParsedArgs): Promise<void> {
 
   // 6. port 可用
   results.push(await checkPortAvailable());
+
+  // 7. config.yaml 存在
+  results.push(checkConfigFile(configDir));
+
+  // 8. MCP 可用（只在 --mcp 旗標時檢查）
+  if (args.flags['mcp'] === true) {
+    results.push(await checkMcpReady());
+  }
 
   // 輸出結果
   const totalPass = results.filter(r => r.pass).length;
@@ -202,6 +212,87 @@ async function checkPortAvailable(): Promise<CheckResult> {
     return { name: t('cmd.doctor.check_port'), pass: true, detail: `port ${defaultPort}` };
   } catch {
     return { name: t('cmd.doctor.check_port'), pass: false, detail: t('cmd.doctor.port_in_use', { port: defaultPort }) };
+  }
+}
+
+/** 7. config.yaml 存在且可讀 */
+function checkConfigFile(configDir: string): CheckResult {
+  const configPath = join(configDir, 'config.yaml');
+
+  if (!existsSync(configDir)) {
+    return {
+      name: 'Config file',
+      pass: false,
+      detail: `${configDir} 目錄不存在（請先跑 clawapi setup 或 clawapi mcp）`,
+    };
+  }
+
+  if (!existsSync(configPath)) {
+    return {
+      name: 'Config file',
+      pass: false,
+      detail: `${configPath} 不存在（跑 clawapi mcp 會自動建立）`,
+    };
+  }
+
+  try {
+    accessSync(configPath, constants.R_OK);
+    return { name: 'Config file', pass: true, detail: configPath };
+  } catch {
+    return { name: 'Config file', pass: false, detail: 'config.yaml 無讀取權限' };
+  }
+}
+
+/** 8. MCP stdio 回應測試 */
+async function checkMcpReady(): Promise<CheckResult> {
+  try {
+    // 找到 CLI 入口路徑（用來啟動 MCP 子程序測試）
+    const cliPath = join(import.meta.dir, '..', 'index.ts');
+
+    if (!existsSync(cliPath)) {
+      return { name: 'MCP Server', pass: false, detail: 'CLI 入口不存在' };
+    }
+
+    // 啟動 MCP 子程序，送 initialize 請求，等回應
+    const initRequest = JSON.stringify({
+      jsonrpc: '2.0',
+      id: 1,
+      method: 'initialize',
+      params: {
+        protocolVersion: '2024-11-05',
+        capabilities: {},
+        clientInfo: { name: 'clawapi-doctor', version: '0.1.0' },
+      },
+    }) + '\n';
+
+    const proc = Bun.spawn(['bun', 'run', cliPath, 'mcp'], {
+      stdin: 'pipe',
+      stdout: 'pipe',
+      stderr: 'pipe',
+    });
+
+    // 寫入 initialize 請求
+    proc.stdin.write(initRequest);
+    proc.stdin.end();
+
+    // 等回應（最多 15 秒，因為引擎初始化需要時間）
+    const timeout = setTimeout(() => proc.kill(), 15000);
+
+    const output = await new Response(proc.stdout).text();
+    clearTimeout(timeout);
+    proc.kill();
+
+    if (output.includes('"protocolVersion"')) {
+      return { name: 'MCP Server', pass: true, detail: 'stdio 回應正常（JSON-RPC OK）' };
+    }
+
+    if (output.length === 0) {
+      return { name: 'MCP Server', pass: false, detail: 'MCP 無回應（可能初始化失敗）' };
+    }
+
+    return { name: 'MCP Server', pass: false, detail: `意外回應：${output.slice(0, 100)}` };
+  } catch (err) {
+    return { name: 'MCP Server', pass: false, detail: `測試失敗：${(err as Error).message}` };
   }
 }
 

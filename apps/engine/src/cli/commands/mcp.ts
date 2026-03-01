@@ -10,6 +10,7 @@
 
 import { homedir } from 'node:os';
 import { join } from 'node:path';
+import { existsSync, mkdirSync, copyFileSync } from 'node:fs';
 import type { ParsedArgs } from '../index';
 
 export async function mcpCommand(_args: ParsedArgs): Promise<void> {
@@ -27,6 +28,24 @@ export async function mcpCommand(_args: ParsedArgs): Promise<void> {
   const log = (msg: string) => process.stderr.write(`[ClawAPI MCP] ${msg}\n`);
 
   try {
+    // 自動初始化：不需要先跑 setup，MCP 模式自動建立必要目錄和設定
+    if (!existsSync(configDir)) {
+      mkdirSync(configDir, { recursive: true });
+      log(`已建立資料目錄 ${configDir}`);
+    }
+
+    const configPath = join(configDir, 'config.yaml');
+    if (!existsSync(configPath)) {
+      // 從套件內建的 default.yaml 複製一份到使用者目錄
+      const defaultYaml = join(import.meta.dir, '..', '..', 'config', 'default.yaml');
+      if (existsSync(defaultYaml)) {
+        copyFileSync(defaultYaml, configPath);
+        log('已自動建立 config.yaml（使用預設值）');
+      } else {
+        log('找不到 default.yaml，使用程式內建預設值');
+      }
+    }
+
     log('初始化引擎...');
 
     // 初始化引擎（HTTP Server 用 port 0 讓 OS 分配隨機 port，避免與已運行的引擎衝突）
