@@ -1,0 +1,22 @@
+{
+  "startup.ready": "Ready!",
+  "startup.port": "Server listening on {host}:{port}",
+  "startup.offline_mode": "Starting in offline mode",
+  "shutdown.draining": "Waiting for in-flight requests to complete...",
+  "shutdown.complete": "Shutdown complete",
+  "key.added": "Key added: {service}",
+  "key.removed": "Key removed: {service}",
+  "key.dead": "Key {name} is dead",
+  "key.expired": "Key {name} expires in {days} days",
+  "key.rate_limited": "Key {name} rate limited, cooling down for {seconds} seconds",
+  "routing.switch": "Switched to {service} (reason: {reason})",
+  "routing.failover": "Failover: {from} → {to}",
+  "aid.requesting": "Requesting mutual aid...",
+  "aid.received": "Mutual aid response received",
+  "aid.timeout": "Mutual aid request timed out",
+  "aid.enabled": "Mutual aid enabled",
+  "aid.disabled": "Mutual aid disabled",
+  "l0.limit_reached": "Free {service} quota exhausted for today",
+  "config.invalid": "Config error: {field} value {value} is invalid",
+  "error.generic": "An error occurred: {message}"
+}

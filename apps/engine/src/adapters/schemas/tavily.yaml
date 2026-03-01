@@ -1,0 +1,49 @@
+schema_version: 1
+
+adapter:
+  id: tavily
+  name: Tavily Search
+  version: "1.0.0"
+  category: search
+  requires_key: true
+  free_tier: true
+
+auth:
+  type: bearer
+  key_url: https://app.tavily.com/home
+
+base_url: https://api.tavily.com
+
+endpoints:
+  search:
+    method: POST
+    path: /search
+    response_type: json
+    body:
+      api_key: "{{ api_key | default: }}"
+      query: "{{ query }}"
+      search_depth: "{{ search_depth | default: basic }}"
+      include_answer: "{{ include_answer | default: true }}"
+      include_raw_content: false
+      max_results: "{{ max_results | default: 5 }}"
+
+  extract:
+    method: POST
+    path: /extract
+    response_type: json
+    body:
+      urls: "{{ urls }}"
+
+capabilities:
+  chat: false
+  streaming: false
+  embeddings: false
+  images: false
+  audio: false
+  models:
+    - id: tavily-search
+      name: Tavily AI Search
+
+rate_limits:
+  requests_per_minute: 60
+  cooldown_on_429: 30

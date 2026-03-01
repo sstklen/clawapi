@@ -1,0 +1,22 @@
+{
+  "startup.ready": "準備完了！",
+  "startup.port": "サーバーが {host}:{port} でリッスン中",
+  "startup.offline_mode": "オフラインモードで起動",
+  "shutdown.draining": "進行中のリクエストの完了を待っています...",
+  "shutdown.complete": "安全にシャットダウンしました",
+  "key.added": "Keyを追加しました：{service}",
+  "key.removed": "Keyを削除しました：{service}",
+  "key.dead": "Key {name} が無効になりました",
+  "key.expired": "Key {name} は {days} 日後に期限切れになります",
+  "key.rate_limited": "Key {name} がレート制限されました、{seconds} 秒間クールダウン",
+  "routing.switch": "{service} に切り替えました（理由：{reason}）",
+  "routing.failover": "フェイルオーバー：{from} → {to}",
+  "aid.requesting": "相互援助をリクエスト中...",
+  "aid.received": "相互援助のレスポンスを受信しました",
+  "aid.timeout": "相互援助のリクエストがタイムアウトしました",
+  "aid.enabled": "相互援助機能が有効になりました",
+  "aid.disabled": "相互援助機能が無効になりました",
+  "l0.limit_reached": "本日の無料 {service} クォータが使い切られました",
+  "config.invalid": "設定エラー：{field} の値 {value} が無効です",
+  "error.generic": "エラーが発生しました：{message}"
+}

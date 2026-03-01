@@ -1,0 +1,73 @@
+schema_version: 1
+
+adapter:
+  id: openrouter
+  name: OpenRouter
+  version: "1.0.0"
+  category: llm
+  requires_key: true
+  free_tier: true
+
+auth:
+  type: bearer
+  key_url: https://openrouter.ai/keys
+
+base_url: https://openrouter.ai/api/v1
+
+endpoints:
+  chat:
+    method: POST
+    path: /chat/completions
+    response_type: json
+    headers:
+      HTTP-Referer: https://clawapi.com
+      X-Title: ClawAPI
+    body:
+      model: "{{ model }}"
+      messages: "{{ messages }}"
+      temperature: "{{ temperature | default: 0.7 }}"
+      max_tokens: "{{ max_tokens | default: 4096 }}"
+      stream: false
+
+  chat_stream:
+    method: POST
+    path: /chat/completions
+    response_type: sse
+    headers:
+      HTTP-Referer: https://clawapi.com
+      X-Title: ClawAPI
+    body:
+      model: "{{ model }}"
+      messages: "{{ messages }}"
+      temperature: "{{ temperature | default: 0.7 }}"
+      max_tokens: "{{ max_tokens | default: 4096 }}"
+      stream: true
+
+  models:
+    method: GET
+    path: /models
+    response_type: json
+
+capabilities:
+  chat: true
+  streaming: true
+  embeddings: false
+  images: true
+  audio: false
+  models:
+    - id: openai/gpt-4o
+      name: GPT-4o (via OpenRouter)
+      context_window: 128000
+    - id: anthropic/claude-opus-4
+      name: Claude Opus 4 (via OpenRouter)
+      context_window: 200000
+    - id: meta-llama/llama-3.3-70b-instruct
+      name: Llama 3.3 70B (via OpenRouter)
+      context_window: 131072
+    - id: google/gemini-2.0-flash-exp
+      name: Gemini 2.0 Flash (via OpenRouter)
+      context_window: 1048576
+
+rate_limits:
+  requests_per_minute: 200
+  cooldown_on_429: 10

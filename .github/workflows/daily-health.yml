@@ -1,0 +1,109 @@
+# ============================================================
+# ClawAPI — 每日健康檢查
+# 觸發：每天 UTC 8:00（日本時間 17:00）
+# 功能：檢查 VPS 健康狀態 → 建立 Issue 報告
+# ============================================================
+
+name: 每日健康檢查
+
+on:
+  schedule:
+    # 每天 UTC 8:00（日本時間 17:00）
+    - cron: '0 8 * * *'
+  # 也支援手動觸發
+  workflow_dispatch:
+
+permissions:
+  issues: write
+
+jobs:
+  health-check:
+    name: VPS 健康檢查
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: 取得程式碼
+        uses: actions/checkout@v4
+
+      # ─── 檢查 VPS 健康狀態 ───
+      - name: 檢查 VPS 健康狀態
+        id: health
+        run: |
+          VPS_URL="${{ vars.VPS_HEALTH_URL || 'https://api.clawapi.com/health' }}"
+          echo "🏥 檢查：$VPS_URL"
+
+          # 發送健康檢查請求
+          HTTP_RESPONSE=$(curl -s -w "\n%{http_code}" --connect-timeout 10 --max-time 30 "$VPS_URL" 2>&1 || true)
+          HTTP_BODY=$(echo "$HTTP_RESPONSE" | sed '$d')
+          HTTP_CODE=$(echo "$HTTP_RESPONSE" | tail -1)
+
+          echo "status_code=$HTTP_CODE" >> "$GITHUB_OUTPUT"
+
+          # 判斷是否健康
+          if [ "$HTTP_CODE" = "200" ]; then
+            echo "healthy=true" >> "$GITHUB_OUTPUT"
+            echo "✅ VPS 運作正常（HTTP $HTTP_CODE）"
+
+            # 解析回應內容
+            echo "response<<EOF" >> "$GITHUB_OUTPUT"
+            echo "$HTTP_BODY" | python3 -m json.tool 2>/dev/null || echo "$HTTP_BODY"
+            echo "EOF" >> "$GITHUB_OUTPUT"
+          else
+            echo "healthy=false" >> "$GITHUB_OUTPUT"
+            echo "❌ VPS 異常（HTTP $HTTP_CODE）"
+
+            echo "response<<EOF" >> "$GITHUB_OUTPUT"
+            echo "$HTTP_BODY"
+            echo "EOF" >> "$GITHUB_OUTPUT"
+          fi
+
+      # ─── 建立 Issue 報告（僅在異常時）───
+      - name: 建立異常報告 Issue
+        if: steps.health.outputs.healthy == 'false'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const date = new Date().toISOString().split('T')[0];
+            const statusCode = '${{ steps.health.outputs.status_code }}';
+            // 安全規則：外部資料不直接插入 template literal，用 JSON.stringify 安全跳脫
+            const rawResponse = process.env.HEALTH_RESPONSE || '(無回應)';
+            const safeResponse = JSON.stringify(rawResponse);
+
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `🚨 VPS 健康檢查異常 — ${date}`,
+              body: [
+                '## 每日健康檢查報告',
+                '',
+                `**日期：** ${date}`,
+                `**狀態碼：** ${statusCode}`,
+                '**結果：** ❌ 異常',
+                '',
+                '### 回應內容',
+                '```json',
+                safeResponse,
+                '```',
+              ].join('\n') + '\n'
+
+            ### 建議處理步驟
+            1. 檢查 VPS 容器狀態：\`docker compose -f docker-compose.vps.yml ps\`
+            2. 查看容器日誌：\`docker compose -f docker-compose.vps.yml logs --tail=100\`
+            3. 確認資料庫連線正常
+            4. 如需重啟：\`docker compose -f docker-compose.vps.yml restart\`
+
+            > 此 Issue 由 GitHub Actions 自動建立`,
+              labels: ['bug', 'health-check', 'automated'],
+            });
+
+      # ─── 健康狀態摘要 ───
+      - name: 健康狀態摘要
+        if: always()
+        run: |
+          echo "============================================================"
+          echo "📊 每日健康檢查摘要"
+          echo "============================================================"
+          echo "  狀態碼：${{ steps.health.outputs.status_code }}"
+          echo "  健康：  ${{ steps.health.outputs.healthy }}"
+          echo "============================================================"

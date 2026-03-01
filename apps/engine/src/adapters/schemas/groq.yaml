@@ -1,0 +1,71 @@
+schema_version: 1
+
+adapter:
+  id: groq
+  name: Groq
+  version: "1.0.0"
+  category: llm
+  requires_key: true
+  free_tier: false
+
+auth:
+  type: bearer
+  key_url: https://console.groq.com/keys
+
+base_url: https://api.groq.com
+
+endpoints:
+  chat:
+    method: POST
+    path: /openai/v1/chat/completions
+    response_type: json
+    body:
+      model: "{{ model }}"
+      messages: "{{ messages }}"
+      temperature: "{{ temperature | default: 0.7 }}"
+      max_tokens: "{{ max_tokens | default: 4096 }}"
+      stream: false
+
+  chat_stream:
+    method: POST
+    path: /openai/v1/chat/completions
+    response_type: sse
+    body:
+      model: "{{ model }}"
+      messages: "{{ messages }}"
+      temperature: "{{ temperature | default: 0.7 }}"
+      max_tokens: "{{ max_tokens | default: 4096 }}"
+      stream: true
+
+  models:
+    method: GET
+    path: /openai/v1/models
+    response_type: json
+
+capabilities:
+  chat: true
+  streaming: true
+  embeddings: false
+  images: false
+  audio: false
+  models:
+    - id: llama-3.3-70b-versatile
+      name: Llama 3.3 70B Versatile
+      context_window: 131072
+      max_output_tokens: 32768
+    - id: llama-3.1-8b-instant
+      name: Llama 3.1 8B Instant
+      context_window: 131072
+      max_output_tokens: 8192
+    - id: mixtral-8x7b-32768
+      name: Mixtral 8x7B
+      context_window: 32768
+      max_output_tokens: 32768
+    - id: gemma2-9b-it
+      name: Gemma 2 9B IT
+      context_window: 8192
+      max_output_tokens: 8192
+
+rate_limits:
+  requests_per_minute: 30
+  cooldown_on_429: 60

@@ -1,0 +1,59 @@
+schema_version: 1
+
+adapter:
+  id: cerebras
+  name: Cerebras
+  version: "1.0.0"
+  category: llm
+  requires_key: true
+  free_tier: false
+
+auth:
+  type: bearer
+  key_url: https://cloud.cerebras.ai/platform/apikeys
+
+base_url: https://api.cerebras.ai
+
+endpoints:
+  chat:
+    method: POST
+    path: /v1/chat/completions
+    response_type: json
+    body:
+      model: "{{ model }}"
+      messages: "{{ messages }}"
+      temperature: "{{ temperature | default: 0.7 }}"
+      max_tokens: "{{ max_tokens | default: 8192 }}"
+      stream: false
+
+  chat_stream:
+    method: POST
+    path: /v1/chat/completions
+    response_type: sse
+    body:
+      model: "{{ model }}"
+      messages: "{{ messages }}"
+      temperature: "{{ temperature | default: 0.7 }}"
+      max_tokens: "{{ max_tokens | default: 8192 }}"
+      stream: true
+
+  models:
+    method: GET
+    path: /v1/models
+    response_type: json
+
+capabilities:
+  chat: true
+  streaming: true
+  embeddings: false
+  images: false
+  audio: false
+  models:
+    - id: llama-3.3-70b
+      name: Llama 3.3 70B
+      context_window: 131072
+      max_output_tokens: 8192
+
+rate_limits:
+  requests_per_minute: 30
+  cooldown_on_429: 60

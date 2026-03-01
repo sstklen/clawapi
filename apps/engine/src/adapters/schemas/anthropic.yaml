@@ -1,0 +1,73 @@
+schema_version: 1
+
+adapter:
+  id: anthropic
+  name: Anthropic Claude
+  version: "1.0.0"
+  category: llm
+  requires_key: true
+  free_tier: false
+
+auth:
+  type: header
+  header_name: x-api-key
+  key_url: https://console.anthropic.com/account/keys
+
+base_url: https://api.anthropic.com
+
+endpoints:
+  chat:
+    method: POST
+    path: /v1/messages
+    response_type: json
+    headers:
+      anthropic-version: "2023-06-01"
+    body:
+      model: "{{ model }}"
+      messages: "{{ messages }}"
+      max_tokens: "{{ max_tokens | default: 8192 }}"
+      temperature: "{{ temperature | default: 0.7 }}"
+
+  chat_stream:
+    method: POST
+    path: /v1/messages
+    response_type: sse
+    headers:
+      anthropic-version: "2023-06-01"
+    body:
+      model: "{{ model }}"
+      messages: "{{ messages }}"
+      max_tokens: "{{ max_tokens | default: 8192 }}"
+      temperature: "{{ temperature | default: 0.7 }}"
+      stream: true
+
+  models:
+    method: GET
+    path: /v1/models
+    response_type: json
+    headers:
+      anthropic-version: "2023-06-01"
+
+capabilities:
+  chat: true
+  streaming: true
+  embeddings: false
+  images: true
+  audio: false
+  models:
+    - id: claude-sonnet-4-20250514
+      name: Claude Sonnet 4
+      context_window: 200000
+      max_output_tokens: 64000
+    - id: claude-opus-4-20250514
+      name: Claude Opus 4
+      context_window: 200000
+      max_output_tokens: 32000
+    - id: claude-haiku-3-5-20241022
+      name: Claude Haiku 3.5
+      context_window: 200000
+      max_output_tokens: 8192
+
+rate_limits:
+  requests_per_minute: 60
+  cooldown_on_429: 60

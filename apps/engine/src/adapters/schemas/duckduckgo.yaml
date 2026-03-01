@@ -1,0 +1,47 @@
+schema_version: 1
+
+adapter:
+  id: duckduckgo
+  name: DuckDuckGo Search
+  version: "1.0.0"
+  category: search
+  requires_key: false
+  free_tier: true
+
+auth:
+  type: none
+
+base_url: https://api.duckduckgo.com
+
+endpoints:
+  search:
+    method: POST
+    path: /
+    response_type: json
+    body:
+      q: "{{ query }}"
+      format: json
+      no_html: 1
+      skip_disambig: 1
+
+  instant_answer:
+    method: POST
+    path: /
+    response_type: json
+    body:
+      q: "{{ query }}"
+      format: json
+      no_html: 1
+
+capabilities:
+  chat: false
+  streaming: false
+  embeddings: false
+  images: false
+  audio: false
+  models:
+    - id: duckduckgo-search
+      name: DuckDuckGo 搜尋（免費，無需 API Key）
+
+rate_limits:
+  requests_per_minute: 30

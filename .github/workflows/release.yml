@@ -1,0 +1,171 @@
+# ============================================================
+# ClawAPI — Release 流水線
+# 觸發：推送 v* tag（例如 v0.1.0）
+# 步驟：多平台構建 → GitHub Release → Docker Push → npm Publish
+# ============================================================
+
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+# 確保同時只有一個 Release 在跑
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+permissions:
+  contents: write   # 建立 GitHub Release
+  packages: write   # 推送 Docker 映像
+
+jobs:
+  # ─── 多平台可執行檔構建 ───
+  build:
+    name: 構建 ${{ matrix.target }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+
+    strategy:
+      matrix:
+        include:
+          - target: linux-x64
+            os: ubuntu-latest
+            bun_target: bun-linux-x64
+          - target: darwin-arm64
+            os: macos-latest
+            bun_target: bun-darwin-arm64
+          - target: darwin-x64
+            os: macos-13
+            bun_target: bun-darwin-x64
+          - target: win-x64
+            os: windows-latest
+            bun_target: bun-windows-x64
+
+    steps:
+      - name: 取得程式碼
+        uses: actions/checkout@v4
+
+      - name: 安裝 Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: 安裝依賴
+        run: bun install --frozen-lockfile
+
+      # 構建開源引擎可執行檔
+      - name: 構建 ClawAPI Engine
+        run: |
+          bun build apps/engine/src/index.ts \
+            --compile \
+            --target=${{ matrix.bun_target }} \
+            --outfile=clawapi-${{ matrix.target }}
+
+      # 上傳構建產物
+      - name: 上傳構建產物
+        uses: actions/upload-artifact@v4
+        with:
+          name: clawapi-${{ matrix.target }}
+          path: clawapi-${{ matrix.target }}${{ matrix.target == 'win-x64' && '.exe' || '' }}
+          retention-days: 7
+
+  # ─── GitHub Release ───
+  release:
+    name: 建立 GitHub Release
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: 取得程式碼
+        uses: actions/checkout@v4
+
+      # 下載所有平台的構建產物
+      - name: 下載所有構建產物
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts/
+
+      # 建立 Release
+      - name: 建立 GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          files: |
+            artifacts/clawapi-engine-linux-x64/*
+            artifacts/clawapi-engine-darwin-arm64/*
+            artifacts/clawapi-engine-darwin-x64/*
+            artifacts/clawapi-engine-win-x64/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # ─── Docker 映像推送 ───
+  docker:
+    name: 推送 Docker 映像
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: 取得程式碼
+        uses: actions/checkout@v4
+
+      - name: 設定 Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: 登入 GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # 提取版本號
+      - name: 提取版本號
+        id: meta
+        run: |
+          VERSION=${GITHUB_REF_NAME#v}
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "📦 版本號：$VERSION"
+
+      # 構建並推送 VPS 映像
+      - name: 構建並推送 Docker 映像
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: apps/vps/Dockerfile.vps
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository }}/vps:latest
+            ghcr.io/${{ github.repository }}/vps:${{ steps.meta.outputs.version }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # ─── npm 發布 ───
+  npm:
+    name: 發布到 npm
+    needs: release
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: 取得程式碼
+        uses: actions/checkout@v4
+
+      - name: 安裝 Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: 安裝依賴
+        run: bun install --frozen-lockfile
+
+      # 發布 @clawapi/protocol 套件
+      - name: 發布 @clawapi/protocol
+        run: |
+          cd packages/protocol
+          npm publish --access public || echo "⚠️ 版本可能已存在，跳過"
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

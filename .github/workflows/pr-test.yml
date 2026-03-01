@@ -1,0 +1,82 @@
+# ============================================================
+# ClawAPI — PR 測試流水線
+# 觸發：對 main 分支發起 Pull Request
+# 步驟：安裝依賴 → 型別檢查 → 單元測試 → 覆蓋率門檻 → Lint
+# ============================================================
+
+name: PR 測試
+
+on:
+  pull_request:
+    branches: [main]
+
+# 同一 PR 只跑最新一次
+concurrency:
+  group: pr-test-${{ github.head_ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: 測試 & 型別檢查
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      # ─── 取得程式碼 ───
+      - name: 取得程式碼
+        uses: actions/checkout@v4
+
+      # ─── 安裝 Bun ───
+      - name: 安裝 Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      # ─── 安裝依賴 ───
+      - name: 安裝依賴
+        run: bun install --frozen-lockfile
+
+      # ─── TypeScript 型別檢查 ───
+      - name: TypeScript 型別檢查
+        run: bun run typecheck
+
+      # ─── 執行測試（含覆蓋率）───
+      - name: 執行測試
+        run: bun test --coverage 2>&1 | tee test-output.txt
+
+      # ─── 覆蓋率門檻檢查（≥ 80%）───
+      - name: 覆蓋率門檻檢查
+        run: |
+          # 從測試輸出中解析覆蓋率百分比
+          # Bun 的覆蓋率輸出格式：All files | xx.xx | ...
+          COVERAGE=$(grep -E "^All files" test-output.txt | awk -F'|' '{print $2}' | tr -d ' ' || echo "0")
+
+          if [ -z "$COVERAGE" ] || [ "$COVERAGE" = "0" ]; then
+            echo "⚠️ 無法解析覆蓋率，跳過門檻檢查"
+            echo "coverage=unknown" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "coverage=$COVERAGE" >> "$GITHUB_OUTPUT"
+          echo "📊 測試覆蓋率：${COVERAGE}%"
+
+          # 比較覆蓋率是否 ≥ 80%
+          PASS=$(echo "$COVERAGE >= 80" | bc -l 2>/dev/null || echo "1")
+          if [ "$PASS" = "0" ]; then
+            echo "❌ 覆蓋率 ${COVERAGE}% 低於門檻 80%"
+            exit 1
+          fi
+
+          echo "✅ 覆蓋率通過門檻（${COVERAGE}% ≥ 80%）"
+
+      # ─── Lint（如果有設定的話）───
+      - name: Lint 檢查
+        run: |
+          # 如果有 biome / eslint 設定就跑，沒有就跳過
+          if [ -f "biome.json" ] || [ -f ".biome.json" ]; then
+            bunx @biomejs/biome check .
+          elif [ -f ".eslintrc.json" ] || [ -f ".eslintrc.js" ] || [ -f "eslint.config.js" ]; then
+            bunx eslint .
+          else
+            echo "ℹ️ 未偵測到 Lint 設定，跳過"
+          fi

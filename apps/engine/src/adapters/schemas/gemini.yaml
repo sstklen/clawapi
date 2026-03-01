@@ -1,0 +1,56 @@
+schema_version: 1
+
+adapter:
+  id: gemini
+  name: Google Gemini
+  version: "1.0.0"
+  category: llm
+  requires_key: true
+  free_tier: true
+
+auth:
+  type: query_param
+  query_param_name: key
+  key_url: https://aistudio.google.com/app/apikey
+
+base_url: https://generativelanguage.googleapis.com
+
+endpoints:
+  chat:
+    method: POST
+    path: /v1beta/models/{{ model }}:generateContent
+    response_type: json
+    body:
+      contents: "{{ messages }}"
+      generationConfig:
+        temperature: "{{ temperature | default: 0.7 }}"
+        maxOutputTokens: "{{ max_tokens | default: 8192 }}"
+
+  models:
+    method: GET
+    path: /v1beta/models
+    response_type: json
+
+capabilities:
+  chat: true
+  streaming: true
+  embeddings: true
+  images: true
+  audio: false
+  models:
+    - id: gemini-2.0-flash
+      name: Gemini 2.0 Flash
+      context_window: 1048576
+      max_output_tokens: 8192
+    - id: gemini-1.5-pro
+      name: Gemini 1.5 Pro
+      context_window: 2097152
+      max_output_tokens: 8192
+    - id: gemini-1.5-flash
+      name: Gemini 1.5 Flash
+      context_window: 1048576
+      max_output_tokens: 8192
+
+rate_limits:
+  requests_per_minute: 60
+  cooldown_on_429: 30

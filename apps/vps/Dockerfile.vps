@@ -1,0 +1,49 @@
+# ============================================================
+# ClawAPI VPS — 生產環境 Dockerfile
+# 基於 Bun 官方映像，非 root 執行
+# ============================================================
+
+# 安全規則：pin 版本確保可重現建置
+FROM oven/bun:1.3.7
+
+# 設定工作目錄
+WORKDIR /app
+
+# 先複製依賴宣告，利用 Docker layer cache
+COPY package.json bun.lock ./
+COPY packages/protocol/package.json packages/protocol/
+COPY apps/vps/package.json apps/vps/
+
+# 安裝生產依賴（frozen-lockfile 確保一致性）
+RUN bun install --frozen-lockfile --production
+
+# 複製全部原始碼
+COPY packages/protocol/ packages/protocol/
+COPY apps/vps/ apps/vps/
+COPY tsconfig.base.json ./
+
+# 建立必要目錄結構
+RUN mkdir -p /data /logs /keys/ecdh /data/backups /data/db-backups
+
+# 建立非 root 使用者（安全最佳實踐）
+RUN adduser --disabled-password --gecos '' clawapi
+
+# 賦予目錄擁有權
+RUN chown -R clawapi:clawapi /app /data /logs /keys
+
+# 切換到非 root 使用者
+USER clawapi
+
+# 設定環境變數
+ENV NODE_ENV=production
+ENV VPS_PORT=3100
+
+# 對外暴露 3100 埠
+EXPOSE 3100
+
+# 健康檢查（用 bun fetch，不用 curl，Alpine 沒有 curl）
+HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
+  CMD bun -e "fetch('http://localhost:3100/health').then(r=>r.ok?process.exit(0):process.exit(1)).catch(()=>process.exit(1))"
+
+# 啟動 VPS 服務
+CMD ["bun", "run", "apps/vps/src/index.ts"]

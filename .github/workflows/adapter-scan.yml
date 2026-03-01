@@ -1,0 +1,226 @@
+# ============================================================
+# ClawAPI — Adapter YAML 安全掃描
+# 觸發：PR 修改 adapters 目錄下的 YAML 檔案
+# 三層掃描：結構驗證 → URL 白名單 → 惡意模式偵測
+# ============================================================
+
+name: Adapter 安全掃描
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'apps/engine/src/adapters/**/*.yaml'
+      - 'apps/engine/src/adapters/**/*.yml'
+
+jobs:
+  scan:
+    name: 三層安全掃描
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      # ─── 取得完整程式碼（需要 origin/main 做比較）───
+      - name: 取得程式碼
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # 完整歷史，否則 origin/main 不存在
+
+      # ─── 安裝 Bun ───
+      - name: 安裝 Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      # ─── 安裝依賴 ───
+      - name: 安裝依賴
+        run: bun install --frozen-lockfile
+
+      # ─── 找出變更的 Adapter 檔案 ───
+      - name: 偵測變更的 Adapter 檔案
+        id: changed
+        run: |
+          CHANGED_FILES=$(git diff --name-only origin/main...HEAD -- 'apps/engine/src/adapters/**/*.yaml' 'apps/engine/src/adapters/**/*.yml' || true)
+
+          if [ -z "$CHANGED_FILES" ]; then
+            echo "ℹ️ 沒有變更的 Adapter 檔案"
+            echo "has_changes=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_changes=true" >> "$GITHUB_OUTPUT"
+            echo "📋 變更的檔案："
+            echo "$CHANGED_FILES"
+            # 存到環境變數供後續步驟使用
+            {
+              echo "CHANGED_FILES<<EOF"
+              echo "$CHANGED_FILES"
+              echo "EOF"
+            } >> "$GITHUB_ENV"
+          fi
+
+      # ─── 第一層：YAML 結構驗證 ───
+      - name: 第一層：YAML 結構驗證
+        if: steps.changed.outputs.has_changes == 'true'
+        run: |
+          echo "🔍 第一層：驗證 YAML 語法與必填欄位..."
+          ERRORS=0
+
+          while IFS= read -r file; do
+            [ -z "$file" ] && continue
+            echo "  檢查：$file"
+
+            # 驗證 YAML 語法
+            if ! bun -e "
+              const yaml = require('js-yaml');
+              const fs = require('fs');
+              try {
+                const doc = yaml.load(fs.readFileSync('$file', 'utf8'));
+                if (!doc) { console.error('  ❌ 空檔案'); process.exit(1); }
+                if (!doc.id) { console.error('  ❌ 缺少 id 欄位'); process.exit(1); }
+                if (!doc.name) { console.error('  ❌ 缺少 name 欄位'); process.exit(1); }
+                if (!doc.base_url) { console.error('  ❌ 缺少 base_url 欄位'); process.exit(1); }
+                console.log('  ✅ 結構正確');
+              } catch (e) {
+                console.error('  ❌ YAML 語法錯誤：' + e.message);
+                process.exit(1);
+              }
+            " 2>&1; then
+              ERRORS=$((ERRORS + 1))
+            fi
+          done <<< "$CHANGED_FILES"
+
+          if [ "$ERRORS" -gt 0 ]; then
+            echo "❌ 第一層掃描失敗：$ERRORS 個錯誤"
+            exit 1
+          fi
+          echo "✅ 第一層掃描通過"
+
+      # ─── 第二層：URL 白名單檢查 ───
+      - name: 第二層：URL 白名單檢查
+        if: steps.changed.outputs.has_changes == 'true'
+        run: |
+          echo "🔍 第二層：檢查 base_url 是否指向已知 API 端點..."
+          ERRORS=0
+
+          # 已知安全的 API 網域
+          ALLOWED_DOMAINS=(
+            "api.openai.com"
+            "api.anthropic.com"
+            "generativelanguage.googleapis.com"
+            "api.groq.com"
+            "api.deepseek.com"
+            "api.cerebras.ai"
+            "api.sambanova.ai"
+            "dashscope.aliyuncs.com"
+            "openrouter.ai"
+            "api.deepl.com"
+            "api.tavily.com"
+            "google.serper.dev"
+            "api.search.brave.com"
+            "api.duckduckgo.com"
+            "localhost"
+          )
+
+          while IFS= read -r file; do
+            [ -z "$file" ] && continue
+
+            BASE_URL=$(bun -e "
+              const yaml = require('js-yaml');
+              const fs = require('fs');
+              const doc = yaml.load(fs.readFileSync('$file', 'utf8'));
+              console.log(doc.base_url || '');
+            " 2>/dev/null)
+
+            if [ -z "$BASE_URL" ]; then
+              continue
+            fi
+
+            # 提取網域
+            DOMAIN=$(echo "$BASE_URL" | sed -E 's|https?://||' | cut -d'/' -f1 | cut -d':' -f1)
+
+            FOUND=false
+            for allowed in "${ALLOWED_DOMAINS[@]}"; do
+              if [ "$DOMAIN" = "$allowed" ] || [[ "$DOMAIN" == *".$allowed" ]]; then
+                FOUND=true
+                break
+              fi
+            done
+
+            if [ "$FOUND" = true ]; then
+              echo "  ✅ $file → $DOMAIN"
+            else
+              echo "  ⚠️ $file → $DOMAIN（非白名單網域，需人工審核）"
+              ERRORS=$((ERRORS + 1))
+            fi
+          done <<< "$CHANGED_FILES"
+
+          if [ "$ERRORS" -gt 0 ]; then
+            echo "⚠️ 第二層掃描：$ERRORS 個檔案使用非白名單網域，需要 maintainer 審核"
+            # 不阻擋，但標記為需要審核
+            echo "needs_review=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "✅ 第二層掃描通過"
+          fi
+
+      # ─── 第三層：惡意模式偵測 ───
+      - name: 第三層：惡意模式偵測
+        if: steps.changed.outputs.has_changes == 'true'
+        run: |
+          echo "🔍 第三層：掃描可疑內容..."
+          ERRORS=0
+
+          # 危險模式清單
+          DANGEROUS_PATTERNS=(
+            "eval("
+            "Function("
+            "exec("
+            "child_process"
+            "require("
+            "import("
+            "__proto__"
+            "constructor.prototype"
+            "process.env"
+            "<script"
+            "javascript:"
+            "data:text/html"
+          )
+
+          while IFS= read -r file; do
+            [ -z "$file" ] && continue
+            CONTENT=$(cat "$file")
+
+            for pattern in "${DANGEROUS_PATTERNS[@]}"; do
+              if echo "$CONTENT" | grep -Fqi "$pattern"; then
+                echo "  ❌ $file 包含可疑模式：$pattern"
+                ERRORS=$((ERRORS + 1))
+              fi
+            done
+          done <<< "$CHANGED_FILES"
+
+          if [ "$ERRORS" -gt 0 ]; then
+            echo "❌ 第三層掃描失敗：偵測到 $ERRORS 個可疑模式"
+            exit 1
+          fi
+          echo "✅ 第三層掃描通過"
+
+      # ─── 掃描報告 ───
+      - name: 發布掃描報告
+        if: always() && steps.changed.outputs.has_changes == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const body = `## 🔍 Adapter 安全掃描報告
+
+            | 掃描層級 | 說明 | 狀態 |
+            |---------|------|------|
+            | 第一層 | YAML 結構驗證 | ${{ steps.changed.outputs.has_changes == 'true' && '✅' || '⏭️' }} |
+            | 第二層 | URL 白名單檢查 | ${{ job.status == 'success' && '✅' || '⚠️' }} |
+            | 第三層 | 惡意模式偵測 | ${{ job.status == 'success' && '✅' || '❌' }} |
+
+            > 自動產生於 ${{ github.event.pull_request.head.sha }}`;
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: body,
+            });

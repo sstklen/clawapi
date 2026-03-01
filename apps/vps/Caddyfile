@@ -1,0 +1,41 @@
+# ============================================================
+# ClawAPI VPS — Caddy 反向代理配置
+# 自動 HTTPS（HTTP challenge，不需 Cloudflare DNS 模組）
+# ============================================================
+
+api.clawapi.com {
+    # ─── WebSocket 升級請求 ───
+    # 必須放在一般 reverse_proxy 前面，確保 WS 連線正確處理
+    @websocket {
+        header Connection *Upgrade*
+        header Upgrade websocket
+    }
+    reverse_proxy @websocket clawapi-vps:3100
+
+    # ─── 一般 HTTP 請求 ───
+    reverse_proxy clawapi-vps:3100
+
+    # ─── 安全 Header ───
+    header {
+        # HSTS — 強制 HTTPS，包含子網域
+        Strict-Transport-Security "max-age=31536000; includeSubDomains"
+        # 禁止 MIME type sniffing
+        X-Content-Type-Options nosniff
+        # 禁止被嵌入 iframe
+        X-Frame-Options DENY
+        # Referrer 政策
+        Referrer-Policy strict-origin-when-cross-origin
+        # 移除 Server header（減少資訊洩漏）
+        -Server
+    }
+
+    # ─── 存取日誌 ───
+    log {
+        output file /var/log/caddy/access.log {
+            roll_size 100mb
+            roll_keep 5
+            roll_keep_for 168h
+        }
+        format json
+    }
+}

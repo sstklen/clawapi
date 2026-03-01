@@ -1,0 +1,5 @@
+# ClawAPI — Bun 全域設定
+# 指定 JSX 轉換使用 Hono 的 JSX runtime（供 Web UI SSR 使用）
+
+jsx = "react-jsx"
+jsxImportSource = "hono/jsx"

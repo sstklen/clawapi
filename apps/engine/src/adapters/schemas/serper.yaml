@@ -1,0 +1,63 @@
+schema_version: 1
+
+adapter:
+  id: serper
+  name: Serper (Google Search API)
+  version: "1.0.0"
+  category: search
+  requires_key: true
+  free_tier: false
+
+auth:
+  type: header
+  header_name: X-API-KEY
+  key_url: https://serper.dev/api-key
+
+base_url: https://google.serper.dev
+
+endpoints:
+  search:
+    method: POST
+    path: /search
+    response_type: json
+    headers:
+      Content-Type: application/json
+    body:
+      q: "{{ query }}"
+      num: "{{ num | default: 10 }}"
+      gl: "{{ country | default: us }}"
+      hl: "{{ language | default: en }}"
+
+  news:
+    method: POST
+    path: /news
+    response_type: json
+    headers:
+      Content-Type: application/json
+    body:
+      q: "{{ query }}"
+      num: "{{ num | default: 10 }}"
+
+  images:
+    method: POST
+    path: /images
+    response_type: json
+    headers:
+      Content-Type: application/json
+    body:
+      q: "{{ query }}"
+      num: "{{ num | default: 10 }}"
+
+capabilities:
+  chat: false
+  streaming: false
+  embeddings: false
+  images: false
+  audio: false
+  models:
+    - id: serper-search
+      name: Serper Google Search
+
+rate_limits:
+  requests_per_minute: 100
+  cooldown_on_429: 10

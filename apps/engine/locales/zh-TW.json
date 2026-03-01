@@ -1,0 +1,22 @@
+{
+  "startup.ready": "準備就緒！",
+  "startup.port": "伺服器正在監聽 {host}:{port}",
+  "startup.offline_mode": "離線模式啟動",
+  "shutdown.draining": "正在等待進行中的請求完成...",
+  "shutdown.complete": "已安全關閉",
+  "key.added": "已新增 Key：{service}",
+  "key.removed": "已移除 Key：{service}",
+  "key.dead": "Key {name} 已失效",
+  "key.expired": "Key {name} 將在 {days} 天後到期",
+  "key.rate_limited": "Key {name} 被限速，冷卻 {seconds} 秒",
+  "routing.switch": "已切換至 {service}（原因：{reason}）",
+  "routing.failover": "Failover：{from} → {to}",
+  "aid.requesting": "正在請求互助...",
+  "aid.received": "收到互助回應",
+  "aid.timeout": "互助請求超時",
+  "aid.enabled": "互助功能已開啟",
+  "aid.disabled": "互助功能已關閉",
+  "l0.limit_reached": "今天的免費 {service} 額度用完了",
+  "config.invalid": "設定檔錯誤：{field} 的值 {value} 不合法",
+  "error.generic": "發生錯誤：{message}"
+}

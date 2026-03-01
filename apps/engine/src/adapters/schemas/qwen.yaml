@@ -1,0 +1,67 @@
+schema_version: 1
+
+adapter:
+  id: qwen
+  name: Alibaba Qwen (DashScope)
+  version: "1.0.0"
+  category: llm
+  requires_key: true
+  free_tier: false
+
+auth:
+  type: bearer
+  key_url: https://dashscope.console.aliyun.com/apiKey
+
+base_url: https://dashscope.aliyuncs.com
+
+endpoints:
+  chat:
+    method: POST
+    path: /compatible-mode/v1/chat/completions
+    response_type: json
+    body:
+      model: "{{ model }}"
+      messages: "{{ messages }}"
+      temperature: "{{ temperature | default: 0.7 }}"
+      max_tokens: "{{ max_tokens | default: 4096 }}"
+      stream: false
+
+  chat_stream:
+    method: POST
+    path: /compatible-mode/v1/chat/completions
+    response_type: sse
+    body:
+      model: "{{ model }}"
+      messages: "{{ messages }}"
+      temperature: "{{ temperature | default: 0.7 }}"
+      max_tokens: "{{ max_tokens | default: 4096 }}"
+      stream: true
+
+  models:
+    method: GET
+    path: /compatible-mode/v1/models
+    response_type: json
+
+capabilities:
+  chat: true
+  streaming: true
+  embeddings: true
+  images: false
+  audio: false
+  models:
+    - id: qwen-turbo
+      name: Qwen Turbo
+      context_window: 131072
+      max_output_tokens: 8192
+    - id: qwen-plus
+      name: Qwen Plus
+      context_window: 131072
+      max_output_tokens: 8192
+    - id: qwen-max
+      name: Qwen Max
+      context_window: 32768
+      max_output_tokens: 8192
+
+rate_limits:
+  requests_per_minute: 60
+  cooldown_on_429: 30
