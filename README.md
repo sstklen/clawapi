@@ -1,152 +1,267 @@
-# 🦞 ClawAPI
+<p align="center">
+  <img src="https://img.shields.io/npm/v/@clawapi/engine?style=flat-square&color=E04040&label=npm" alt="npm version">
+  <img src="https://img.shields.io/github/license/sstklen/clawapi?style=flat-square&color=4A90D9" alt="license">
+  <img src="https://img.shields.io/badge/runtime-Bun-f472b6?style=flat-square" alt="bun">
+  <img src="https://img.shields.io/badge/providers-15+-10B981?style=flat-square" alt="providers">
+  <img src="https://img.shields.io/badge/MCP-ready-8B5CF6?style=flat-square" alt="MCP">
+</p>
 
-**Open-source AI API Key Manager + Smart Router**
+<h1 align="center">🦞 ClawAPI</h1>
 
-> Your keys never leave your machine. Period.
+<p align="center">
+  <strong>One command. Every AI. Your keys stay home.</strong>
+</p>
 
-ClawAPI helps you manage multiple AI API keys locally, route requests intelligently, and share unused quota with friends — all without exposing your keys to any third party.
+<p align="center">
+  Open-source AI API Key Manager + Smart Router<br>
+  Manage 15+ AI providers from a single local engine — keys never leave your machine.
+</p>
 
-## Features
+---
 
-- **30+ CLI Commands** — Full local management of AI API keys
-- **12-Page Web UI** — SSR + HTMX, zero JS framework dependency
-- **MCP Server** — 12 tools for Claude Desktop, Cursor, and more
-- **OpenAI-Compatible API** — Drop-in replacement, works with any OpenAI SDK client
-- **Smart Routing (L1-L4)** — From direct passthrough to AI-powered dynamic scheduling
-- **Quality Testing (P1-P4)** — Automated API quality and health checks
-- **AES-256-GCM Encryption** — Keys are encrypted at rest on your machine
-- **ECDH P-256 Key Exchange** — End-to-end secure communication with VPS
+## The Problem
 
-## Iron Rules
+You have API keys scattered across OpenAI, Anthropic, Google, DeepSeek, Groq...
 
-1. **Keys never leave your machine** — All API calls are made locally
-2. **VPS never sees API content** — Only metadata (latency, status) is shared
-3. **Works offline** — Full functionality without VPS connection
+- Keys stored in `.env` files across 20 projects
+- No idea which key is burning money
+- Can't easily switch providers when one goes down
+- AI coding tools (Claude Code, Cursor) each need separate key config
 
-## Quick Start
+## The Solution
 
-### Download
-
-Download the latest binary for your platform from [Releases](https://github.com/sstklen/clawapi/releases):
-
-| Platform | File |
-|----------|------|
-| macOS (Apple Silicon) | `clawapi-darwin-arm64` |
-| macOS (Intel) | `clawapi-darwin-x64` |
-| Linux (x64) | `clawapi-linux-x64` |
-| Windows (x64) | `clawapi-win-x64.exe` |
-
-### Install & Run
-
-```bash
-# macOS / Linux
-chmod +x clawapi-darwin-arm64
-./clawapi-darwin-arm64 setup
-
-# Start the engine
-./clawapi-darwin-arm64 start
-
-# Add your first API key
-./clawapi-darwin-arm64 keys add
+```
+         ┌─────────────────────────────────────────────┐
+         │              ClawAPI Engine                  │
+         │           (runs on YOUR machine)             │
+         │                                              │
+  You ──►│  🔑 Encrypted key vault (AES-256-GCM)       │
+         │  🧠 Smart routing across providers           │
+         │  📊 Cost tracking & health monitoring        │
+         │  🔌 OpenAI-compatible API on localhost       │
+         │                                              │
+         │   Keys     Keys     Keys     Keys     Keys  │
+         │    │        │        │        │        │     │
+         └────┼────────┼────────┼────────┼────────┼─────┘
+              ▼        ▼        ▼        ▼        ▼
+           OpenAI  Anthropic  Gemini  DeepSeek  Groq
+                                              + 10 more
 ```
 
-### Use as OpenAI-Compatible API
+**Your keys never leave your machine. Period.**
 
-Once started, ClawAPI exposes a local OpenAI-compatible endpoint:
+---
+
+## ⚡ Quick Start
+
+### Install via npm (requires [Bun](https://bun.sh))
+
+```bash
+# Install
+bun add -g @clawapi/engine
+
+# Setup (interactive — adds your first API key)
+clawapi setup
+
+# Start the engine
+clawapi start
+```
+
+### Or download a binary (no dependencies)
+
+```bash
+# macOS (Apple Silicon)
+curl -fsSL https://github.com/sstklen/clawapi/releases/latest/download/clawapi-darwin-arm64 -o clawapi
+chmod +x clawapi && ./clawapi setup
+```
+
+<details>
+<summary>Other platforms</summary>
+
+| Platform | Download |
+|----------|----------|
+| macOS Apple Silicon | `clawapi-darwin-arm64` |
+| macOS Intel | `clawapi-darwin-x64` |
+| Linux x64 | `clawapi-linux-x64` |
+| Windows x64 | `clawapi-win-x64.exe` |
+
+→ [All releases](https://github.com/sstklen/clawapi/releases)
+
+</details>
+
+---
+
+## 🔌 Use with AI Coding Tools
+
+### Claude Code (MCP)
+
+```bash
+claude mcp add clawapi --scope user -- clawapi mcp
+```
+
+That's it. Restart Claude Code — you now have 12 AI tools available:
+
+| Tool | What it does |
+|------|-------------|
+| `llm` | Chat with any AI model through ClawAPI |
+| `search` | Web search via Brave/Tavily/DuckDuckGo |
+| `translate` | Translate text via DeepL or AI |
+| `image_generate` | Generate images |
+| `audio_transcribe` | Transcribe audio files |
+| `embeddings` | Generate text embeddings |
+| `keys_list` | View your API keys |
+| `keys_add` | Add a new API key |
+| `status` | Check engine health |
+| `adapters` | List supported providers |
+| `ask` | Ask ClawAPI anything |
+| `task` | Execute multi-step AI tasks |
+
+### Any OpenAI SDK Client
 
 ```python
 from openai import OpenAI
 
+# Point any OpenAI client at ClawAPI — it just works
 client = OpenAI(
-    base_url="http://localhost:3000/v1",
-    api_key="your-local-key"
+    base_url="http://localhost:4141/v1",
+    api_key="your-clawapi-key"
 )
 
+# ClawAPI picks the best available provider automatically
 response = client.chat.completions.create(
-    model="gpt-4",
+    model="auto",  # Let ClawAPI choose, or specify "gpt-4" / "claude-3" / "gemini-2"
     messages=[{"role": "user", "content": "Hello!"}]
 )
 ```
 
-### Use as MCP Server
+Works with: Python, Node.js, Go, Rust — anything that speaks OpenAI API.
 
-Add to your Claude Desktop or Cursor config:
+---
 
-```json
-{
-  "mcpServers": {
-    "clawapi": {
-      "command": "/path/to/clawapi-darwin-arm64",
-      "args": ["mcp"]
-    }
-  }
-}
-```
+## 🧠 Smart Routing (L1 → L4)
 
-## CLI Commands
+ClawAPI doesn't just proxy — it thinks.
+
+| Layer | Name | What it does |
+|-------|------|-------------|
+| **L1** | Direct Proxy | Fastest path. Pass request to the specified provider. |
+| **L2** | Smart Gateway | Auto-select the best provider based on cost, latency, and health. |
+| **L3** | AI Concierge | Understand intent, pick the right model + parameters. |
+| **L4** | Task Engine | Break complex tasks into steps, orchestrate multiple AI calls. |
 
 ```
-Engine:     start, stop, status
-Keys:       keys add/list/remove/pin/rotate/import/check
-Gold Key:   gold-key set/show/remove
-Sub-Keys:   sub-keys issue/list/revoke/usage
-Mutual Aid: aid config/stats/donate
-Adapters:   adapters list/install/remove/update
-Telemetry:  telemetry show/toggle
-Backup:     backup export/import
-Other:      logs, config, setup, doctor, version
+"Translate this doc to Japanese and summarize it"
+
+  L4 Task Engine
+   ├─ Step 1: L1 → DeepL (translate)
+   ├─ Step 2: L2 → Best LLM (summarize)
+   └─ Step 3: Merge results → Return
 ```
 
-## Architecture
+---
+
+## 🔑 Iron Rules
+
+These are not features — they are **guarantees**.
+
+| # | Rule | How |
+|---|------|-----|
+| 1 | **Keys never leave your machine** | All API calls made locally. VPS only sees metadata. |
+| 2 | **VPS never sees API content** | ECDH P-256 key exchange. Only latency/status shared. |
+| 3 | **Works offline** | Full functionality without internet. VPS is optional. |
+
+---
+
+## 📦 Supported Providers
+
+| Provider | Models | Type |
+|----------|--------|------|
+| **OpenAI** | GPT-4o, GPT-4, o1, o3 | LLM |
+| **Anthropic** | Claude 4, Claude 3.5 Sonnet | LLM |
+| **Google** | Gemini 2.5, Gemini 2.0 Flash | LLM |
+| **DeepSeek** | DeepSeek-V3, DeepSeek-R1 | LLM |
+| **Groq** | Llama 3, Mixtral (ultra-fast) | LLM |
+| **Cerebras** | Llama 3 (fastest inference) | LLM |
+| **SambaNova** | Llama 3 (fast inference) | LLM |
+| **OpenRouter** | 200+ models (aggregator) | LLM |
+| **Qwen** | Qwen-2.5 | LLM |
+| **Ollama** | Any local model | LLM |
+| **Brave Search** | Web search | Search |
+| **Tavily** | AI-powered search | Search |
+| **DuckDuckGo** | Web search (free) | Search |
+| **DeepL** | 30+ languages | Translation |
+| **+** | Community adapters (YAML) | Extensible |
+
+Add your own provider in 30 lines of YAML. No code needed.
+
+---
+
+## 🛠 Full CLI
 
 ```
-┌─────────────────────────┐          ┌──────────────────────┐
-│   ClawAPI Engine        │          │   ClawAPI VPS        │
-│   (Your Machine)        │  ECDH    │   (Cloud)            │
-│                         │◄────────►│                      │
-│  • Key Storage (AES)    │  Metadata│  • Device Registry   │
-│  • Smart Router         │   Only   │  • Telemetry Agg.    │
-│  • OpenAI-Compat API    │          │  • L0 Key Pool       │
-│  • MCP Server           │          │  • Mutual Aid Match  │
-│  • Web UI               │          │  • Anomaly Detection │
-│  • CLI                  │          │                      │
-└─────────────────────────┘          └──────────────────────┘
-     Keys stay here ☝️                  Never sees your keys
+Engine      start · stop · status
+Keys        keys add · list · remove · pin · rotate · import · check
+Gold Key    gold-key set · show · remove
+Sub-Keys    sub-keys issue · list · revoke · usage
+Mutual Aid  aid config · stats · donate
+Adapters    adapters list · install · remove · update
+Telemetry   telemetry show · toggle
+Backup      backup export · import
+System      logs · config · setup · doctor · version · mcp
 ```
 
-## Supported Providers
+**30+ commands.** 3 languages (English, 繁體中文, 日本語).
 
-OpenAI, Anthropic (Claude), Google (Gemini), Groq, DeepSeek, Mistral, Cohere, Sambanova, Cerebras, OpenRouter, Brave Search, DeepL, and more via community adapters.
+---
 
-## Tech Stack
+## 🏗 Architecture
 
-- **Runtime:** Bun 1.3.7
-- **Framework:** Hono
-- **Database:** SQLite (local) + SQLite (VPS)
-- **Language:** TypeScript
-- **Encryption:** AES-256-GCM + ECDH P-256
-- **Packaging:** Bun compile (4-platform binaries)
-- **Container:** Docker + Caddy
+```
+┌─────────────────────────────┐          ┌────────────────────────┐
+│      ClawAPI Engine         │          │     ClawAPI VPS        │
+│      (Your Machine)         │  ECDH    │     (Optional Cloud)   │
+│                             │◄────────►│                        │
+│  🔐 Key Vault (AES-256)    │ Metadata │  📋 Device Registry    │
+│  🧠 Smart Router (L1-L4)   │   Only   │  📊 Telemetry Agg.    │
+│  🌐 OpenAI-Compat API      │          │  🤝 Mutual Aid Match  │
+│  🔧 MCP Server (12 tools)  │          │  🔍 Anomaly Detection │
+│  💻 CLI (30+ commands)      │          │                        │
+│  🖥  Web UI (SSR + HTMX)   │          │                        │
+└─────────────────────────────┘          └────────────────────────┘
+      Keys stay here ☝️                    Never sees your keys
+```
 
-## Security
+## 🔒 Security
 
+- **AES-256-GCM** encryption at rest
+- **ECDH P-256** key exchange with VPS
+- **1,478 tests**, 0 failures
 - Triple code review (self + Codex + Opus cross-review)
-- 5-party security audit (Red team + Mutation testing + Blind review + Supply chain + STRIDE)
-- 1,478 tests, 0 failures
+- 5-party security audit methodology
 - Non-root Docker execution
 - Rate limiting on all endpoints
 
-## VPS Endpoint
+## Tech Stack
 
-```
-Health:  https://clawapi.washinmura.jp/health
-API:     https://clawapi.washinmura.jp/v1/
-```
+| Component | Technology |
+|-----------|-----------|
+| Runtime | [Bun](https://bun.sh) |
+| Framework | [Hono](https://hono.dev) |
+| Database | SQLite (bun:sqlite) |
+| Language | TypeScript |
+| Packaging | Bun compile (4-platform binaries) |
+| Container | Docker + Caddy |
 
-## License
+---
 
-AGPL-3.0 — See [LICENSE](LICENSE) for details.
+## 📝 License
 
-## Contributing
+**AGPL-3.0** — Free to use, modify, and distribute. Contributions welcome.
 
-Issues and PRs welcome. Please read the specs in `specs/` before contributing.
+See [LICENSE](LICENSE) for details.
+
+---
+
+<p align="center">
+  <sub>Built with 🦞 by <a href="https://github.com/sstklen">sstklen</a> — Bōsō Peninsula, Japan</sub>
+</p>
