@@ -1,0 +1,491 @@
+{
+  "common.cancelled": {
+    "zh-TW": "已取消",
+    "en": "Cancelled",
+    "ja": "キャンセルしました"
+  },
+  "common.unknown_subcmd": {
+    "zh-TW": "未知的子命令：{subcmd}",
+    "en": "Unknown subcommand: {subcmd}",
+    "ja": "不明なサブコマンド：{subcmd}"
+  },
+  "common.available_subcmds": {
+    "zh-TW": "可用的子命令：{list}",
+    "en": "Available subcommands: {list}",
+    "ja": "利用可能なサブコマンド：{list}"
+  },
+  "common.enabled": {
+    "zh-TW": "已啟用",
+    "en": "Enabled",
+    "ja": "有効"
+  },
+  "common.disabled": {
+    "zh-TW": "已停用",
+    "en": "Disabled",
+    "ja": "無効"
+  },
+  "common.all": {
+    "zh-TW": "全部",
+    "en": "All",
+    "ja": "すべて"
+  },
+  "common.none": {
+    "zh-TW": "無",
+    "en": "None",
+    "ja": "なし"
+  },
+
+  "cmd.aid.config_title": {
+    "zh-TW": "互助功能設定",
+    "en": "Mutual Aid Configuration",
+    "ja": "相互援助設定"
+  },
+  "cmd.aid.enable_prompt": {
+    "zh-TW": "啟用互助功能？",
+    "en": "Enable mutual aid?",
+    "ja": "相互援助機能を有効にしますか？"
+  },
+  "cmd.aid.disabled": {
+    "zh-TW": "互助功能已關閉",
+    "en": "Mutual aid has been disabled",
+    "ja": "相互援助機能を無効にしました"
+  },
+  "cmd.aid.daily_limit": {
+    "zh-TW": "每日互助上限（次數）",
+    "en": "Daily mutual aid limit (times)",
+    "ja": "1日あたりの相互援助上限（回数）"
+  },
+  "cmd.aid.allowed_services": {
+    "zh-TW": "允許的服務（逗號分隔，留空=全部）",
+    "en": "Allowed services (comma-separated, empty = all)",
+    "ja": "許可するサービス（カンマ区切り、空欄＝すべて）"
+  },
+  "cmd.aid.blackout_hours": {
+    "zh-TW": "禁止時段（小時，如 0,1,2,3，留空=無）",
+    "en": "Blackout hours (e.g. 0,1,2,3, empty = none)",
+    "ja": "利用禁止時間帯（例: 0,1,2,3、空欄＝なし）"
+  },
+  "cmd.aid.config_updated": {
+    "zh-TW": "互助設定已更新",
+    "en": "Mutual aid settings updated",
+    "ja": "相互援助設定を更新しました"
+  },
+  "cmd.aid.allowed_services_label": {
+    "zh-TW": "允許的服務",
+    "en": "Allowed services",
+    "ja": "許可するサービス"
+  },
+  "cmd.aid.blackout_hours_label": {
+    "zh-TW": "禁止時段",
+    "en": "Blackout hours",
+    "ja": "利用禁止時間帯"
+  },
+  "cmd.aid.hour_suffix": {
+    "zh-TW": "時",
+    "en": "h",
+    "ja": "時"
+  },
+  "cmd.aid.stats_title": {
+    "zh-TW": "互助統計",
+    "en": "Mutual Aid Statistics",
+    "ja": "相互援助統計"
+  },
+  "cmd.aid.status_label": {
+    "zh-TW": "狀態",
+    "en": "Status",
+    "ja": "ステータス"
+  },
+  "cmd.aid.today_helped": {
+    "zh-TW": "今日幫助他人",
+    "en": "Helped others today",
+    "ja": "本日の援助提供"
+  },
+  "cmd.aid.today_received": {
+    "zh-TW": "今日收到幫助",
+    "en": "Received help today",
+    "ja": "本日の援助受領"
+  },
+  "cmd.aid.total_helped": {
+    "zh-TW": "累計幫助他人",
+    "en": "Total helped",
+    "ja": "累計援助提供"
+  },
+  "cmd.aid.total_received": {
+    "zh-TW": "累計收到幫助",
+    "en": "Total received",
+    "ja": "累計援助受領"
+  },
+  "cmd.aid.times_suffix": {
+    "zh-TW": "次",
+    "en": "times",
+    "ja": "回"
+  },
+  "cmd.aid.reputation_score": {
+    "zh-TW": "信譽分數",
+    "en": "Reputation score",
+    "ja": "信頼スコア"
+  },
+  "cmd.aid.donate_title": {
+    "zh-TW": "捐贈 Key 給 L0（免費層）",
+    "en": "Donate Key to L0 (free tier)",
+    "ja": "L0（無料枠）にKeyを寄付"
+  },
+  "cmd.aid.donate_desc": {
+    "zh-TW": "捐贈的 Key 會讓所有人都能使用基礎 AI 服務。",
+    "en": "Donated keys allow everyone to access basic AI services.",
+    "ja": "寄付されたKeyにより、すべてのユーザーが基本AIサービスを利用できるようになります。"
+  },
+  "cmd.aid.donate_service_id": {
+    "zh-TW": "要捐贈的服務 ID",
+    "en": "Service ID to donate",
+    "ja": "寄付するサービスID"
+  },
+  "cmd.aid.service_id_empty": {
+    "zh-TW": "服務 ID 不能為空",
+    "en": "Service ID cannot be empty",
+    "ja": "サービスIDは必須です"
+  },
+  "cmd.aid.paste_api_key": {
+    "zh-TW": "貼上 API Key",
+    "en": "Paste your API Key",
+    "ja": "API Keyを貼り付けてください"
+  },
+  "cmd.aid.api_key_empty": {
+    "zh-TW": "API Key 不能為空",
+    "en": "API Key cannot be empty",
+    "ja": "API Keyは必須です"
+  },
+  "cmd.aid.donate_confirm": {
+    "zh-TW": "確定要捐贈此 Key？",
+    "en": "Are you sure you want to donate this key?",
+    "ja": "このKeyを寄付してもよろしいですか？"
+  },
+  "cmd.aid.donate_thanks": {
+    "zh-TW": "感謝您的慷慨捐贈！",
+    "en": "Thank you for your generous donation!",
+    "ja": "寛大なご寄付ありがとうございます！"
+  },
+  "cmd.aid.service_label": {
+    "zh-TW": "服務",
+    "en": "Service",
+    "ja": "サービス"
+  },
+
+  "cmd.adapters.list_title": {
+    "zh-TW": "Adapter 列表",
+    "en": "Adapter List",
+    "ja": "アダプター一覧"
+  },
+  "cmd.adapters.col_name": {
+    "zh-TW": "名稱",
+    "en": "Name",
+    "ja": "名前"
+  },
+  "cmd.adapters.col_version": {
+    "zh-TW": "版本",
+    "en": "Version",
+    "ja": "バージョン"
+  },
+  "cmd.adapters.col_type": {
+    "zh-TW": "類型",
+    "en": "Type",
+    "ja": "種類"
+  },
+  "cmd.adapters.col_status": {
+    "zh-TW": "狀態",
+    "en": "Status",
+    "ja": "ステータス"
+  },
+  "cmd.adapters.specify_url": {
+    "zh-TW": "請指定 Adapter 來源 URL。用法：clawapi adapters install <url>",
+    "en": "Please specify the adapter source URL. Usage: clawapi adapters install <url>",
+    "ja": "アダプターのソースURLを指定してください。使い方：clawapi adapters install <url>"
+  },
+  "cmd.adapters.installing": {
+    "zh-TW": "正在安裝 Adapter：{url}",
+    "en": "Installing adapter: {url}",
+    "ja": "アダプターをインストール中：{url}"
+  },
+  "cmd.adapters.invalid_url": {
+    "zh-TW": "無效的 URL 格式",
+    "en": "Invalid URL format",
+    "ja": "無効なURL形式です"
+  },
+  "cmd.adapters.community_warning": {
+    "zh-TW": "社群 Adapter 未經 ClawAPI 官方審核",
+    "en": "Community adapters are not officially reviewed by ClawAPI",
+    "ja": "コミュニティアダプターはClawAPI公式の審査を受けていません"
+  },
+  "cmd.adapters.install_confirm": {
+    "zh-TW": "確定要安裝？",
+    "en": "Are you sure you want to install?",
+    "ja": "インストールしてもよろしいですか？"
+  },
+  "cmd.adapters.installed": {
+    "zh-TW": "Adapter 已安裝",
+    "en": "Adapter installed",
+    "ja": "アダプターをインストールしました"
+  },
+  "cmd.adapters.source_label": {
+    "zh-TW": "來源",
+    "en": "Source",
+    "ja": "ソース"
+  },
+  "cmd.adapters.restart_required": {
+    "zh-TW": "重啟引擎後生效",
+    "en": "Restart the engine to apply changes",
+    "ja": "エンジンを再起動すると反映されます"
+  },
+  "cmd.adapters.specify_id": {
+    "zh-TW": "請指定 Adapter ID。用法：clawapi adapters remove <id>",
+    "en": "Please specify the adapter ID. Usage: clawapi adapters remove <id>",
+    "ja": "アダプターIDを指定してください。使い方：clawapi adapters remove <id>"
+  },
+  "cmd.adapters.cannot_remove_builtin": {
+    "zh-TW": "無法移除內建 Adapter：{id}",
+    "en": "Cannot remove built-in adapter: {id}",
+    "ja": "組み込みアダプターは削除できません：{id}"
+  },
+  "cmd.adapters.remove_confirm": {
+    "zh-TW": "確定要移除 Adapter「{id}」？",
+    "en": "Are you sure you want to remove adapter \"{id}\"?",
+    "ja": "アダプター「{id}」を削除してもよろしいですか？"
+  },
+  "cmd.adapters.removed": {
+    "zh-TW": "Adapter「{id}」已移除",
+    "en": "Adapter \"{id}\" has been removed",
+    "ja": "アダプター「{id}」を削除しました"
+  },
+  "cmd.adapters.checking_updates": {
+    "zh-TW": "檢查 Adapter 更新...",
+    "en": "Checking for adapter updates...",
+    "ja": "アダプターの更新を確認中..."
+  },
+  "cmd.adapters.all_up_to_date": {
+    "zh-TW": "所有 Adapter 都是最新版本",
+    "en": "All adapters are up to date",
+    "ja": "すべてのアダプターは最新バージョンです"
+  },
+  "cmd.adapters.update_hint": {
+    "zh-TW": "使用 clawapi adapters install <url> 更新指定 Adapter",
+    "en": "Use clawapi adapters install <url> to update a specific adapter",
+    "ja": "clawapi adapters install <url> で指定のアダプターを更新できます"
+  },
+
+  "cmd.telemetry.status_title": {
+    "zh-TW": "遙測（集體智慧）狀態",
+    "en": "Telemetry (Collective Intelligence) Status",
+    "ja": "テレメトリ（集合知）ステータス"
+  },
+  "cmd.telemetry.status_label": {
+    "zh-TW": "狀態",
+    "en": "Status",
+    "ja": "ステータス"
+  },
+  "cmd.telemetry.pending_events": {
+    "zh-TW": "待上報事件",
+    "en": "Pending events",
+    "ja": "未送信イベント"
+  },
+  "cmd.telemetry.events_unit": {
+    "zh-TW": "筆",
+    "en": "events",
+    "ja": "件"
+  },
+  "cmd.telemetry.pending_size": {
+    "zh-TW": "待上報大小",
+    "en": "Pending size",
+    "ja": "未送信サイズ"
+  },
+  "cmd.telemetry.last_upload": {
+    "zh-TW": "上次上報",
+    "en": "Last upload",
+    "ja": "前回送信"
+  },
+  "cmd.telemetry.next_upload": {
+    "zh-TW": "下次上報",
+    "en": "Next upload",
+    "ja": "次回送信"
+  },
+  "cmd.telemetry.sample_title": {
+    "zh-TW": "待上報事件樣本：",
+    "en": "Sample pending events:",
+    "ja": "未送信イベントのサンプル："
+  },
+  "cmd.telemetry.disclaimer": {
+    "zh-TW": "說明：遙測資料僅包含匿名化的路由結果，不含任何 API Key 或請求內容。",
+    "en": "Note: Telemetry data only contains anonymized routing results. No API keys or request content are included.",
+    "ja": "注記：テレメトリデータには匿名化されたルーティング結果のみが含まれ、API Keyやリクエスト内容は一切含まれません。"
+  },
+  "cmd.telemetry.current_status": {
+    "zh-TW": "遙測目前為：{status}",
+    "en": "Telemetry is currently: {status}",
+    "ja": "テレメトリの現在の状態：{status}"
+  },
+  "cmd.telemetry.disable_prompt": {
+    "zh-TW": "要關閉遙測嗎？",
+    "en": "Would you like to disable telemetry?",
+    "ja": "テレメトリを無効にしますか？"
+  },
+  "cmd.telemetry.disabled": {
+    "zh-TW": "遙測已關閉",
+    "en": "Telemetry has been disabled",
+    "ja": "テレメトリを無効にしました"
+  },
+  "cmd.telemetry.kept_enabled": {
+    "zh-TW": "已保持啟用",
+    "en": "Kept enabled",
+    "ja": "有効のまま維持します"
+  },
+  "cmd.telemetry.benefit_desc": {
+    "zh-TW": "遙測資料幫助 ClawAPI 改善路由品質，僅包含匿名統計。",
+    "en": "Telemetry data helps ClawAPI improve routing quality and only includes anonymous statistics.",
+    "ja": "テレメトリデータはClawAPIのルーティング品質改善に役立ち、匿名統計のみを含みます。"
+  },
+  "cmd.telemetry.enable_prompt": {
+    "zh-TW": "要開啟遙測嗎？",
+    "en": "Would you like to enable telemetry?",
+    "ja": "テレメトリを有効にしますか？"
+  },
+  "cmd.telemetry.enabled": {
+    "zh-TW": "遙測已啟用",
+    "en": "Telemetry has been enabled",
+    "ja": "テレメトリを有効にしました"
+  },
+  "cmd.telemetry.kept_disabled": {
+    "zh-TW": "已保持停用",
+    "en": "Kept disabled",
+    "ja": "無効のまま維持します"
+  },
+
+  "cmd.backup.export_title": {
+    "zh-TW": "匯出加密備份",
+    "en": "Export Encrypted Backup",
+    "ja": "暗号化バックアップのエクスポート"
+  },
+  "cmd.backup.set_password": {
+    "zh-TW": "設定備份密碼",
+    "en": "Set backup password",
+    "ja": "バックアップパスワードを設定"
+  },
+  "cmd.backup.password_empty": {
+    "zh-TW": "密碼不能為空",
+    "en": "Password cannot be empty",
+    "ja": "パスワードは必須です"
+  },
+  "cmd.backup.confirm_password": {
+    "zh-TW": "再次輸入密碼",
+    "en": "Confirm password",
+    "ja": "パスワードを再入力"
+  },
+  "cmd.backup.password_mismatch": {
+    "zh-TW": "兩次密碼不一致",
+    "en": "Passwords do not match",
+    "ja": "パスワードが一致しません"
+  },
+  "cmd.backup.output_path": {
+    "zh-TW": "輸出路徑",
+    "en": "Output path",
+    "ja": "出力パス"
+  },
+  "cmd.backup.export_done": {
+    "zh-TW": "備份已匯出！",
+    "en": "Backup exported!",
+    "ja": "バックアップをエクスポートしました！"
+  },
+  "cmd.backup.path_label": {
+    "zh-TW": "路徑",
+    "en": "Path",
+    "ja": "パス"
+  },
+  "cmd.backup.size_label": {
+    "zh-TW": "大小",
+    "en": "Size",
+    "ja": "サイズ"
+  },
+  "cmd.backup.keys_count": {
+    "zh-TW": "Key 數量",
+    "en": "Key count",
+    "ja": "Key数"
+  },
+  "cmd.backup.sub_keys_count": {
+    "zh-TW": "Sub-Key 數量",
+    "en": "Sub-Key count",
+    "ja": "Sub-Key数"
+  },
+  "cmd.backup.keep_safe_warning": {
+    "zh-TW": "請妥善保管備份檔案和密碼！",
+    "en": "Please keep your backup file and password safe!",
+    "ja": "バックアップファイルとパスワードを安全に保管してください！"
+  },
+  "cmd.backup.import_title": {
+    "zh-TW": "匯入加密備份",
+    "en": "Import Encrypted Backup",
+    "ja": "暗号化バックアップのインポート"
+  },
+  "cmd.backup.file_path": {
+    "zh-TW": "備份檔案路徑",
+    "en": "Backup file path",
+    "ja": "バックアップファイルのパス"
+  },
+  "cmd.backup.file_path_required": {
+    "zh-TW": "請指定備份檔案路徑",
+    "en": "Please specify the backup file path",
+    "ja": "バックアップファイルのパスを指定してください"
+  },
+  "cmd.backup.file_not_found": {
+    "zh-TW": "檔案不存在：{path}",
+    "en": "File not found: {path}",
+    "ja": "ファイルが見つかりません：{path}"
+  },
+  "cmd.backup.enter_password": {
+    "zh-TW": "輸入備份密碼",
+    "en": "Enter backup password",
+    "ja": "バックアップパスワードを入力"
+  },
+  "cmd.backup.import_overwrite_warning": {
+    "zh-TW": "匯入備份將覆蓋現有的 Key 和設定",
+    "en": "Importing the backup will overwrite existing keys and settings",
+    "ja": "バックアップをインポートすると、既存のKeyと設定が上書きされます"
+  },
+  "cmd.backup.continue_confirm": {
+    "zh-TW": "確定要繼續？",
+    "en": "Are you sure you want to continue?",
+    "ja": "続行してもよろしいですか？"
+  },
+  "cmd.backup.import_done": {
+    "zh-TW": "備份已匯入！",
+    "en": "Backup imported!",
+    "ja": "バックアップをインポートしました！"
+  },
+  "cmd.backup.restored_keys": {
+    "zh-TW": "還原 Key",
+    "en": "Restored keys",
+    "ja": "復元Key"
+  },
+  "cmd.backup.restored_sub_keys": {
+    "zh-TW": "還原 Sub-Key",
+    "en": "Restored sub-keys",
+    "ja": "復元Sub-Key"
+  },
+  "cmd.backup.count_unit": {
+    "zh-TW": "個",
+    "en": "",
+    "ja": "個"
+  },
+  "cmd.backup.config_label": {
+    "zh-TW": "設定檔",
+    "en": "Config",
+    "ja": "設定ファイル"
+  },
+  "cmd.backup.restored": {
+    "zh-TW": "已還原",
+    "en": "Restored",
+    "ja": "復元済み"
+  },
+  "cmd.backup.restart_suggestion": {
+    "zh-TW": "建議重啟引擎以套用新設定",
+    "en": "We recommend restarting the engine to apply the new settings",
+    "ja": "新しい設定を適用するため、エンジンの再起動をお勧めします"
+  }
+}

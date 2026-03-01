@@ -4,6 +4,7 @@
 
 import * as readline from 'node:readline';
 import { color, print, blank } from './output';
+import { t } from './i18n';
 
 // ===== 型別定義 =====
 
@@ -133,12 +134,12 @@ export async function select(question: string, options: SelectOption[]): Promise
   blank();
 
   while (true) {
-    const answer = await ask('請輸入編號');
+    const answer = await ask(t('prompt.enter_number'));
     const num = parseInt(answer, 10);
     if (num >= 1 && num <= options.length) {
       return options[num - 1]!.value;
     }
-    print(color.red(`  請輸入 1~${options.length} 之間的數字`));
+    print(color.red(`  ${t('prompt.invalid_range', { max: options.length })}`));
   }
 }
 
@@ -162,7 +163,7 @@ export async function multiSelect(question: string, options: SelectOption[]): Pr
 
   blank();
 
-  const answer = await ask('請輸入編號（用逗號分隔，如 1,3,5）');
+  const answer = await ask(t('prompt.enter_numbers'));
   const nums = answer.split(',').map(s => parseInt(s.trim(), 10));
   const selected: string[] = [];
 

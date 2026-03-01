@@ -3,6 +3,7 @@
 
 import { color, print, blank, success, info, warn, jsonOutput, isJsonMode, output } from '../utils/output';
 import { confirm } from '../utils/prompt';
+import { t } from '../utils/i18n';
 import type { ParsedArgs } from '../index';
 
 // ===== 子命令路由 =====
@@ -20,7 +21,7 @@ export async function telemetryCommand(args: ParsedArgs): Promise<void> {
         jsonOutput({ error: 'unknown_subcommand', available: ['show', 'toggle'] });
         process.exit(1);
       }
-      print('可用的子命令：show, toggle');
+      print(t('common.available_subcmds', { list: 'show, toggle' }));
       process.exit(1);
   }
 }
@@ -44,20 +45,20 @@ async function telemetryShow(_args: ParsedArgs): Promise<void> {
   output(
     () => {
       blank();
-      info('遙測（集體智慧）狀態');
+      info(t('cmd.telemetry.status_title'));
       blank();
-      print(`  狀態：${pendingData.enabled ? color.green('已啟用') : color.red('已停用')}`);
-      print(`  待上報事件：${pendingData.pending_events} 筆`);
-      print(`  待上報大小：${(pendingData.pending_size_bytes / 1024).toFixed(1)} KB`);
-      print(`  上次上報：${pendingData.last_upload_at}`);
-      print(`  下次上報：${pendingData.next_upload_at}`);
+      print(`  ${t('cmd.telemetry.status_label')}：${pendingData.enabled ? color.green(t('common.enabled')) : color.red(t('common.disabled'))}`);
+      print(`  ${t('cmd.telemetry.pending_events')}：${pendingData.pending_events} ${t('cmd.telemetry.events_unit')}`);
+      print(`  ${t('cmd.telemetry.pending_size')}：${(pendingData.pending_size_bytes / 1024).toFixed(1)} KB`);
+      print(`  ${t('cmd.telemetry.last_upload')}：${pendingData.last_upload_at}`);
+      print(`  ${t('cmd.telemetry.next_upload')}：${pendingData.next_upload_at}`);
       blank();
-      info('待上報事件樣本：');
+      info(t('cmd.telemetry.sample_title'));
       for (const e of pendingData.sample_events) {
         print(`    ${e.type} | ${e.service} | ${e.latency_ms}ms | ${e.timestamp}`);
       }
       blank();
-      print(color.dim('  說明：遙測資料僅包含匿名化的路由結果，不含任何 API Key 或請求內容。'));
+      print(color.dim('  ' + t('cmd.telemetry.disclaimer')));
       blank();
     },
     pendingData
@@ -72,27 +73,27 @@ async function telemetryToggle(_args: ParsedArgs): Promise<void> {
 
   blank();
   if (currentlyEnabled) {
-    info('遙測目前為：已啟用');
-    const disable = await confirm('要關閉遙測嗎？');
+    info(t('cmd.telemetry.current_status', { status: t('common.enabled') }));
+    const disable = await confirm(t('cmd.telemetry.disable_prompt'));
     if (disable) {
       output(
-        () => success('遙測已關閉'),
+        () => success(t('cmd.telemetry.disabled')),
         { status: 'disabled' }
       );
     } else {
-      info('已保持啟用');
+      info(t('cmd.telemetry.kept_enabled'));
     }
   } else {
-    info('遙測目前為：已停用');
-    print('  遙測資料幫助 ClawAPI 改善路由品質，僅包含匿名統計。');
-    const enable = await confirm('要開啟遙測嗎？');
+    info(t('cmd.telemetry.current_status', { status: t('common.disabled') }));
+    print('  ' + t('cmd.telemetry.benefit_desc'));
+    const enable = await confirm(t('cmd.telemetry.enable_prompt'));
     if (enable) {
       output(
-        () => success('遙測已啟用'),
+        () => success(t('cmd.telemetry.enabled')),
         { status: 'enabled' }
       );
     } else {
-      info('已保持停用');
+      info(t('cmd.telemetry.kept_disabled'));
     }
   }
 }

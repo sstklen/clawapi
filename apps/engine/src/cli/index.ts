@@ -4,6 +4,7 @@
 
 import { CLAWAPI_VERSION } from '@clawapi/protocol';
 import { setOutputMode, print, color, blank, error } from './utils/output';
+import { initCliI18n, t } from './utils/i18n';
 
 // ===== 型別定義 =====
 
@@ -121,70 +122,70 @@ function isValueFlag(flag: string): boolean {
 function printHelp(): void {
   blank();
   print(color.bold(`ClawAPI v${CLAWAPI_VERSION}`));
-  print(color.dim('開源 AI API 鑰匙管理器 + 智慧路由器'));
+  print(color.dim(t('help.subtitle')));
   blank();
-  print(color.bold('用法：'));
-  print('  clawapi <命令> [子命令] [選項]');
+  print(color.bold(t('help.usage_title')));
+  print(`  ${t('help.usage_line')}`);
   blank();
-  print(color.bold('引擎控制：'));
-  print('  start              啟動引擎 (-p/--port, --host, --daemon, --no-vps, --verbose)');
-  print('  stop               停止引擎');
-  print('  status             查看引擎狀態');
+  print(color.bold(t('help.section.engine')));
+  print(`  start              ${t('help.engine.start')}`);
+  print(`  stop               ${t('help.engine.stop')}`);
+  print(`  status             ${t('help.engine.status')}`);
   blank();
-  print(color.bold('Key 管理：'));
-  print('  keys add           新增 Key（互動式）');
-  print('  keys list          列出 Key');
-  print('  keys remove <id>   刪除 Key');
-  print('  keys pin <id>      釘選 Key');
-  print('  keys rotate <id>   輪換 Key');
-  print('  keys import        批量匯入');
-  print('  keys check         手動檢查 Key 健康度');
+  print(color.bold(t('help.section.keys')));
+  print(`  keys add           ${t('help.keys.add')}`);
+  print(`  keys list          ${t('help.keys.list')}`);
+  print(`  keys remove <id>   ${t('help.keys.remove')}`);
+  print(`  keys pin <id>      ${t('help.keys.pin')}`);
+  print(`  keys rotate <id>   ${t('help.keys.rotate')}`);
+  print(`  keys import        ${t('help.keys.import')}`);
+  print(`  keys check         ${t('help.keys.check')}`);
   blank();
-  print(color.bold('金鑰匙：'));
-  print('  gold-key set       設定金鑰匙');
-  print('  gold-key show      查看金鑰匙');
-  print('  gold-key remove    移除金鑰匙');
+  print(color.bold(t('help.section.gold_key')));
+  print(`  gold-key set       ${t('help.gold_key.set')}`);
+  print(`  gold-key show      ${t('help.gold_key.show')}`);
+  print(`  gold-key remove    ${t('help.gold_key.remove')}`);
   blank();
-  print(color.bold('Sub-Key：'));
-  print('  sub-keys issue     發行 Sub-Key');
-  print('  sub-keys list      列出 Sub-Key');
-  print('  sub-keys revoke <id>  撤銷 Sub-Key');
-  print('  sub-keys usage <id>   查看用量');
+  print(color.bold(t('help.section.sub_keys')));
+  print(`  sub-keys issue     ${t('help.sub_keys.issue')}`);
+  print(`  sub-keys list      ${t('help.sub_keys.list')}`);
+  print(`  sub-keys revoke <id>  ${t('help.sub_keys.revoke')}`);
+  print(`  sub-keys usage <id>   ${t('help.sub_keys.usage')}`);
   blank();
-  print(color.bold('互助：'));
-  print('  aid config         設定互助');
-  print('  aid stats          查看互助統計');
-  print('  aid donate         捐 Key 給 L0');
+  print(color.bold(t('help.section.aid')));
+  print(`  aid config         ${t('help.aid.config')}`);
+  print(`  aid stats          ${t('help.aid.stats')}`);
+  print(`  aid donate         ${t('help.aid.donate')}`);
   blank();
-  print(color.bold('Adapter：'));
-  print('  adapters list      列出 Adapter');
-  print('  adapters install <url>  安裝社群 Adapter');
-  print('  adapters remove <id>    移除 Adapter');
-  print('  adapters update    手動更新');
+  print(color.bold(t('help.section.adapters')));
+  print(`  adapters list      ${t('help.adapters.list')}`);
+  print(`  adapters install <url>  ${t('help.adapters.install')}`);
+  print(`  adapters remove <id>    ${t('help.adapters.remove')}`);
+  print(`  adapters update    ${t('help.adapters.update')}`);
   blank();
-  print(color.bold('遙測：'));
-  print('  telemetry show     查看待上報內容');
-  print('  telemetry toggle   開/關統計上報');
+  print(color.bold(t('help.section.telemetry')));
+  print(`  telemetry show     ${t('help.telemetry.show')}`);
+  print(`  telemetry toggle   ${t('help.telemetry.toggle')}`);
   blank();
-  print(color.bold('備份：'));
-  print('  backup export      匯出加密備份');
-  print('  backup import      匯入備份');
+  print(color.bold(t('help.section.backup')));
+  print(`  backup export      ${t('help.backup.export')}`);
+  print(`  backup import      ${t('help.backup.import')}`);
   blank();
-  print(color.bold('其他：'));
-  print('  logs               查看最近紀錄 (--service, --export csv)');
-  print('  config show        查看設定');
-  print('  config set <key> <value>  修改設定');
-  print('  migrate            執行 DB 遷移');
-  print('  device reset       重置裝置');
-  print('  version            查看版本');
-  print('  setup              首次安裝引導');
-  print('  doctor             診斷工具');
+  print(color.bold(t('help.section.misc')));
+  print(`  logs               ${t('help.misc.logs')}`);
+  print(`  config show        ${t('help.misc.config_show')}`);
+  print(`  config set <key> <value>  ${t('help.misc.config_set')}`);
+  print(`  migrate            ${t('help.misc.migrate')}`);
+  print(`  device reset       ${t('help.misc.device_reset')}`);
+  print(`  version            ${t('help.misc.version')}`);
+  print(`  setup              ${t('help.misc.setup')}`);
+  print(`  doctor             ${t('help.misc.doctor')}`);
   blank();
-  print(color.bold('全域選項：'));
-  print('  --plain            無色彩（CI 環境友好）');
-  print('  --json             JSON 輸出（機器可讀）');
-  print('  --locale <locale>  語言切換 (zh-TW|en|ja)');
-  print('  --help, -h         顯示幫助');
+  print(color.bold(t('help.section.global_options')));
+  print(`  --plain            ${t('help.options.plain')}`);
+  print(`  --json             ${t('help.options.json')}`);
+  print(`  --locale <locale>  ${t('help.options.locale')}`);
+  print(`  --help, -h         ${t('help.options.help')}`);
   blank();
 }
 
@@ -265,8 +266,8 @@ async function route(parsed: ParsedArgs): Promise<void> {
         const { deviceResetCommand } = await import('./commands/misc');
         return deviceResetCommand(parsed);
       }
-      error(`未知的子命令：device ${parsed.positional[0] ?? ''}`);
-      print('可用的子命令：device reset');
+      error(t('common.unknown_subcommand', { command: `device ${parsed.positional[0] ?? ''}` }));
+      print(t('common.available_subcommands', { list: 'device reset' }));
       process.exit(1);
       break;
     }
@@ -276,8 +277,8 @@ async function route(parsed: ParsedArgs): Promise<void> {
       break;
     }
     default: {
-      error(`未知的命令：${command}`);
-      print(`使用 ${color.cyan('clawapi --help')} 查看所有可用命令`);
+      error(t('common.unknown_command', { command }));
+      print(t('common.use_help'));
       process.exit(1);
     }
   }
@@ -292,6 +293,10 @@ export async function main(argv: string[] = process.argv): Promise<void> {
   const plain = parsed.flags['plain'] === true;
   const json = parsed.flags['json'] === true;
   setOutputMode({ plain, json });
+
+  // 初始化多語系（必須在所有命令之前）
+  const cliLocale = parsed.flags['locale'] as string | undefined;
+  initCliI18n(cliLocale);
 
   // --help / -h
   if (parsed.flags['help'] === true || parsed.flags['h'] === true) {

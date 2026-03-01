@@ -11,6 +11,7 @@ import { join } from 'node:path';
 import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import { CLAWAPI_VERSION } from '@clawapi/protocol';
 import { color, print, blank, success, error, info, warn, step, box, jsonOutput, isJsonMode, output } from '../utils/output';
+import { t } from '../utils/i18n';
 import { ask, password, confirm, select } from '../utils/prompt';
 import type { ParsedArgs } from '../index';
 
@@ -25,122 +26,122 @@ const CONFIG_PATH = join(CONFIG_DIR, 'config.yaml');
 export async function setupCommand(args: ParsedArgs): Promise<void> {
   // JSON 模式不支援互動式
   if (isJsonMode()) {
-    jsonOutput({ error: 'not_supported', message: 'setup 不支援 --json 模式，請使用互動式模式' });
+    jsonOutput({ error: 'not_supported', message: t('cmd.setup.no_json_mode') });
     process.exit(1);
   }
 
   blank();
   box([
     `ClawAPI v${CLAWAPI_VERSION}`,
-    '首次安裝引導',
+    t('cmd.setup.first_run_title'),
   ], 'Welcome');
   blank();
-  print('  這個引導會幫你完成基本設定。隨時按 Ctrl+C 離開。');
+  print(`  ${t('cmd.setup.intro')}`);
   blank();
 
   // ===== 步驟 1：歡迎 + 語言選擇 =====
-  step(1, TOTAL_STEPS, '語言設定');
+  step(1, TOTAL_STEPS, t('cmd.setup.step_language'));
   blank();
 
-  const locale = await select('選擇語言', [
-    { label: '繁體中文', value: 'zh-TW' },
+  const locale = await select(t('cmd.setup.select_language'), [
+    { label: t('cmd.setup.lang_zh_tw'), value: 'zh-TW' },
     { label: 'English', value: 'en' },
-    { label: '日本語', value: 'ja' },
+    { label: t('cmd.setup.lang_ja'), value: 'ja' },
   ]);
 
-  success(`語言已設定為：${localeLabel(locale)}`);
+  success(t('cmd.setup.language_set', { lang: localeLabel(locale) }));
   blank();
 
   // ===== 步驟 2：加入第一把 Key =====
-  step(2, TOTAL_STEPS, '新增第一把 API Key');
+  step(2, TOTAL_STEPS, t('cmd.setup.step_add_key'));
   blank();
 
-  print(`  推薦使用 ${color.bold('Groq')}（免費、速度極快）`);
-  print(`  前往 ${color.cyan('https://console.groq.com/')} 取得 API Key`);
+  print(`  ${t('cmd.setup.recommend_groq', { groq: color.bold('Groq') })}`);
+  print(`  ${t('cmd.setup.groq_url', { url: color.cyan('https://console.groq.com/') })}`);
   blank();
 
-  const addKey = await confirm('現在新增 API Key？', true);
+  const addKey = await confirm(t('cmd.setup.add_key_now'), true);
   let firstKeyService: string | null = null;
   let firstKeyMasked: string | null = null;
 
   if (addKey) {
-    const service = await select('選擇服務', [
-      { label: 'Groq（推薦）', value: 'groq', description: '免費、超快' },
+    const service = await select(t('cmd.setup.select_service'), [
+      { label: t('cmd.setup.groq_recommended'), value: 'groq', description: t('cmd.setup.groq_desc') },
       { label: 'OpenAI', value: 'openai' },
       { label: 'Anthropic', value: 'anthropic' },
       { label: 'Google AI', value: 'google' },
-      { label: '其他', value: 'other' },
+      { label: t('cmd.setup.other'), value: 'other' },
     ]);
 
     const finalService = service === 'other'
-      ? await ask('輸入服務 ID')
+      ? await ask(t('cmd.setup.enter_service_id'))
       : service;
 
-    const keyValue = await password('貼上 API Key');
+    const keyValue = await password(t('cmd.setup.paste_api_key'));
     if (keyValue) {
       firstKeyService = finalService;
       firstKeyMasked = maskKey(keyValue);
-      success(`已新增 ${finalService} Key`);
+      success(t('cmd.setup.key_added', { service: finalService }));
     } else {
-      warn('跳過（稍後可用 clawapi keys add 新增）');
+      warn(t('cmd.setup.skip_key'));
     }
   } else {
-    info('跳過（稍後可用 clawapi keys add 新增）');
+    info(t('cmd.setup.skip_key'));
   }
   blank();
 
   // ===== 步驟 3：金鑰匙設定 =====
-  step(3, TOTAL_STEPS, '金鑰匙設定（進階功能）');
+  step(3, TOTAL_STEPS, t('cmd.setup.step_gold_key'));
   blank();
-  print('  金鑰匙用於 L3 管家和 L4 多步驟任務。');
-  print('  需要 OpenAI 或 Anthropic 等付費 API Key。');
+  print(`  ${t('cmd.setup.gold_key_desc')}`);
+  print(`  ${t('cmd.setup.gold_key_requirement')}`);
   blank();
 
-  const setupGoldKey = await confirm('現在設定金鑰匙？', false);
+  const setupGoldKey = await confirm(t('cmd.setup.setup_gold_key_now'), false);
   let goldKeyService: string | null = null;
 
   if (setupGoldKey) {
-    const gkService = await select('金鑰匙服務', [
+    const gkService = await select(t('cmd.setup.gold_key_service'), [
       { label: 'OpenAI', value: 'openai', description: 'GPT-4o' },
       { label: 'Anthropic', value: 'anthropic', description: 'Claude' },
     ]);
 
-    const gkKey = await password('貼上 API Key');
+    const gkKey = await password(t('cmd.setup.paste_api_key'));
     if (gkKey) {
       goldKeyService = gkService;
-      success(`金鑰匙已設定（${gkService}）`);
+      success(t('cmd.setup.gold_key_set', { service: gkService }));
     } else {
-      warn('跳過金鑰匙設定');
+      warn(t('cmd.setup.skip_gold_key'));
     }
   } else {
-    info('跳過（稍後可用 clawapi gold-key set 設定）');
+    info(t('cmd.setup.skip_gold_key_later'));
   }
   blank();
 
   // ===== 步驟 4：VPS 連線設定 =====
-  step(4, TOTAL_STEPS, 'VPS 連線設定');
+  step(4, TOTAL_STEPS, t('cmd.setup.step_vps'));
   blank();
-  print('  連接 ClawAPI VPS 可啟用互助、遙測、聊天室等線上功能。');
-  print('  不連接也能正常使用所有本機功能。');
+  print(`  ${t('cmd.setup.vps_desc')}`);
+  print(`  ${t('cmd.setup.vps_optional')}`);
   blank();
 
-  const enableVps = await confirm('啟用 VPS 連線？', true);
+  const enableVps = await confirm(t('cmd.setup.enable_vps'), true);
   blank();
 
   // ===== 步驟 5：確認 + 完成 =====
-  step(5, TOTAL_STEPS, '確認設定');
+  step(5, TOTAL_STEPS, t('cmd.setup.step_confirm'));
   blank();
 
-  print('  設定摘要：');
-  print(`    語言：${localeLabel(locale)}`);
-  print(`    第一把 Key：${firstKeyService ? `${firstKeyService} (${firstKeyMasked})` : '(未設定)'}`);
-  print(`    金鑰匙：${goldKeyService ?? '(未設定)'}`);
-  print(`    VPS 連線：${enableVps ? '啟用' : '停用'}`);
+  print(`  ${t('cmd.setup.summary')}`)
+  print(`    ${t('cmd.setup.summary_language')}${localeLabel(locale)}`);
+  print(`    ${t('cmd.setup.summary_first_key')}${firstKeyService ? `${firstKeyService} (${firstKeyMasked})` : t('cmd.setup.not_set')}`);
+  print(`    ${t('cmd.setup.summary_gold_key')}${goldKeyService ?? t('cmd.setup.not_set')}`);
+  print(`    ${t('cmd.setup.summary_vps')}${enableVps ? t('cmd.setup.enabled') : t('cmd.setup.disabled')}`);
   blank();
 
-  const confirmed = await confirm('確認以上設定？', true);
+  const confirmed = await confirm(t('cmd.setup.confirm_settings'), true);
   if (!confirmed) {
-    warn('設定已取消');
+    warn(t('common.cancelled'));
     process.exit(0);
   }
 
@@ -154,11 +155,11 @@ export async function setupCommand(args: ParsedArgs): Promise<void> {
 
   blank();
   box([
-    '設定完成！',
+    t('cmd.setup.complete'),
     '',
-    `使用 ${color.bold('clawapi start')} 啟動引擎`,
-    `使用 ${color.bold('clawapi doctor')} 檢查系統狀態`,
-    `使用 ${color.bold('clawapi --help')} 查看所有命令`,
+    t('cmd.setup.hint_start', { cmd: color.bold('clawapi start') }),
+    t('cmd.setup.hint_doctor', { cmd: color.bold('clawapi doctor') }),
+    t('cmd.setup.hint_help', { cmd: color.bold('clawapi --help') }),
   ], 'All Done');
   blank();
 }

@@ -3,6 +3,7 @@
 import { readPid, isPidAlive } from './start';
 import { CLAWAPI_VERSION } from '@clawapi/protocol';
 import { color, print, blank, box, jsonOutput, isJsonMode } from '../utils/output';
+import { t } from '../utils/i18n';
 import type { ParsedArgs } from '../index';
 
 export async function statusCommand(_args: ParsedArgs): Promise<void> {
@@ -22,17 +23,17 @@ export async function statusCommand(_args: ParsedArgs): Promise<void> {
 
   if (running) {
     box([
-      `狀態：${color.boldGreen('運行中')}`,
-      `PID：${pid}`,
-      `版本：${CLAWAPI_VERSION}`,
-    ], 'ClawAPI 引擎狀態');
+      `${t('cmd.status.label_status')}${color.boldGreen(t('cmd.status.running'))}`,
+      `${t('cmd.status.label_pid')}${pid}`,
+      `${t('cmd.status.label_version')}${CLAWAPI_VERSION}`,
+    ], t('cmd.status.title'));
   } else {
     box([
-      `狀態：${color.boldRed('已停止')}`,
-      `版本：${CLAWAPI_VERSION}`,
-    ], 'ClawAPI 引擎狀態');
+      `${t('cmd.status.label_status')}${color.boldRed(t('cmd.status.stopped'))}`,
+      `${t('cmd.status.label_version')}${CLAWAPI_VERSION}`,
+    ], t('cmd.status.title'));
     blank();
-    print(`使用 ${color.cyan('clawapi start')} 啟動引擎`);
+    print(t('cmd.status.use_start'));
   }
 
   blank();

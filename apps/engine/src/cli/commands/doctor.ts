@@ -10,6 +10,7 @@ import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { existsSync, accessSync, constants } from 'node:fs';
 import { color, print, blank, success, error, info, check, jsonOutput, isJsonMode } from '../utils/output';
+import { t } from '../utils/i18n';
 import type { ParsedArgs } from '../index';
 
 // ===== 型別 =====
@@ -59,7 +60,7 @@ export async function doctorCommand(args: ParsedArgs): Promise<void> {
 
   blank();
   print(color.bold('ClawAPI Doctor'));
-  print(color.dim('系統診斷報告'));
+  print(color.dim(t('cmd.doctor.title')));
   blank();
 
   for (const r of results) {
@@ -69,9 +70,9 @@ export async function doctorCommand(args: ParsedArgs): Promise<void> {
   blank();
 
   if (totalFail === 0) {
-    success(`全部 ${results.length} 項檢查通過！`);
+    success(t('cmd.doctor.all_passed', { count: results.length }));
   } else {
-    error(`${totalFail} 項檢查失敗，${totalPass} 項通過`);
+    error(t('cmd.doctor.some_failed', { fail: totalFail, pass: totalPass }));
   }
 
   blank();
@@ -84,24 +85,24 @@ async function checkDbWritable(configDir: string): Promise<CheckResult> {
   const dbPath = join(configDir, 'data.db');
 
   if (!existsSync(configDir)) {
-    return { name: 'DB 可寫', pass: false, detail: `目錄不存在：${configDir}` };
+    return { name: t('cmd.doctor.check_db'), pass: false, detail: t('cmd.doctor.dir_not_found', { path: configDir }) };
   }
 
   if (existsSync(dbPath)) {
     try {
       accessSync(dbPath, constants.R_OK | constants.W_OK);
-      return { name: 'DB 可寫', pass: true, detail: dbPath };
+      return { name: t('cmd.doctor.check_db'), pass: true, detail: dbPath };
     } catch {
-      return { name: 'DB 可寫', pass: false, detail: '檔案無讀寫權限' };
+      return { name: t('cmd.doctor.check_db'), pass: false, detail: t('cmd.doctor.no_rw_permission') };
     }
   }
 
   // DB 不存在但目錄可寫也算通過（首次啟動會自動建立）
   try {
     accessSync(configDir, constants.W_OK);
-    return { name: 'DB 可寫', pass: true, detail: '資料庫尚未建立（首次啟動會自動建立）' };
+    return { name: t('cmd.doctor.check_db'), pass: true, detail: t('cmd.doctor.db_not_created') };
   } catch {
-    return { name: 'DB 可寫', pass: false, detail: '目錄無寫入權限' };
+    return { name: t('cmd.doctor.check_db'), pass: false, detail: t('cmd.doctor.no_write_permission') };
   }
 }
 
@@ -110,13 +111,13 @@ function checkMasterKey(configDir: string): CheckResult {
   const keyPath = join(configDir, 'master.key');
 
   if (existsSync(keyPath)) {
-    return { name: 'master.key 存在', pass: true, detail: keyPath };
+    return { name: t('cmd.doctor.check_master_key'), pass: true, detail: keyPath };
   }
 
   return {
-    name: 'master.key 存在',
+    name: t('cmd.doctor.check_master_key'),
     pass: false,
-    detail: '尚未產生（首次啟動會自動建立）',
+    detail: t('cmd.doctor.master_key_not_created'),
   };
 }
 
@@ -133,11 +134,11 @@ async function checkVpsReachable(): Promise<CheckResult> {
     clearTimeout(timeoutId);
 
     if (response.ok) {
-      return { name: 'VPS 可達', pass: true, detail: 'clawapi.washinmura.jp' };
+      return { name: t('cmd.doctor.check_vps'), pass: true, detail: 'clawapi.washinmura.jp' };
     }
-    return { name: 'VPS 可達', pass: false, detail: `HTTP ${response.status}` };
+    return { name: t('cmd.doctor.check_vps'), pass: false, detail: `HTTP ${response.status}` };
   } catch (err) {
-    return { name: 'VPS 可達', pass: false, detail: '無法連線（離線模式仍可使用）' };
+    return { name: t('cmd.doctor.check_vps'), pass: false, detail: t('cmd.doctor.vps_unreachable') };
   }
 }
 
@@ -150,7 +151,7 @@ function checkAdapters(): CheckResult {
   const schemaDir = join(import.meta.dir, '..', '..', 'adapters', 'schemas');
 
   if (!existsSync(schemaDir)) {
-    return { name: 'Adapter 完整', pass: false, detail: `Adapter 目錄不存在：${schemaDir}` };
+    return { name: t('cmd.doctor.check_adapters'), pass: false, detail: t('cmd.doctor.adapter_dir_missing', { path: schemaDir }) };
   }
 
   const missing: string[] = [];
@@ -162,13 +163,13 @@ function checkAdapters(): CheckResult {
   }
 
   if (missing.length === 0) {
-    return { name: 'Adapter 完整', pass: true, detail: `${requiredAdapters.length} 個核心 Adapter 就緒` };
+    return { name: t('cmd.doctor.check_adapters'), pass: true, detail: t('cmd.doctor.adapters_ready', { count: requiredAdapters.length }) };
   }
 
   return {
-    name: 'Adapter 完整',
+    name: t('cmd.doctor.check_adapters'),
     pass: false,
-    detail: `缺少：${missing.join(', ')}`,
+    detail: t('cmd.doctor.adapters_missing', { list: missing.join(', ') }),
   };
 }
 
@@ -177,12 +178,12 @@ function checkKeyHealth(configDir: string): CheckResult {
   const dbPath = join(configDir, 'data.db');
 
   if (!existsSync(dbPath)) {
-    return { name: 'Key 健康', pass: true, detail: '尚無 Key（首次使用）' };
+    return { name: t('cmd.doctor.check_keys'), pass: true, detail: t('cmd.doctor.no_keys_yet') };
   }
 
   // 實際實作需要讀取 DB 查詢 Key 狀態
   // 這裡返回通過（因為 DB 可讀代表基本功能正常）
-  return { name: 'Key 健康', pass: true, detail: '需啟動引擎後進行完整檢查' };
+  return { name: t('cmd.doctor.check_keys'), pass: true, detail: t('cmd.doctor.keys_need_engine') };
 }
 
 /** 6. port 可用 */
@@ -198,9 +199,9 @@ async function checkPortAvailable(): Promise<CheckResult> {
       },
     });
     server.stop(true);
-    return { name: 'port 可用', pass: true, detail: `port ${defaultPort}` };
+    return { name: t('cmd.doctor.check_port'), pass: true, detail: `port ${defaultPort}` };
   } catch {
-    return { name: 'port 可用', pass: false, detail: `port ${defaultPort} 被占用` };
+    return { name: t('cmd.doctor.check_port'), pass: false, detail: t('cmd.doctor.port_in_use', { port: defaultPort }) };
   }
 }
 

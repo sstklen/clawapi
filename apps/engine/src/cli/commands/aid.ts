@@ -2,7 +2,8 @@
 // 子命令：config, stats, donate
 
 import { color, print, blank, success, error, info, warn, jsonOutput, isJsonMode, output } from '../utils/output';
-import { ask, confirm, select } from '../utils/prompt';
+import { ask, confirm, select, password } from '../utils/prompt';
+import { t } from '../utils/i18n';
 import type { ParsedArgs } from '../index';
 
 // ===== 子命令路由 =====
@@ -22,8 +23,8 @@ export async function aidCommand(args: ParsedArgs): Promise<void> {
         jsonOutput({ error: 'unknown_subcommand', available: ['config', 'stats', 'donate'] });
         process.exit(1);
       }
-      error(`未知的子命令：${sub ?? '(無)'}`);
-      print('可用的子命令：config, stats, donate');
+      error(t('common.unknown_subcmd', { subcmd: sub ?? '(無)' }));
+      print(t('common.available_subcmds', { list: 'config, stats, donate' }));
       process.exit(1);
   }
 }
@@ -32,30 +33,30 @@ export async function aidCommand(args: ParsedArgs): Promise<void> {
 
 async function aidConfig(_args: ParsedArgs): Promise<void> {
   blank();
-  info('互助功能設定');
+  info(t('cmd.aid.config_title'));
   blank();
 
   // 是否啟用
-  const enabled = await confirm('啟用互助功能？', false);
+  const enabled = await confirm(t('cmd.aid.enable_prompt'), false);
 
   if (!enabled) {
     output(
-      () => success('互助功能已關閉'),
+      () => success(t('cmd.aid.disabled')),
       { status: 'disabled' }
     );
     return;
   }
 
   // 每日上限
-  const dailyLimitStr = await ask('每日互助上限（次數）', '50');
+  const dailyLimitStr = await ask(t('cmd.aid.daily_limit'), '50');
   const dailyLimit = parseInt(dailyLimitStr, 10) || 50;
 
   // 允許的服務
-  const allowedStr = await ask('允許的服務（逗號分隔，留空=全部）');
+  const allowedStr = await ask(t('cmd.aid.allowed_services'));
   const allowedServices = allowedStr ? allowedStr.split(',').map(s => s.trim()) : null;
 
   // 禁止時段
-  const blackoutStr = await ask('禁止時段（小時，如 0,1,2,3，留空=無）');
+  const blackoutStr = await ask(t('cmd.aid.blackout_hours'));
   const blackoutHours = blackoutStr
     ? blackoutStr.split(',').map(s => parseInt(s.trim(), 10)).filter(n => !isNaN(n))
     : [];
@@ -63,10 +64,10 @@ async function aidConfig(_args: ParsedArgs): Promise<void> {
   output(
     () => {
       blank();
-      success('互助設定已更新');
-      print(`  每日上限：${dailyLimit}`);
-      print(`  允許的服務：${allowedServices ? allowedServices.join(', ') : '全部'}`);
-      print(`  禁止時段：${blackoutHours.length > 0 ? blackoutHours.join(', ') + ' 時' : '無'}`);
+      success(t('cmd.aid.config_updated'));
+      print(`  ${t('cmd.aid.daily_limit')}：${dailyLimit}`);
+      print(`  ${t('cmd.aid.allowed_services_label')}：${allowedServices ? allowedServices.join(', ') : t('common.all')}`);
+      print(`  ${t('cmd.aid.blackout_hours_label')}：${blackoutHours.length > 0 ? blackoutHours.join(', ') + ' ' + t('cmd.aid.hour_suffix') : t('common.none')}`);
     },
     {
       status: 'configured',
@@ -95,16 +96,16 @@ async function aidStats(_args: ParsedArgs): Promise<void> {
   output(
     () => {
       blank();
-      info('互助統計');
+      info(t('cmd.aid.stats_title'));
       blank();
-      print(`  狀態：${stats.enabled ? color.green('已啟用') : color.red('已停用')}`);
-      print(`  每日上限：${stats.daily_limit}`);
+      print(`  ${t('cmd.aid.status_label')}：${stats.enabled ? color.green(t('common.enabled')) : color.red(t('common.disabled'))}`);
+      print(`  ${t('cmd.aid.daily_limit')}：${stats.daily_limit}`);
       blank();
-      print(`  今日幫助他人：${stats.today_helped} 次`);
-      print(`  今日收到幫助：${stats.today_received} 次`);
-      print(`  累計幫助他人：${stats.total_helped} 次`);
-      print(`  累計收到幫助：${stats.total_received} 次`);
-      print(`  信譽分數：${stats.reputation_score}`);
+      print(`  ${t('cmd.aid.today_helped')}：${stats.today_helped} ${t('cmd.aid.times_suffix')}`);
+      print(`  ${t('cmd.aid.today_received')}：${stats.today_received} ${t('cmd.aid.times_suffix')}`);
+      print(`  ${t('cmd.aid.total_helped')}：${stats.total_helped} ${t('cmd.aid.times_suffix')}`);
+      print(`  ${t('cmd.aid.total_received')}：${stats.total_received} ${t('cmd.aid.times_suffix')}`);
+      print(`  ${t('cmd.aid.reputation_score')}：${stats.reputation_score}`);
       blank();
     },
     stats
@@ -115,35 +116,35 @@ async function aidStats(_args: ParsedArgs): Promise<void> {
 
 async function aidDonate(_args: ParsedArgs): Promise<void> {
   blank();
-  info('捐贈 Key 給 L0（免費層）');
-  print('  捐贈的 Key 會讓所有人都能使用基礎 AI 服務。');
+  info(t('cmd.aid.donate_title'));
+  print('  ' + t('cmd.aid.donate_desc'));
   blank();
 
   // 選擇服務
-  const service = await ask('要捐贈的服務 ID');
+  const service = await ask(t('cmd.aid.donate_service_id'));
   if (!service) {
-    error('服務 ID 不能為空');
+    error(t('cmd.aid.service_id_empty'));
     process.exit(1);
   }
 
   // 輸入 Key（安全規則：用 password 模式，不回顯在終端）
-  const key = await password('貼上 API Key');
+  const key = await password(t('cmd.aid.paste_api_key'));
   if (!key) {
-    error('API Key 不能為空');
+    error(t('cmd.aid.api_key_empty'));
     process.exit(1);
   }
 
-  const confirmed = await confirm('確定要捐贈此 Key？');
+  const confirmed = await confirm(t('cmd.aid.donate_confirm'));
   if (!confirmed) {
-    info('已取消');
+    info(t('common.cancelled'));
     return;
   }
 
   output(
     () => {
       blank();
-      success('感謝您的慷慨捐贈！');
-      print(`  服務：${service}`);
+      success(t('cmd.aid.donate_thanks'));
+      print(`  ${t('cmd.aid.service_label')}：${service}`);
     },
     {
       status: 'donated',

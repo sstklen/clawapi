@@ -4,6 +4,7 @@ import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { CLAWAPI_VERSION } from '@clawapi/protocol';
 import { color, print, blank, success, error, info, warn, jsonOutput, isJsonMode, output } from '../utils/output';
+import { t } from '../utils/i18n';
 import { confirm, ask } from '../utils/prompt';
 import type { ParsedArgs } from '../index';
 
@@ -30,7 +31,7 @@ export async function versionCommand(_args: ParsedArgs): Promise<void> {
 
 export async function migrateCommand(_args: ParsedArgs): Promise<void> {
   blank();
-  info('執行資料庫遷移...');
+  info(t('cmd.misc.running_migration'));
   blank();
 
   // 模擬遷移（實際由 ClawDatabase.init 中的 migration 處理）
@@ -45,7 +46,7 @@ export async function migrateCommand(_args: ParsedArgs): Promise<void> {
         print(`  ${icon} ${m.name} (v${m.version})`);
       }
       blank();
-      success('遷移完成');
+      success(t('cmd.misc.migration_done'));
     },
     { migrations }
   );
@@ -55,34 +56,34 @@ export async function migrateCommand(_args: ParsedArgs): Promise<void> {
 
 export async function deviceResetCommand(_args: ParsedArgs): Promise<void> {
   blank();
-  warn('裝置重置');
-  print('  這個操作會：');
-  print('    1. 刪除所有 Key（加密資料）');
-  print('    2. 重新產生 master.key');
-  print('    3. 重新產生 auth.token');
-  print('    4. 清除所有 Sub-Key');
-  print('    5. 重置 VPS 裝置註冊');
+  warn(t('cmd.misc.device_reset'));
+  print(`  ${t('cmd.misc.reset_will')}`)
+  print(`    1. ${t('cmd.misc.reset_step1')}`);
+  print(`    2. ${t('cmd.misc.reset_step2')}`);
+  print(`    3. ${t('cmd.misc.reset_step3')}`);
+  print(`    4. ${t('cmd.misc.reset_step4')}`);
+  print(`    5. ${t('cmd.misc.reset_step5')}`);
   blank();
-  print(color.boldRed('  警告：此操作不可逆！'));
+  print(color.boldRed(`  ${t('cmd.misc.warning_irreversible')}`));
   blank();
 
-  const firstConfirm = await confirm('確定要重置裝置？');
+  const firstConfirm = await confirm(t('cmd.misc.confirm_reset'));
   if (!firstConfirm) {
-    info('已取消');
+    info(t('common.cancelled'));
     return;
   }
 
-  const typedConfirm = await ask('請輸入 RESET 確認');
+  const typedConfirm = await ask(t('cmd.misc.type_reset'));
   if (typedConfirm !== 'RESET') {
-    info('輸入不正確，已取消');
+    info(t('cmd.misc.wrong_input_cancelled'));
     return;
   }
 
   output(
     () => {
       blank();
-      success('裝置已重置');
-      info('請使用 clawapi setup 重新設定');
+      success(t('cmd.misc.reset_done'));
+      info(t('cmd.misc.use_setup_again'));
     },
     { status: 'reset' }
   );

@@ -22,6 +22,7 @@ endpoints:
     response_type: json
     body:
       contents: "{{ messages }}"
+      systemInstruction: "{{ system_instruction }}"
       generationConfig:
         temperature: "{{ temperature | default: 0.7 }}"
         maxOutputTokens: "{{ max_tokens | default: 8192 }}"

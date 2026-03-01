@@ -3,20 +3,21 @@
 
 import { color, print, blank, success, error, info, warn, table, jsonOutput, isJsonMode, output } from '../utils/output';
 import { ask, select, password, confirm } from '../utils/prompt';
+import { t } from '../utils/i18n';
 import type { ParsedArgs } from '../index';
 
 // ===== 已知服務列表（互動式新增用） =====
 
 const KNOWN_SERVICES = [
-  { label: 'Groq', value: 'groq', description: '免費、超快推論' },
-  { label: 'OpenAI', value: 'openai', description: 'GPT-4o, o1 系列' },
-  { label: 'Anthropic', value: 'anthropic', description: 'Claude 系列' },
-  { label: 'Google AI', value: 'google', description: 'Gemini 系列' },
-  { label: 'Mistral', value: 'mistral', description: 'Mistral/Mixtral 系列' },
-  { label: 'Together AI', value: 'together', description: '開源模型推論' },
-  { label: 'OpenRouter', value: 'openrouter', description: '多模型閘道' },
-  { label: 'DeepSeek', value: 'deepseek', description: 'DeepSeek 系列' },
-  { label: '其他', value: 'other', description: '自行輸入服務 ID' },
+  { label: 'Groq', value: 'groq', description: t('cmd.keys.svc_groq') },
+  { label: 'OpenAI', value: 'openai', description: t('cmd.keys.svc_openai') },
+  { label: 'Anthropic', value: 'anthropic', description: t('cmd.keys.svc_anthropic') },
+  { label: 'Google AI', value: 'google', description: t('cmd.keys.svc_google') },
+  { label: 'Mistral', value: 'mistral', description: t('cmd.keys.svc_mistral') },
+  { label: 'Together AI', value: 'together', description: t('cmd.keys.svc_together') },
+  { label: 'OpenRouter', value: 'openrouter', description: t('cmd.keys.svc_openrouter') },
+  { label: 'DeepSeek', value: 'deepseek', description: t('cmd.keys.svc_deepseek') },
+  { label: t('cmd.keys.other_label'), value: 'other', description: t('cmd.keys.svc_other') },
 ];
 
 // ===== 子命令路由 =====
@@ -46,8 +47,8 @@ export async function keysCommand(args: ParsedArgs): Promise<void> {
         jsonOutput({ error: 'unknown_subcommand', available: ['add', 'list', 'remove', 'pin', 'rotate', 'import', 'check'] });
         process.exit(1);
       }
-      error(`未知的子命令：${sub ?? '(無)'}`);
-      print('可用的子命令：add, list, remove, pin, rotate, import, check');
+      error(t('common.unknown_subcmd', { subcmd: sub ?? t('common.none') }));
+      print(t('common.available_subcmds', { list: 'add, list, remove, pin, rotate, import, check' }));
       process.exit(1);
   }
 }
@@ -57,44 +58,44 @@ export async function keysCommand(args: ParsedArgs): Promise<void> {
 async function keysAdd(args: ParsedArgs): Promise<void> {
   // 互動式流程
   blank();
-  info('新增 API Key');
+  info(t('cmd.keys.add_title'));
   blank();
 
   // 步驟 1：選擇服務
-  const serviceId = await select('選擇服務', KNOWN_SERVICES);
+  const serviceId = await select(t('cmd.keys.select_service'), KNOWN_SERVICES);
   const finalService = serviceId === 'other'
-    ? await ask('輸入服務 ID')
+    ? await ask(t('common.enter_service_id'))
     : serviceId;
 
   if (!finalService) {
-    error('服務 ID 不能為空');
+    error(t('cmd.keys.service_id_empty'));
     process.exit(1);
   }
 
   // 步驟 2：輸入 Key
-  const keyValue = await password('貼上 API Key');
+  const keyValue = await password(t('cmd.keys.paste_key'));
   if (!keyValue) {
-    error('API Key 不能為空');
+    error(t('common.api_key_empty'));
     process.exit(1);
   }
 
   // 步驟 3：選擇池
-  const poolType = await select('選擇 Key 池', [
-    { label: 'King（國王池 — 自己的 Key）', value: 'king' },
-    { label: 'Friend（朋友池 — 別人給的 Key）', value: 'friend' },
+  const poolType = await select(t('cmd.keys.select_pool'), [
+    { label: t('cmd.keys.pool_king'), value: 'king' },
+    { label: t('cmd.keys.pool_friend'), value: 'friend' },
   ]) as 'king' | 'friend';
 
   // 步驟 4：取名
-  const label = await ask('Key 標籤（可留空）');
+  const label = await ask(t('cmd.keys.label_prompt'));
 
   // 執行新增
   blank();
 
   output(
     () => {
-      success(`已新增 Key：${finalService} (${poolType})`);
-      if (label) print(`  標籤：${label}`);
-      print(`  Key：${maskKey(keyValue)}`);
+      success(t('cmd.keys.added', { service: finalService, pool: poolType }));
+      if (label) print(t('cmd.keys.label_display', { label }));
+      print(t('cmd.keys.key_display', { key: maskKey(keyValue) }));
     },
     {
       status: 'added',
@@ -131,11 +132,13 @@ async function keysList(args: ParsedArgs): Promise<void> {
   }
 
   blank();
-  info(serviceFilter ? `Key 列表（${serviceFilter}）` : 'Key 列表');
+  info(serviceFilter
+    ? t('cmd.keys.list_title_filtered', { service: serviceFilter })
+    : t('cmd.keys.list_title'));
   blank();
 
   if (mockKeys.length === 0) {
-    print('  目前沒有任何 Key。使用 clawapi keys add 新增。');
+    print(t('cmd.keys.no_keys'));
     blank();
     return;
   }
@@ -143,12 +146,12 @@ async function keysList(args: ParsedArgs): Promise<void> {
   table(
     [
       { header: 'ID', key: 'id', minWidth: 4, align: 'right' },
-      { header: '服務', key: 'service_id', minWidth: 10 },
+      { header: t('cmd.keys.header_service'), key: 'service_id', minWidth: 10 },
       { header: 'Key', key: 'key_masked', minWidth: 14 },
-      { header: '池', key: 'pool_type', minWidth: 6 },
-      { header: '標籤', key: 'label', minWidth: 6 },
-      { header: '狀態', key: 'status', minWidth: 8 },
-      { header: '今日用量', key: 'daily_used', minWidth: 8, align: 'right' },
+      { header: t('cmd.keys.header_pool'), key: 'pool_type', minWidth: 6 },
+      { header: t('cmd.keys.header_label'), key: 'label', minWidth: 6 },
+      { header: t('cmd.keys.header_status'), key: 'status', minWidth: 8 },
+      { header: t('cmd.keys.header_daily_usage'), key: 'daily_used', minWidth: 8, align: 'right' },
     ],
     mockKeys
   );
@@ -161,24 +164,24 @@ async function keysList(args: ParsedArgs): Promise<void> {
 async function keysRemove(args: ParsedArgs): Promise<void> {
   const idStr = args.positional[1];
   if (!idStr) {
-    error('請指定 Key ID。用法：clawapi keys remove <id>');
+    error(t('common.specify_key_id', { cmd: 'keys remove' }));
     process.exit(1);
   }
 
   const id = parseInt(idStr, 10);
   if (isNaN(id)) {
-    error(`無效的 ID：${idStr}`);
+    error(t('common.invalid_id', { id: idStr }));
     process.exit(1);
   }
 
-  const confirmed = await confirm(`確定要刪除 Key #${id}？`);
+  const confirmed = await confirm(t('cmd.keys.confirm_remove', { id }));
   if (!confirmed) {
-    info('已取消');
+    info(t('common.cancelled'));
     return;
   }
 
   output(
-    () => success(`已刪除 Key #${id}`),
+    () => success(t('cmd.keys.removed', { id })),
     { status: 'removed', id }
   );
 }
@@ -188,18 +191,18 @@ async function keysRemove(args: ParsedArgs): Promise<void> {
 async function keysPin(args: ParsedArgs): Promise<void> {
   const idStr = args.positional[1];
   if (!idStr) {
-    error('請指定 Key ID。用法：clawapi keys pin <id>');
+    error(t('common.specify_key_id', { cmd: 'keys pin' }));
     process.exit(1);
   }
 
   const id = parseInt(idStr, 10);
   if (isNaN(id)) {
-    error(`無效的 ID：${idStr}`);
+    error(t('common.invalid_id', { id: idStr }));
     process.exit(1);
   }
 
   output(
-    () => success(`已釘選 Key #${id}（優先使用）`),
+    () => success(t('cmd.keys.pinned', { id })),
     { status: 'pinned', id }
   );
 }
@@ -209,27 +212,27 @@ async function keysPin(args: ParsedArgs): Promise<void> {
 async function keysRotate(args: ParsedArgs): Promise<void> {
   const idStr = args.positional[1];
   if (!idStr) {
-    error('請指定 Key ID。用法：clawapi keys rotate <id>');
+    error(t('common.specify_key_id', { cmd: 'keys rotate' }));
     process.exit(1);
   }
 
   const id = parseInt(idStr, 10);
   if (isNaN(id)) {
-    error(`無效的 ID：${idStr}`);
+    error(t('common.invalid_id', { id: idStr }));
     process.exit(1);
   }
 
   // 輸入新 Key
-  const newKey = await password('貼上新的 API Key');
+  const newKey = await password(t('cmd.keys.paste_new_key'));
   if (!newKey) {
-    error('新 Key 不能為空');
+    error(t('cmd.keys.new_key_empty'));
     process.exit(1);
   }
 
   output(
     () => {
-      success(`已輪換 Key #${id}`);
-      print(`  新 Key：${maskKey(newKey)}`);
+      success(t('cmd.keys.rotated', { id }));
+      print(t('cmd.keys.new_key_display', { key: maskKey(newKey) }));
     },
     { status: 'rotated', id, key_masked: maskKey(newKey) }
   );
@@ -239,16 +242,16 @@ async function keysRotate(args: ParsedArgs): Promise<void> {
 
 async function keysImport(_args: ParsedArgs): Promise<void> {
   blank();
-  info('批量匯入 Key');
-  print('  支援格式：每行一個 Key，格式為 service_id:key_value');
-  print('  例如：');
+  info(t('cmd.keys.import_title'));
+  print(t('cmd.keys.import_format'));
+  print(t('cmd.keys.import_example_header'));
   print('    groq:gsk_xxxxxxxxxxxx');
   print('    openai:sk-xxxxxxxxxxxx');
   blank();
 
-  const input = await ask('請貼上 Key 列表（按 Enter 結束）');
+  const input = await ask(t('cmd.keys.import_prompt'));
   if (!input) {
-    info('已取消');
+    info(t('common.cancelled'));
     return;
   }
 
@@ -267,7 +270,7 @@ async function keysImport(_args: ParsedArgs): Promise<void> {
 
   output(
     () => {
-      success(`匯入完成：${added} 個成功，${failed} 個失敗`);
+      success(t('cmd.keys.import_done', { added, failed }));
     },
     { status: 'imported', added, failed }
   );
@@ -277,7 +280,7 @@ async function keysImport(_args: ParsedArgs): Promise<void> {
 
 async function keysCheck(_args: ParsedArgs): Promise<void> {
   blank();
-  info('檢查所有 Key 健康度...');
+  info(t('cmd.keys.check_title'));
   blank();
 
   // 模擬檢查結果
@@ -294,7 +297,7 @@ async function keysCheck(_args: ParsedArgs): Promise<void> {
         print(`  ${statusIcon}  ${r.service_id}  ${r.key_masked}  ${r.latency_ms}ms`);
       }
       blank();
-      success(`檢查完成：${results.length} 個 Key`);
+      success(t('cmd.keys.check_done', { count: results.length }));
     },
     { keys: results }
   );

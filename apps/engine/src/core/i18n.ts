@@ -3,7 +3,7 @@
 // 使用 {param} 語法進行字串插值
 // Fallback 順序：指定語言 → en → 回傳 key 本身
 
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 
 // ===== 型別定義 =====
@@ -149,6 +149,7 @@ export class I18n {
   private loadAllLocales(): void {
     const supportedLocales: SupportedLocale[] = ['zh-TW', 'en', 'ja'];
 
+    // 載入主要語言檔（{locale}.json）
     for (const locale of supportedLocales) {
       const filePath = join(this.localesDir, `${locale}.json`);
       if (existsSync(filePath)) {
@@ -161,6 +162,44 @@ export class I18n {
         }
       } else {
         this.messages[locale] = {};
+      }
+    }
+
+    // 載入 fragments/ 目錄下的分片語言檔並合併
+    // fragment 格式：{ "key": { "zh-TW": "...", "en": "...", "ja": "..." } }
+    this.loadFragments(supportedLocales);
+  }
+
+  /**
+   * 載入 fragments/ 目錄下的所有 JSON 分片，並合併到各語系 messages 中
+   * 分片檔案格式：每個 key 包含所有語系的翻譯
+   */
+  private loadFragments(supportedLocales: SupportedLocale[]): void {
+    const fragmentsDir = join(this.localesDir, 'fragments');
+    if (!existsSync(fragmentsDir)) return;
+
+    let files: string[];
+    try {
+      files = readdirSync(fragmentsDir).filter(f => f.endsWith('.json')).sort();
+    } catch {
+      return;
+    }
+
+    for (const file of files) {
+      const filePath = join(fragmentsDir, file);
+      try {
+        const raw = readFileSync(filePath, 'utf8');
+        const fragment = JSON.parse(raw) as Record<string, Record<string, string>>;
+
+        for (const [key, translations] of Object.entries(fragment)) {
+          for (const locale of supportedLocales) {
+            if (translations[locale]) {
+              this.messages[locale]![key] = translations[locale];
+            }
+          }
+        }
+      } catch {
+        // 分片檔案損毀則跳過
       }
     }
   }

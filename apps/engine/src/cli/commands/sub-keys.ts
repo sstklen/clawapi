@@ -3,6 +3,7 @@
 
 import { color, print, blank, success, error, info, warn, table, jsonOutput, isJsonMode, output } from '../utils/output';
 import { ask, confirm, select, multiSelect } from '../utils/prompt';
+import { t } from '../utils/i18n';
 import type { ParsedArgs } from '../index';
 
 // ===== 子命令路由 =====
@@ -25,8 +26,8 @@ export async function subKeysCommand(args: ParsedArgs): Promise<void> {
         jsonOutput({ error: 'unknown_subcommand', available: ['issue', 'list', 'revoke', 'usage'] });
         process.exit(1);
       }
-      error(`未知的子命令：${sub ?? '(無)'}`);
-      print('可用的子命令：issue, list, revoke, usage');
+      error(t('common.unknown_subcmd', { subcmd: sub ?? t('common.none') }));
+      print(t('common.available_subcmds', { list: 'issue, list, revoke, usage' }));
       process.exit(1);
   }
 }
@@ -35,30 +36,30 @@ export async function subKeysCommand(args: ParsedArgs): Promise<void> {
 
 async function subKeysIssue(_args: ParsedArgs): Promise<void> {
   blank();
-  info('發行新的 Sub-Key');
+  info(t('cmd.sub_keys.issue_title'));
   blank();
 
   // 標籤
-  const label = await ask('Sub-Key 標籤');
+  const label = await ask(t('cmd.sub_keys.label_prompt'));
   if (!label) {
-    error('標籤不能為空');
+    error(t('cmd.sub_keys.label_empty'));
     process.exit(1);
   }
 
   // 有效期
-  const expiryStr = await ask('有效期（天數，0=永久）', '30');
+  const expiryStr = await ask(t('cmd.sub_keys.expiry_prompt'), '30');
   const expiryDays = parseInt(expiryStr, 10) || 30;
 
   // 每日用量上限
-  const dailyLimitStr = await ask('每日用量上限（0=無限制）', '100');
+  const dailyLimitStr = await ask(t('cmd.sub_keys.daily_limit_prompt'), '100');
   const dailyLimit = parseInt(dailyLimitStr, 10) || 0;
 
   // 每小時速率
-  const rateLimitStr = await ask('每小時速率上限（0=無限制）', '60');
+  const rateLimitStr = await ask(t('cmd.sub_keys.rate_limit_prompt'), '60');
   const rateLimit = parseInt(rateLimitStr, 10) || 0;
 
   // 允許的服務
-  const allowedServices = await ask('允許的服務（逗號分隔，留空=全部）');
+  const allowedServices = await ask(t('cmd.sub_keys.allowed_services_prompt'));
 
   // 產生 token
   const token = `sk_live_${randomHex(32)}`;
@@ -66,16 +67,22 @@ async function subKeysIssue(_args: ParsedArgs): Promise<void> {
   output(
     () => {
       blank();
-      success('Sub-Key 已發行！');
+      success(t('cmd.sub_keys.issued'));
       blank();
-      print(`  Token：${color.bold(token)}`);
-      print(`  標籤：${label}`);
-      print(`  有效期：${expiryDays === 0 ? '永久' : `${expiryDays} 天`}`);
-      print(`  每日上限：${dailyLimit === 0 ? '無限制' : dailyLimit}`);
-      print(`  每小時速率：${rateLimit === 0 ? '無限制' : rateLimit}`);
-      if (allowedServices) print(`  允許的服務：${allowedServices}`);
+      print(t('cmd.sub_keys.token_display', { token: color.bold(token) }));
+      print(t('cmd.sub_keys.label_display', { label }));
+      print(expiryDays === 0
+        ? t('cmd.sub_keys.expiry_display_permanent')
+        : t('cmd.sub_keys.expiry_display_days', { days: expiryDays }));
+      print(dailyLimit === 0
+        ? t('cmd.sub_keys.daily_limit_display_unlimited')
+        : t('cmd.sub_keys.daily_limit_display', { limit: dailyLimit }));
+      print(rateLimit === 0
+        ? t('cmd.sub_keys.rate_limit_display_unlimited')
+        : t('cmd.sub_keys.rate_limit_display', { limit: rateLimit }));
+      if (allowedServices) print(t('cmd.sub_keys.allowed_services_display', { services: allowedServices }));
       blank();
-      warn('請妥善保管此 Token，它不會再次顯示！');
+      warn(t('cmd.sub_keys.token_warning'));
     },
     {
       status: 'issued',
@@ -108,11 +115,11 @@ async function subKeysList(_args: ParsedArgs): Promise<void> {
   output(
     () => {
       blank();
-      info('Sub-Key 列表');
+      info(t('cmd.sub_keys.list_title'));
       blank();
 
       if (mockSubKeys.length === 0) {
-        print('  目前沒有任何 Sub-Key。使用 clawapi sub-keys issue 發行。');
+        print(t('cmd.sub_keys.no_sub_keys'));
         blank();
         return;
       }
@@ -120,12 +127,12 @@ async function subKeysList(_args: ParsedArgs): Promise<void> {
       table(
         [
           { header: 'ID', key: 'id', minWidth: 4, align: 'right' },
-          { header: '標籤', key: 'label', minWidth: 10 },
+          { header: t('cmd.sub_keys.header_label'), key: 'label', minWidth: 10 },
           { header: 'Token', key: 'token_prefix', minWidth: 16 },
-          { header: '每日上限', key: 'daily_limit', minWidth: 8, align: 'right' },
-          { header: '今日用量', key: 'daily_used', minWidth: 8, align: 'right' },
-          { header: '狀態', key: 'is_active', minWidth: 6 },
-          { header: '到期日', key: 'expires_at', minWidth: 12 },
+          { header: t('cmd.sub_keys.header_daily_limit'), key: 'daily_limit', minWidth: 8, align: 'right' },
+          { header: t('cmd.sub_keys.header_daily_usage'), key: 'daily_used', minWidth: 8, align: 'right' },
+          { header: t('cmd.sub_keys.header_status'), key: 'is_active', minWidth: 6 },
+          { header: t('cmd.sub_keys.header_expiry'), key: 'expires_at', minWidth: 12 },
         ],
         mockSubKeys
       );
@@ -140,24 +147,24 @@ async function subKeysList(_args: ParsedArgs): Promise<void> {
 async function subKeysRevoke(args: ParsedArgs): Promise<void> {
   const idStr = args.positional[1];
   if (!idStr) {
-    error('請指定 Sub-Key ID。用法：clawapi sub-keys revoke <id>');
+    error(t('cmd.sub_keys.specify_id', { cmd: 'revoke' }));
     process.exit(1);
   }
 
   const id = parseInt(idStr, 10);
   if (isNaN(id)) {
-    error(`無效的 ID：${idStr}`);
+    error(t('common.invalid_id', { id: idStr }));
     process.exit(1);
   }
 
-  const confirmed = await confirm(`確定要撤銷 Sub-Key #${id}？撤銷後無法恢復。`);
+  const confirmed = await confirm(t('cmd.sub_keys.confirm_revoke', { id }));
   if (!confirmed) {
-    info('已取消');
+    info(t('common.cancelled'));
     return;
   }
 
   output(
-    () => success(`Sub-Key #${id} 已撤銷`),
+    () => success(t('cmd.sub_keys.revoked', { id })),
     { status: 'revoked', id }
   );
 }
@@ -167,13 +174,13 @@ async function subKeysRevoke(args: ParsedArgs): Promise<void> {
 async function subKeysUsage(args: ParsedArgs): Promise<void> {
   const idStr = args.positional[1];
   if (!idStr) {
-    error('請指定 Sub-Key ID。用法：clawapi sub-keys usage <id>');
+    error(t('cmd.sub_keys.specify_id', { cmd: 'usage' }));
     process.exit(1);
   }
 
   const id = parseInt(idStr, 10);
   if (isNaN(id)) {
-    error(`無效的 ID：${idStr}`);
+    error(t('common.invalid_id', { id: idStr }));
     process.exit(1);
   }
 
@@ -192,13 +199,13 @@ async function subKeysUsage(args: ParsedArgs): Promise<void> {
   output(
     () => {
       blank();
-      info(`Sub-Key #${id} 用量統計`);
+      info(t('cmd.sub_keys.usage_title', { id }));
       blank();
-      print(`  標籤：${usage.label}`);
-      print(`  今日用量：${usage.daily_used} / ${usage.daily_limit}`);
-      print(`  本小時速率：${usage.rate_used_this_hour} / ${usage.rate_limit_per_hour}`);
-      print(`  累計請求：${usage.total_requests}`);
-      print(`  最後使用：${usage.last_used_at}`);
+      print(t('cmd.sub_keys.usage_label', { label: usage.label }));
+      print(t('cmd.sub_keys.usage_daily', { used: usage.daily_used, limit: usage.daily_limit }));
+      print(t('cmd.sub_keys.usage_rate', { used: usage.rate_used_this_hour, limit: usage.rate_limit_per_hour }));
+      print(t('cmd.sub_keys.usage_total', { total: usage.total_requests }));
+      print(t('cmd.sub_keys.usage_last_used', { time: usage.last_used_at }));
       blank();
     },
     usage

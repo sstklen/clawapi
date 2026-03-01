@@ -6,6 +6,7 @@ import { join } from 'node:path';
 import { existsSync } from 'node:fs';
 import { color, print, blank, success, error, info, warn, jsonOutput, isJsonMode, output } from '../utils/output';
 import { ask, password, confirm } from '../utils/prompt';
+import { t } from '../utils/i18n';
 import type { ParsedArgs } from '../index';
 
 // ===== 子命令路由 =====
@@ -23,8 +24,8 @@ export async function backupCommand(args: ParsedArgs): Promise<void> {
         jsonOutput({ error: 'unknown_subcommand', available: ['export', 'import'] });
         process.exit(1);
       }
-      error(`未知的子命令：${sub ?? '(無)'}`);
-      print('可用的子命令：export, import');
+      error(t('common.unknown_subcmd', { subcmd: sub ?? '(無)' }));
+      print(t('common.available_subcmds', { list: 'export, import' }));
       process.exit(1);
   }
 }
@@ -33,25 +34,25 @@ export async function backupCommand(args: ParsedArgs): Promise<void> {
 
 async function backupExport(_args: ParsedArgs): Promise<void> {
   blank();
-  info('匯出加密備份');
+  info(t('cmd.backup.export_title'));
   blank();
 
   // 輸入加密密碼
-  const pwd = await password('設定備份密碼');
+  const pwd = await password(t('cmd.backup.set_password'));
   if (!pwd) {
-    error('密碼不能為空');
+    error(t('cmd.backup.password_empty'));
     process.exit(1);
   }
 
-  const pwdConfirm = await password('再次輸入密碼');
+  const pwdConfirm = await password(t('cmd.backup.confirm_password'));
   if (pwd !== pwdConfirm) {
-    error('兩次密碼不一致');
+    error(t('cmd.backup.password_mismatch'));
     process.exit(1);
   }
 
   // 預設輸出路徑
   const defaultPath = join(homedir(), 'clawapi-backup.enc');
-  const outputPath = await ask('輸出路徑', defaultPath);
+  const outputPath = await ask(t('cmd.backup.output_path'), defaultPath);
 
   // 模擬備份
   const backupInfo = {
@@ -66,13 +67,13 @@ async function backupExport(_args: ParsedArgs): Promise<void> {
   output(
     () => {
       blank();
-      success('備份已匯出！');
-      print(`  路徑：${backupInfo.path}`);
-      print(`  大小：${(backupInfo.size_bytes / 1024).toFixed(1)} KB`);
-      print(`  Key 數量：${backupInfo.keys_count}`);
-      print(`  Sub-Key 數量：${backupInfo.sub_keys_count}`);
+      success(t('cmd.backup.export_done'));
+      print(`  ${t('cmd.backup.path_label')}：${backupInfo.path}`);
+      print(`  ${t('cmd.backup.size_label')}：${(backupInfo.size_bytes / 1024).toFixed(1)} KB`);
+      print(`  ${t('cmd.backup.keys_count')}：${backupInfo.keys_count}`);
+      print(`  ${t('cmd.backup.sub_keys_count')}：${backupInfo.sub_keys_count}`);
       blank();
-      warn('請妥善保管備份檔案和密碼！');
+      warn(t('cmd.backup.keep_safe_warning'));
     },
     backupInfo
   );
@@ -82,33 +83,33 @@ async function backupExport(_args: ParsedArgs): Promise<void> {
 
 async function backupImport(args: ParsedArgs): Promise<void> {
   blank();
-  info('匯入加密備份');
+  info(t('cmd.backup.import_title'));
   blank();
 
   // 輸入檔案路徑
-  const inputPath = args.positional[1] ?? await ask('備份檔案路徑');
+  const inputPath = args.positional[1] ?? await ask(t('cmd.backup.file_path'));
   if (!inputPath) {
-    error('請指定備份檔案路徑');
+    error(t('cmd.backup.file_path_required'));
     process.exit(1);
   }
 
   if (!existsSync(inputPath)) {
-    error(`檔案不存在：${inputPath}`);
+    error(t('cmd.backup.file_not_found', { path: inputPath }));
     process.exit(1);
   }
 
   // 輸入密碼
-  const pwd = await password('輸入備份密碼');
+  const pwd = await password(t('cmd.backup.enter_password'));
   if (!pwd) {
-    error('密碼不能為空');
+    error(t('cmd.backup.password_empty'));
     process.exit(1);
   }
 
   // 確認覆寫
-  warn('匯入備份將覆蓋現有的 Key 和設定');
-  const confirmed = await confirm('確定要繼續？');
+  warn(t('cmd.backup.import_overwrite_warning'));
+  const confirmed = await confirm(t('cmd.backup.continue_confirm'));
   if (!confirmed) {
-    info('已取消');
+    info(t('common.cancelled'));
     return;
   }
 
@@ -123,12 +124,12 @@ async function backupImport(args: ParsedArgs): Promise<void> {
   output(
     () => {
       blank();
-      success('備份已匯入！');
-      print(`  還原 Key：${importInfo.keys_restored} 個`);
-      print(`  還原 Sub-Key：${importInfo.sub_keys_restored} 個`);
-      print(`  設定檔：已還原`);
+      success(t('cmd.backup.import_done'));
+      print(`  ${t('cmd.backup.restored_keys')}：${importInfo.keys_restored} ${t('cmd.backup.count_unit')}`);
+      print(`  ${t('cmd.backup.restored_sub_keys')}：${importInfo.sub_keys_restored} ${t('cmd.backup.count_unit')}`);
+      print(`  ${t('cmd.backup.config_label')}：${t('cmd.backup.restored')}`);
       blank();
-      info('建議重啟引擎以套用新設定');
+      info(t('cmd.backup.restart_suggestion'));
     },
     importInfo
   );

@@ -5,6 +5,7 @@ import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { color, print, blank, success, error, info, warn, jsonOutput, isJsonMode, output } from '../utils/output';
+import { t } from '../utils/i18n';
 import type { ParsedArgs } from '../index';
 
 // ===== 子命令路由 =====
@@ -22,8 +23,8 @@ export async function configCommand(args: ParsedArgs): Promise<void> {
         jsonOutput({ error: 'unknown_subcommand', available: ['show', 'set'] });
         process.exit(1);
       }
-      error(`未知的子命令：${sub ?? '(無)'}`);
-      print('可用的子命令：show, set');
+      error(t('cmd.config.unknown_subcommand', { sub: sub ?? t('common.none') }));
+      print(t('cmd.config.available_subcommands'));
       process.exit(1);
   }
 }
@@ -37,9 +38,9 @@ async function configShow(_args: ParsedArgs): Promise<void> {
     output(
       () => {
         blank();
-        info('尚未建立設定檔，使用預設值');
-        print(`  預期路徑：${configPath}`);
-        print(`  使用 ${color.cyan('clawapi setup')} 進行初始設定`);
+        info(t('cmd.config.no_config'));
+        print(`  ${t('cmd.config.expected_path')}${configPath}`);
+        print(`  ${t('cmd.config.use_setup', { cmd: color.cyan('clawapi setup') })}`);
         blank();
       },
       { exists: false, path: configPath }
@@ -52,7 +53,7 @@ async function configShow(_args: ParsedArgs): Promise<void> {
   output(
     () => {
       blank();
-      info(`設定檔：${configPath}`);
+      info(t('cmd.config.config_file', { path: configPath }));
       blank();
       print(content);
       blank();
@@ -72,8 +73,8 @@ async function configSet(args: ParsedArgs): Promise<void> {
   const value = args.positional[2];
 
   if (!key || value === undefined) {
-    error('用法：clawapi config set <key> <value>');
-    print('  範例：');
+    error(t('cmd.config.set_usage'));
+    print(`  ${t('cmd.config.set_examples')}`);
     print('    clawapi config set server.port 8080');
     print('    clawapi config set routing.default_strategy fast');
     print('    clawapi config set ui.locale en');
@@ -89,8 +90,8 @@ async function configSet(args: ParsedArgs): Promise<void> {
 
   const isValidKey = validPrefixes.some(prefix => key.startsWith(prefix));
   if (!isValidKey) {
-    error(`無效的設定 key：${key}`);
-    print(`  有效的前綴：${validPrefixes.map(p => p.slice(0, -1)).join(', ')}`);
+    error(t('cmd.config.invalid_key', { key }));
+    print(`  ${t('cmd.config.valid_prefixes', { prefixes: validPrefixes.map(p => p.slice(0, -1)).join(', ') })}`);
     process.exit(1);
   }
 
@@ -104,8 +105,8 @@ async function configSet(args: ParsedArgs): Promise<void> {
 
   output(
     () => {
-      success(`已更新設定：${key} = ${JSON.stringify(parsedValue)}`);
-      info('重啟引擎後生效');
+      success(t('cmd.config.updated', { key, value: JSON.stringify(parsedValue) }));
+      info(t('common.restart_required'));
     },
     {
       status: 'updated',

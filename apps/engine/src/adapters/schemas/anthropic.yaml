@@ -25,6 +25,7 @@ endpoints:
     body:
       model: "{{ model }}"
       messages: "{{ messages }}"
+      system: "{{ system }}"
       max_tokens: "{{ max_tokens | default: 8192 }}"
       temperature: "{{ temperature | default: 0.7 }}"
 
@@ -37,6 +38,7 @@ endpoints:
     body:
       model: "{{ model }}"
       messages: "{{ messages }}"
+      system: "{{ system }}"
       max_tokens: "{{ max_tokens | default: 8192 }}"
       temperature: "{{ temperature | default: 0.7 }}"
       stream: true

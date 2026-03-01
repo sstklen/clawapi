@@ -62,8 +62,11 @@ export class AdapterExecutor {
       };
     }
 
-    // 構建 URL
-    const url = this.buildUrl(adapter, endpointName, params, key);
+    // 轉換訊息格式（Gemini/Anthropic 需要不同格式）
+    const preparedParams = this.prepareParams(adapter, params);
+
+    // 構建 URL（用 preparedParams 確保模板中的 model 等已正確）
+    const url = this.buildUrl(adapter, endpointName, preparedParams, key);
 
     // 構建 Headers
     const headers = this.buildHeaders(adapter, endpoint.headers ?? {}, key);
@@ -71,7 +74,7 @@ export class AdapterExecutor {
     // 構建 Body
     let bodyStr: string | undefined;
     if (endpoint.body && endpoint.method !== 'GET') {
-      const rendered = this.renderTemplateObject(endpoint.body, params);
+      const rendered = this.renderTemplateObject(endpoint.body, preparedParams);
       bodyStr = JSON.stringify(rendered);
       headers['Content-Type'] = 'application/json';
     }
@@ -131,7 +134,35 @@ export class AdapterExecutor {
       };
     }
 
-    // 成功，解析回應
+    // 其他客戶端錯誤（400, 404, 405, 409, 413, 422 等）
+    if (status >= 400) {
+      let errorBody: unknown;
+      try {
+        errorBody = await response.json();
+      } catch {
+        try { errorBody = await response.text(); } catch { errorBody = null; }
+      }
+      // 提取錯誤訊息
+      let errorMsg = `客戶端錯誤（${status}）`;
+      if (errorBody && typeof errorBody === 'object') {
+        const eb = errorBody as Record<string, unknown>;
+        // 嘗試各種 API 的錯誤格式
+        const errField = eb['error'];
+        const msg = eb['message']
+          ?? (typeof errField === 'object' && errField !== null ? (errField as Record<string, unknown>)['message'] : undefined)
+          ?? (typeof errField === 'string' ? errField : undefined);
+        if (typeof msg === 'string') errorMsg = `${status}: ${msg}`;
+      }
+      return {
+        success: false,
+        status,
+        error: errorMsg,
+        data: errorBody,
+        latency_ms: latency,
+      };
+    }
+
+    // 成功（2xx / 3xx），解析回應
     const responseType = endpoint.response_type ?? 'json';
     let data: unknown;
 
@@ -175,7 +206,9 @@ export class AdapterExecutor {
   ): string {
     const endpoint = adapter.endpoints[endpointName]!;
     const baseUrl = adapter.base_url.replace(/\/$/, '');
-    const path = endpoint.path.startsWith('/') ? endpoint.path : `/${endpoint.path}`;
+    // 渲染 path 中的模板（如 Gemini 的 /v1beta/models/{{ model }}:generateContent）
+    const renderedPath = this.renderTemplate(endpoint.path, params);
+    const path = renderedPath.startsWith('/') ? renderedPath : `/${renderedPath}`;
 
     let url = `${baseUrl}${path}`;
 
@@ -225,6 +258,70 @@ export class AdapterExecutor {
     return headers;
   }
 
+  // ===== 訊息格式轉換 =====
+
+  /**
+   * 根據 Adapter 類型轉換請求參數
+   *
+   * OpenAI 格式（輸入標準）：
+   *   messages: [{ role: "system"|"user"|"assistant", content: "..." }]
+   *
+   * Gemini 格式：
+   *   messages → contents: [{ role: "user"|"model", parts: [{ text: "..." }] }]
+   *   system messages → system_instruction: { parts: [{ text: "..." }] }
+   *
+   * Anthropic 格式：
+   *   system messages → system: "..."（獨立欄位）
+   *   其他 messages 保持原樣
+   */
+  prepareParams(
+    adapter: AdapterConfig,
+    params: Record<string, unknown>
+  ): Record<string, unknown> {
+    const messages = params['messages'] as Array<{ role: string; content: string | null }> | undefined;
+    if (!messages || !Array.isArray(messages)) return params;
+
+    const adapterId = adapter.adapter.id;
+
+    switch (adapterId) {
+      case 'gemini': {
+        const newParams = { ...params };
+        // 轉換訊息為 Gemini 格式：role "assistant" → "model"，content → parts[].text
+        newParams['messages'] = messages
+          .filter(m => m.role !== 'system')
+          .map(m => ({
+            role: m.role === 'assistant' ? 'model' : 'user',
+            parts: [{ text: m.content || '' }],
+          }));
+        // 提取 system 訊息到 systemInstruction
+        const systemMsgs = messages.filter(m => m.role === 'system');
+        if (systemMsgs.length > 0) {
+          newParams['system_instruction'] = {
+            parts: [{ text: systemMsgs.map(m => m.content || '').join('\n') }],
+          };
+        }
+        return newParams;
+      }
+
+      case 'anthropic': {
+        const newParams = { ...params };
+        // 過濾掉 system 訊息（Anthropic 需要獨立的 system 欄位）
+        newParams['messages'] = messages.filter(m => m.role !== 'system');
+        // 提取 system 訊息
+        const systemMsgs = messages.filter(m => m.role === 'system');
+        if (systemMsgs.length > 0) {
+          newParams['system'] = systemMsgs.map(m => m.content || '').join('\n');
+        }
+        return newParams;
+      }
+
+      default:
+        // OpenAI 相容（groq, openai, deepseek, cerebras, sambanova, qwen, openrouter, ollama）
+        // 不需要轉換
+        return params;
+    }
+  }
+
   // ===== 模板替換 =====
 
   /**
@@ -258,6 +355,11 @@ export class AdapterExecutor {
 
   /**
    * 遞迴渲染物件中的所有字串模板
+   *
+   * 重要修正：「純模板」（整個值只有一個 {{ param }}）保留原始型別
+   * - "{{ messages }}" → 直接使用陣列（不會變成 JSON 字串）
+   * - "{{ temperature | default: 0.7 }}" → 保留數字型別
+   * - "Bearer {{ token }}" → 混合模板，結果為字串（原有行為）
    */
   renderTemplateObject(
     obj: Record<string, unknown>,
@@ -265,9 +367,38 @@ export class AdapterExecutor {
   ): Record<string, unknown> {
     const result: Record<string, unknown> = {};
 
+    // 純模板正則：整個值就是一個 {{ param }} 或 {{ param | default: value }}
+    const pureTemplateRegex = /^\{\{\s*([\w.]+)(?:\s*\|\s*default:\s*([^}]+))?\s*\}\}$/;
+
     for (const [key, val] of Object.entries(obj)) {
       if (typeof val === 'string') {
-        result[key] = this.renderTemplate(val, params);
+        const pureMatch = val.match(pureTemplateRegex);
+        if (pureMatch) {
+          // 純模板：保留原始型別
+          const paramKey = pureMatch[1]!;
+          const defaultStr = pureMatch[2];
+          const rawValue = this.getNestedValue(params, paramKey);
+
+          if (rawValue !== undefined && rawValue !== null) {
+            result[key] = rawValue;
+          } else if (defaultStr !== undefined) {
+            // 嘗試解析 default 為原始型別（數字、布林、null）
+            const trimmed = defaultStr.trim();
+            try {
+              result[key] = JSON.parse(trimmed);
+            } catch {
+              result[key] = trimmed;
+            }
+          }
+          // 若無值也無 default → 不加入 result（省略該欄位）
+        } else {
+          // 混合模板或靜態字串：結果為字串
+          const rendered = this.renderTemplate(val, params);
+          // 如果渲染後仍含未替換模板且不是靜態文字，跳過
+          if (rendered !== val || !val.includes('{{')) {
+            result[key] = rendered;
+          }
+        }
       } else if (Array.isArray(val)) {
         result[key] = val.map(item =>
           typeof item === 'object' && item !== null

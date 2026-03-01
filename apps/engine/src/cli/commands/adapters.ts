@@ -3,6 +3,7 @@
 
 import { color, print, blank, success, error, info, warn, table, jsonOutput, isJsonMode, output } from '../utils/output';
 import { ask, confirm } from '../utils/prompt';
+import { t } from '../utils/i18n';
 import type { ParsedArgs } from '../index';
 
 // ===== 子命令路由 =====
@@ -26,8 +27,8 @@ export async function adaptersCommand(args: ParsedArgs): Promise<void> {
         jsonOutput({ error: 'unknown_subcommand', available: ['list', 'install', 'remove', 'update'] });
         process.exit(1);
       }
-      error(`未知的子命令：${sub ?? '(無)'}`);
-      print('可用的子命令：list, install, remove, update');
+      error(t('common.unknown_subcmd', { subcmd: sub ?? '(無)' }));
+      print(t('common.available_subcmds', { list: 'list, install, remove, update' }));
       process.exit(1);
   }
 }
@@ -48,16 +49,16 @@ async function adaptersList(_args: ParsedArgs): Promise<void> {
   output(
     () => {
       blank();
-      info('Adapter 列表');
+      info(t('cmd.adapters.list_title'));
       blank();
 
       table(
         [
           { header: 'ID', key: 'id', minWidth: 12 },
-          { header: '名稱', key: 'name', minWidth: 12 },
-          { header: '版本', key: 'version', minWidth: 8 },
-          { header: '類型', key: 'type', minWidth: 10 },
-          { header: '狀態', key: 'status', minWidth: 8 },
+          { header: t('cmd.adapters.col_name'), key: 'name', minWidth: 12 },
+          { header: t('cmd.adapters.col_version'), key: 'version', minWidth: 8 },
+          { header: t('cmd.adapters.col_type'), key: 'type', minWidth: 10 },
+          { header: t('cmd.adapters.col_status'), key: 'status', minWidth: 8 },
         ],
         adapters
       );
@@ -72,35 +73,35 @@ async function adaptersList(_args: ParsedArgs): Promise<void> {
 async function adaptersInstall(args: ParsedArgs): Promise<void> {
   const url = args.positional[1];
   if (!url) {
-    error('請指定 Adapter 來源 URL。用法：clawapi adapters install <url>');
+    error(t('cmd.adapters.specify_url'));
     process.exit(1);
   }
 
   blank();
-  info(`正在安裝 Adapter：${url}`);
+  info(t('cmd.adapters.installing', { url }));
 
   // 驗證 URL 格式
   try {
     new URL(url);
   } catch {
-    error('無效的 URL 格式');
+    error(t('cmd.adapters.invalid_url'));
     process.exit(1);
   }
 
   // 安全確認
-  warn('社群 Adapter 未經 ClawAPI 官方審核');
-  const confirmed = await confirm('確定要安裝？');
+  warn(t('cmd.adapters.community_warning'));
+  const confirmed = await confirm(t('cmd.adapters.install_confirm'));
   if (!confirmed) {
-    info('已取消');
+    info(t('common.cancelled'));
     return;
   }
 
   output(
     () => {
       blank();
-      success(`Adapter 已安裝`);
-      print(`  來源：${url}`);
-      info('重啟引擎後生效');
+      success(t('cmd.adapters.installed'));
+      print(`  ${t('cmd.adapters.source_label')}：${url}`);
+      info(t('cmd.adapters.restart_required'));
     },
     { status: 'installed', url }
   );
@@ -111,25 +112,25 @@ async function adaptersInstall(args: ParsedArgs): Promise<void> {
 async function adaptersRemove(args: ParsedArgs): Promise<void> {
   const id = args.positional[1];
   if (!id) {
-    error('請指定 Adapter ID。用法：clawapi adapters remove <id>');
+    error(t('cmd.adapters.specify_id'));
     process.exit(1);
   }
 
   // 禁止刪除內建 adapter
   const builtIn = ['openai', 'anthropic', 'groq', 'google', 'mistral', 'ollama'];
   if (builtIn.includes(id)) {
-    error(`無法移除內建 Adapter：${id}`);
+    error(t('cmd.adapters.cannot_remove_builtin', { id }));
     process.exit(1);
   }
 
-  const confirmed = await confirm(`確定要移除 Adapter「${id}」？`);
+  const confirmed = await confirm(t('cmd.adapters.remove_confirm', { id }));
   if (!confirmed) {
-    info('已取消');
+    info(t('common.cancelled'));
     return;
   }
 
   output(
-    () => success(`Adapter「${id}」已移除`),
+    () => success(t('cmd.adapters.removed', { id })),
     { status: 'removed', id }
   );
 }
@@ -138,7 +139,7 @@ async function adaptersRemove(args: ParsedArgs): Promise<void> {
 
 async function adaptersUpdate(_args: ParsedArgs): Promise<void> {
   blank();
-  info('檢查 Adapter 更新...');
+  info(t('cmd.adapters.checking_updates'));
 
   // 模擬更新檢查
   const updates = [
@@ -149,13 +150,13 @@ async function adaptersUpdate(_args: ParsedArgs): Promise<void> {
     () => {
       blank();
       if (updates.length === 0) {
-        success('所有 Adapter 都是最新版本');
+        success(t('cmd.adapters.all_up_to_date'));
       } else {
         for (const u of updates) {
           print(`  ${u.id}: ${u.current} -> ${color.green(u.latest)}`);
         }
         blank();
-        info('使用 clawapi adapters install <url> 更新指定 Adapter');
+        info(t('cmd.adapters.update_hint'));
       }
       blank();
     },

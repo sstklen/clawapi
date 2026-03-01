@@ -2,6 +2,7 @@
 
 import { readPid, isPidAlive, removePid } from './start';
 import { success, error, info, jsonOutput, isJsonMode } from '../utils/output';
+import { t } from '../utils/i18n';
 import type { ParsedArgs } from '../index';
 
 export async function stopCommand(_args: ParsedArgs): Promise<void> {
@@ -10,10 +11,10 @@ export async function stopCommand(_args: ParsedArgs): Promise<void> {
   // 沒有 PID 檔案
   if (pid === null) {
     if (isJsonMode()) {
-      jsonOutput({ error: 'not_running', message: '引擎未在運行' });
+      jsonOutput({ error: 'not_running', message: t('cmd.stop.not_running') });
       process.exit(1);
     }
-    error('引擎未在運行（找不到 PID 檔案）');
+    error(t('cmd.stop.not_running_detail'));
     return;
   }
 
@@ -21,10 +22,10 @@ export async function stopCommand(_args: ParsedArgs): Promise<void> {
   if (!isPidAlive(pid)) {
     removePid();
     if (isJsonMode()) {
-      jsonOutput({ error: 'not_running', message: '引擎 process 已不存在，已清除 PID 檔案' });
+      jsonOutput({ error: 'not_running', message: t('cmd.stop.process_gone') });
       return;
     }
-    info('引擎 process 已不存在，已清除 PID 檔案');
+    info(t('cmd.stop.process_gone'));
     return;
   }
 
@@ -36,7 +37,7 @@ export async function stopCommand(_args: ParsedArgs): Promise<void> {
       jsonOutput({ error: 'kill_failed', message: String(err) });
       process.exit(1);
     }
-    error(`無法停止引擎 (PID: ${pid}): ${err}`);
+    error(t('cmd.stop.kill_failed', { pid: String(pid), error: String(err) }));
     return;
   }
 
@@ -49,7 +50,7 @@ export async function stopCommand(_args: ParsedArgs): Promise<void> {
         jsonOutput({ status: 'stopped', pid });
         return;
       }
-      success(`引擎已停止 (PID: ${pid})`);
+      success(t('cmd.stop.stopped', { pid: String(pid) }));
       return;
     }
     await new Promise(resolve => setTimeout(resolve, 200));
@@ -64,10 +65,10 @@ export async function stopCommand(_args: ParsedArgs): Promise<void> {
   removePid();
 
   if (isJsonMode()) {
-    jsonOutput({ status: 'killed', pid, message: '優雅關機超時，已強制終止' });
+    jsonOutput({ status: 'killed', pid, message: t('cmd.stop.force_killed') });
     return;
   }
-  success(`引擎已強制終止 (PID: ${pid})`);
+  success(t('cmd.stop.force_killed_detail', { pid: String(pid) }));
 }
 
 export default stopCommand;

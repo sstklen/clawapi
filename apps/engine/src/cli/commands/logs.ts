@@ -5,6 +5,7 @@ import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { existsSync, readFileSync } from 'node:fs';
 import { color, print, blank, error, info, table, jsonOutput, isJsonMode, output } from '../utils/output';
+import { t } from '../utils/i18n';
 import type { ParsedArgs } from '../index';
 
 // ===== 型別 =====
@@ -32,11 +33,11 @@ export async function logsCommand(args: ParsedArgs): Promise<void> {
     output(
       () => {
         blank();
-        info('沒有找到日誌檔');
-        print(`  路徑：${logPath}`);
+        info(t('cmd.logs.not_found'));
+        print(`  ${t('cmd.config.expected_path')}${logPath}`);
         blank();
       },
-      { entries: [], message: '沒有找到日誌檔' }
+      { entries: [], message: t('cmd.logs.not_found') }
     );
     return;
   }
@@ -54,7 +55,7 @@ export async function logsCommand(args: ParsedArgs): Promise<void> {
       }
     });
   } catch (err) {
-    error(`讀取日誌失敗：${err}`);
+    error(t('cmd.logs.read_failed', { error: String(err) }));
     process.exit(1);
   }
 
@@ -84,11 +85,11 @@ export async function logsCommand(args: ParsedArgs): Promise<void> {
 
   // 文字輸出
   blank();
-  info(`最近 ${entries.length} 筆日誌${serviceFilter ? ` (${serviceFilter})` : ''}`);
+  info(t('cmd.logs.recent', { count: entries.length }) + (serviceFilter ? ` (${serviceFilter})` : ''));
   blank();
 
   if (entries.length === 0) {
-    print('  (無記錄)');
+    print(`  ${t('cmd.logs.no_records')}`);
     blank();
     return;
   }

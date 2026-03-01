@@ -258,17 +258,48 @@ function buildXClawAPI(
 
 /**
  * 從後端回應中嘗試提取使用量資訊
- * OpenAI 格式：{ usage: { prompt_tokens, completion_tokens, total_tokens } }
+ * 支援三種格式：
+ *   OpenAI:    { usage: { prompt_tokens, completion_tokens, total_tokens } }
+ *   Gemini:    { usageMetadata: { promptTokenCount, candidatesTokenCount, totalTokenCount } }
+ *   Anthropic: { usage: { input_tokens, output_tokens } }
  */
 function extractUsage(data: unknown): { prompt_tokens: number; completion_tokens: number; total_tokens: number } {
   if (data && typeof data === 'object') {
     const d = data as Record<string, unknown>;
+
+    // OpenAI / Anthropic 格式：都有 usage 欄位
     if (d['usage'] && typeof d['usage'] === 'object') {
       const u = d['usage'] as Record<string, unknown>;
+      // OpenAI 風格：prompt_tokens
+      if (typeof u['prompt_tokens'] === 'number') {
+        return {
+          prompt_tokens: u['prompt_tokens'],
+          completion_tokens: typeof u['completion_tokens'] === 'number' ? u['completion_tokens'] : 0,
+          total_tokens: typeof u['total_tokens'] === 'number' ? u['total_tokens'] : 0,
+        };
+      }
+      // Anthropic 風格：input_tokens / output_tokens
+      if (typeof u['input_tokens'] === 'number') {
+        const inputTokens = u['input_tokens'] as number;
+        const outputTokens = typeof u['output_tokens'] === 'number' ? (u['output_tokens'] as number) : 0;
+        return {
+          prompt_tokens: inputTokens,
+          completion_tokens: outputTokens,
+          total_tokens: inputTokens + outputTokens,
+        };
+      }
+    }
+
+    // Gemini 格式：usageMetadata
+    if (d['usageMetadata'] && typeof d['usageMetadata'] === 'object') {
+      const u = d['usageMetadata'] as Record<string, unknown>;
+      const promptTokens = typeof u['promptTokenCount'] === 'number' ? u['promptTokenCount'] : 0;
+      const completionTokens = typeof u['candidatesTokenCount'] === 'number' ? u['candidatesTokenCount'] : 0;
+      const totalTokens = typeof u['totalTokenCount'] === 'number' ? u['totalTokenCount'] : 0;
       return {
-        prompt_tokens: typeof u['prompt_tokens'] === 'number' ? u['prompt_tokens'] : 0,
-        completion_tokens: typeof u['completion_tokens'] === 'number' ? u['completion_tokens'] : 0,
-        total_tokens: typeof u['total_tokens'] === 'number' ? u['total_tokens'] : 0,
+        prompt_tokens: promptTokens,
+        completion_tokens: completionTokens,
+        total_tokens: totalTokens || (promptTokens + completionTokens),
       };
     }
   }
@@ -277,11 +308,16 @@ function extractUsage(data: unknown): { prompt_tokens: number; completion_tokens
 
 /**
  * 從後端回應中嘗試提取第一個 choice 的 message
- * OpenAI 格式：{ choices: [{ message: { role, content } }] }
+ * 支援三種格式：
+ *   OpenAI:    { choices: [{ message: { role, content } }] }
+ *   Gemini:    { candidates: [{ content: { parts: [{ text: "..." }] } }] }
+ *   Anthropic: { role: "assistant", content: [{ type: "text", text: "..." }] }
  */
 function extractMessage(data: unknown): ChatMessage {
   if (data && typeof data === 'object') {
     const d = data as Record<string, unknown>;
+
+    // OpenAI 格式：choices[].message
     if (Array.isArray(d['choices']) && d['choices'].length > 0) {
       const choice = d['choices'][0] as Record<string, unknown>;
       if (choice['message'] && typeof choice['message'] === 'object') {
@@ -292,22 +328,76 @@ function extractMessage(data: unknown): ChatMessage {
         };
       }
     }
+
+    // Gemini 格式：candidates[].content.parts[].text
+    if (Array.isArray(d['candidates']) && d['candidates'].length > 0) {
+      const candidate = d['candidates'][0] as Record<string, unknown>;
+      if (candidate['content'] && typeof candidate['content'] === 'object') {
+        const content = candidate['content'] as Record<string, unknown>;
+        if (Array.isArray(content['parts']) && content['parts'].length > 0) {
+          const texts = (content['parts'] as Record<string, unknown>[])
+            .map(p => p['text'])
+            .filter((t): t is string => typeof t === 'string');
+          return {
+            role: 'assistant',
+            content: texts.join('') || null,
+          };
+        }
+      }
+    }
+
+    // Anthropic 格式：{ role: "assistant", content: [{ type: "text", text: "..." }] }
+    if (d['role'] === 'assistant' && Array.isArray(d['content']) && d['content'].length > 0) {
+      const texts = (d['content'] as Record<string, unknown>[])
+        .filter(block => block['type'] === 'text')
+        .map(block => block['text'])
+        .filter((t): t is string => typeof t === 'string');
+      return {
+        role: 'assistant',
+        content: texts.join('') || null,
+      };
+    }
   }
   return { role: 'assistant', content: '' };
 }
 
 /**
  * 從後端回應中嘗試提取 finish_reason
+ * 支援三種格式：
+ *   OpenAI:    choices[].finish_reason = "stop" | "tool_calls" | "length" | "content_filter"
+ *   Gemini:    candidates[].finishReason = "STOP" | "MAX_TOKENS" | "SAFETY"
+ *   Anthropic: stop_reason = "end_turn" | "max_tokens" | "tool_use"
  */
 function extractFinishReason(data: unknown): 'stop' | 'tool_calls' | 'length' | 'content_filter' | null {
   if (data && typeof data === 'object') {
     const d = data as Record<string, unknown>;
+
+    // OpenAI 格式：choices[].finish_reason
     if (Array.isArray(d['choices']) && d['choices'].length > 0) {
       const choice = d['choices'][0] as Record<string, unknown>;
       const fr = choice['finish_reason'];
       if (fr === 'stop' || fr === 'tool_calls' || fr === 'length' || fr === 'content_filter') {
         return fr;
       }
+    }
+
+    // Gemini 格式：candidates[].finishReason（大寫）
+    if (Array.isArray(d['candidates']) && d['candidates'].length > 0) {
+      const candidate = d['candidates'][0] as Record<string, unknown>;
+      const fr = candidate['finishReason'];
+      if (fr === 'STOP') return 'stop';
+      if (fr === 'MAX_TOKENS') return 'length';
+      if (fr === 'SAFETY') return 'content_filter';
+      if (typeof fr === 'string') return 'stop'; // 其他 Gemini 結束原因歸為 stop
+    }
+
+    // Anthropic 格式：stop_reason
+    if (d['stop_reason']) {
+      const sr = d['stop_reason'];
+      if (sr === 'end_turn') return 'stop';
+      if (sr === 'max_tokens') return 'length';
+      if (sr === 'tool_use') return 'tool_calls';
+      if (typeof sr === 'string') return 'stop';
     }
   }
   return 'stop';

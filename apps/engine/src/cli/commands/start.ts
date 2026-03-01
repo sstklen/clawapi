@@ -6,6 +6,7 @@ import { join } from 'node:path';
 import { existsSync, writeFileSync, readFileSync } from 'node:fs';
 import { CLAWAPI_VERSION } from '@clawapi/protocol';
 import { color, print, blank, info, error, success, box, jsonOutput, isJsonMode } from '../utils/output';
+import { t } from '../utils/i18n';
 import type { ParsedArgs } from '../index';
 
 // ===== 型別定義 =====
@@ -75,7 +76,7 @@ function parseStartOptions(args: ParsedArgs): StartOptions {
     if (!isNaN(parsed) && parsed >= 1 && parsed <= 65535) {
       options.port = parsed;
     } else {
-      throw new Error(`無效的 port 值：${portVal}`);
+      throw new Error(t('cmd.start.port_invalid', { value: String(portVal) }));
     }
   }
 
@@ -115,8 +116,8 @@ export async function startCommand(args: ParsedArgs): Promise<void> {
       jsonOutput({ error: 'already_running', pid: existingPid });
       process.exit(1);
     }
-    error(`引擎已在運行中 (PID: ${existingPid})`);
-    info('使用 clawapi stop 停止現有引擎');
+    error(t('cmd.start.already_running', { pid: String(existingPid) }));
+    info(t('cmd.start.use_stop'));
     process.exit(1);
   }
 
@@ -152,7 +153,7 @@ async function startForeground(options: StartOptions): Promise<void> {
     blank();
     box([
       `ClawAPI Engine v${CLAWAPI_VERSION}`,
-      `啟動中...`,
+      t('cmd.start.starting'),
     ], 'ClawAPI');
     blank();
   }
@@ -165,7 +166,7 @@ async function startForeground(options: StartOptions): Promise<void> {
 
   try {
     if (!isJsonMode()) {
-      print(`${color.cyan('[1/3]')} 初始化引擎組件...`);
+      print(`${color.cyan('[1/3]')} ${t('cmd.start.init_components')}`);
     }
 
     const server = await start({
@@ -180,15 +181,15 @@ async function startForeground(options: StartOptions): Promise<void> {
     writePid(process.pid);
 
     if (!isJsonMode()) {
-      print(`${color.cyan('[2/3]')} HTTP Server 已啟動`);
-      print(`${color.cyan('[3/3]')} 引擎就緒`);
+      print(`${color.cyan('[2/3]')} ${t('cmd.start.http_started')}`);
+      print(`${color.cyan('[3/3]')} ${t('cmd.start.engine_ready')}`);
       blank();
-      success(`引擎啟動完成！`);
-      print(`  位址：${color.bold(`http://${host}:${port}`)}`);
-      print(`  PID：${process.pid}`);
-      print(`  模式：${options.noVps ? '離線' : '線上'}`);
+      success(t('cmd.start.complete'));
+      print(`  ${t('cmd.start.address')}${color.bold(`http://${host}:${port}`)}`);
+      print(`  ${t('cmd.start.pid')}${process.pid}`);
+      print(`  ${t('cmd.start.mode')}${options.noVps ? t('cmd.start.offline') : t('cmd.start.online')}`);
       blank();
-      print(`按 ${color.bold('Ctrl+C')} 安全關機`);
+      print(t('cmd.start.ctrl_c'));
       blank();
     }
 
@@ -206,12 +207,12 @@ async function startForeground(options: StartOptions): Promise<void> {
     const shutdown = async () => {
       if (!isJsonMode()) {
         blank();
-        print(color.yellow('收到關機信號，開始優雅關機...'));
+        print(color.yellow(t('cmd.start.shutdown_signal')));
       }
       await stop();
       removePid();
       if (!isJsonMode()) {
-        success('已安全關機');
+        success(t('cmd.start.shutdown_complete'));
       }
       process.exit(0);
     };
@@ -224,7 +225,7 @@ async function startForeground(options: StartOptions): Promise<void> {
     if (isJsonMode()) {
       jsonOutput({ status: 'error', error: String(err) });
     } else {
-      error(`引擎啟動失敗：${err}`);
+      error(t('cmd.start.failed', { error: String(err) }));
     }
     process.exit(1);
   }
@@ -251,8 +252,8 @@ async function startDaemon(options: StartOptions): Promise<void> {
     return;
   }
 
-  success(`引擎已在背景啟動 (PID: ${child.pid})`);
-  info('使用 clawapi status 查看狀態');
+  success(t('cmd.start.daemon_started', { pid: String(child.pid) }));
+  info(t('cmd.start.use_status'));
 }
 
 export default startCommand;

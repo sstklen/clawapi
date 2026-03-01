@@ -23,6 +23,7 @@ import type { TelemetryCollector } from './intelligence/telemetry';
 import type { L0Manager } from './l0/manager';
 import type { ClawConfig } from './core/config';
 import { CLAWAPI_VERSION } from '@clawapi/protocol';
+import { t } from './cli/utils/i18n';
 import { createUIRouter } from './ui/router';
 import type { UIDeps } from './ui/router';
 
@@ -118,7 +119,7 @@ export class ClawEngineServer implements EngineServer {
   /** 啟動 Server */
   async start(): Promise<void> {
     if (this.running) {
-      throw new Error('Server 已在運行中');
+      throw new Error(t('server.already_running'));
     }
 
     // 初始化 auth.token
@@ -146,7 +147,7 @@ export class ClawEngineServer implements EngineServer {
     if (!this.running || this.shuttingDown) return;
     this.shuttingDown = true;
 
-    console.log('\n[Server] 收到關機信號，開始優雅關機...');
+    console.log(`\n[Server] ${t('server.shutdown_signal')}`);
 
     // 1. 等待進行中請求完成（最多 shutdownTimeoutMs）
     await this.waitForActiveRequests();
@@ -158,24 +159,24 @@ export class ClawEngineServer implements EngineServer {
     }
 
     // 3. Flush 寫入緩衝區
-    console.log('[Server] 正在 flush 寫入緩衝區...');
+    console.log(`[Server] ${t('server.flushing_buffer')}`);
     try {
       await this.writeBuffer.stop();
     } catch (err) {
-      console.error('[Server] WriteBuffer flush 失敗:', err);
+      console.error('[Server] WriteBuffer flush failed:', err);
     }
 
     // 4. 關閉 DB（含 WAL checkpoint）
-    console.log('[Server] 正在關閉資料庫...');
+    console.log(`[Server] ${t('server.closing_db')}`);
     try {
       await this.db.close();
     } catch (err) {
-      console.error('[Server] DB 關閉失敗:', err);
+      console.error('[Server] DB close failed:', err);
     }
 
     this.running = false;
     this.shuttingDown = false;
-    console.log('[Server] 已安全關機');
+    console.log(`[Server] ${t('server.shutdown_complete')}`);
   }
 
   /** 取得 Hono 實例（測試用） */
@@ -225,7 +226,7 @@ export class ClawEngineServer implements EngineServer {
         return c.json(
           {
             error: 'service_unavailable',
-            message: 'Server 正在關機，請稍後再試',
+            message: t('server.shutting_down'),
           },
           503
         );
@@ -306,7 +307,7 @@ export class ClawEngineServer implements EngineServer {
         const authType = c.get('authType');
         if (authType !== 'master') {
           return c.json(
-            { error: 'forbidden', message: '管理 API 僅允許 Master Token，Sub-Key 無權存取' },
+            { error: 'forbidden', message: t('server.master_only') },
             403
           );
         }
@@ -345,7 +346,7 @@ export class ClawEngineServer implements EngineServer {
       return c.json(
         {
           error: 'not_found',
-          message: `路徑 ${c.req.method} ${c.req.path} 不存在`,
+          message: t('server.path_not_found', { method: c.req.method, path: c.req.path }),
         },
         404
       );
@@ -353,11 +354,11 @@ export class ClawEngineServer implements EngineServer {
 
     // === 錯誤處理 ===
     app.onError((err: Error, c: Context) => {
-      console.error('[Server] 未處理的錯誤:', err);
+      console.error('[Server] Unhandled error:', err);
       return c.json(
         {
           error: 'internal_server_error',
-          message: '伺服器發生內部錯誤',
+          message: t('server.internal_error'),
         },
         500
       );
@@ -393,19 +394,18 @@ export class ClawEngineServer implements EngineServer {
     while (this.activeRequests.size > 0) {
       if (Date.now() >= deadline) {
         console.warn(
-          `[Server] 優雅關機超時（${this.shutdownTimeoutMs}ms），` +
-          `仍有 ${this.activeRequests.size} 個請求未完成，強制關機`
+          `[Server] ${t('server.shutdown_timeout', { ms: this.shutdownTimeoutMs, count: this.activeRequests.size })}`
         );
         break;
       }
 
       const remaining = this.activeRequests.size;
-      console.log(`[Server] 等待 ${remaining} 個進行中請求完成...`);
+      console.log(`[Server] ${t('server.waiting_requests', { count: remaining })}`);
       await new Promise(resolve => setTimeout(resolve, 100));
     }
 
     if (this.activeRequests.size === 0) {
-      console.log('[Server] 所有請求已完成');
+      console.log(`[Server] ${t('server.all_requests_done')}`);
     }
   }
 
@@ -426,24 +426,24 @@ export class ClawEngineServer implements EngineServer {
 
   /** 顯示啟動資訊 */
   private printStartupInfo(): void {
-    const token = (() => {
+    const tokenDisplay = (() => {
       try {
-        const t = this.auth.getToken();
-        return `${t.slice(0, 12)}...（已隱藏）`;
+        const tok = this.auth.getToken();
+        return `${tok.slice(0, 12)}...${t('server.token_hidden')}`;
       } catch {
-        return '（尚未初始化）';
+        return t('server.token_not_init');
       }
     })();
 
     console.log('');
     console.log('╔══════════════════════════════════════════╗');
-    console.log('║        ClawAPI 開源引擎 已啟動           ║');
+    console.log(`║        ${t('server.engine_started').padEnd(34)}║`);
     console.log('╠══════════════════════════════════════════╣');
-    console.log(`║  版本：${CLAWAPI_VERSION.padEnd(34)}║`);
-    console.log(`║  位址：http://${this.host}:${this.port}`.padEnd(44) + '║');
-    console.log(`║  Token：${token.padEnd(33)}║`);
+    console.log(`║  ${t('server.label_version')}${CLAWAPI_VERSION.padEnd(34 - t('server.label_version').length)}║`);
+    console.log(`║  ${t('server.label_address')}http://${this.host}:${this.port}`.padEnd(44) + '║');
+    console.log(`║  ${t('server.label_token')}${tokenDisplay.padEnd(34 - t('server.label_token').length)}║`);
     console.log('╠══════════════════════════════════════════╣');
-    console.log('║  已掛載路由：                            ║');
+    console.log(`║  ${t('server.mounted_routes')}`.padEnd(44) + '║');
     console.log('║    GET  /health                          ║');
     console.log('║    GET  /v1/health                       ║');
     console.log('║    POST /v1/chat/completions             ║');
@@ -456,22 +456,22 @@ export class ClawEngineServer implements EngineServer {
     console.log('║    GET  /v1/files                        ║');
     console.log('║    GET  /v1/files/:file_id               ║');
     console.log('║    DELETE /v1/files/:file_id             ║');
-    console.log('║  ClawAPI 簡化 API：                      ║');
+    console.log(`║  ${t('server.simplified_api')}`.padEnd(44) + '║');
     console.log('║    POST /api/llm                         ║');
     console.log('║    POST /api/search                      ║');
     console.log('║    POST /api/translate                   ║');
     console.log('║    POST /api/ask                         ║');
     console.log('║    POST /api/task                        ║');
-    console.log('║  管理 API 和 SSE：                       ║');
-    console.log('║    GET  /api/events（SSE）               ║');
+    console.log(`║  ${t('server.mgmt_api_sse')}`.padEnd(44) + '║');
+    console.log(`║    GET  /api/events${t('server.sse_label')}`.padEnd(42) + '║');
     console.log('║    GET  /api/status                      ║');
     console.log('║    GET  /api/keys                        ║');
     console.log('║    GET  /api/logs                        ║');
-    console.log('║  Web UI：                                ║');
-    console.log('║    GET  /ui（Dashboard + 12 頁）         ║');
+    console.log(`║  Web UI${'：'.padEnd(36)}║`);
+    console.log(`║    GET  /ui${t('server.ui_label')}`.padEnd(42) + '║');
     console.log('╚══════════════════════════════════════════╝');
     console.log('');
-    console.log('按 Ctrl+C 安全關機');
+    console.log(t('server.ctrl_c_shutdown'));
     console.log('');
   }
 }
