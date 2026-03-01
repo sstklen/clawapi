@@ -1,7 +1,7 @@
 // Auth 模組 — 引擎端本機認證
 // 負責 auth.token 管理、請求驗證、Sub-Key 驗證
 
-import { randomBytes, timingSafeEqual } from 'node:crypto';
+import { randomBytes, timingSafeEqual, createHmac } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, writeFileSync, chmodSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { homedir } from 'node:os';
@@ -368,13 +368,14 @@ export class EngineAuth {
     return /^[0-9a-f]+$/i.test(hexPart);
   }
 
-  /** 使用 timingSafeEqual 進行常數時間比較，防止 timing attack */
+  /** 使用 HMAC + timingSafeEqual 進行常數時間比較，防止 timing attack（含長度洩漏防護） */
   private safeCompare(a: string, b: string): boolean {
-    if (a.length !== b.length) return false;
     try {
-      const bufA = Buffer.from(a);
-      const bufB = Buffer.from(b);
-      return timingSafeEqual(bufA, bufB);
+      // HMAC 輸出固定 32 bytes，消除長度差異造成的 timing leak
+      const key = randomBytes(32);
+      const hmacA = createHmac('sha256', key).update(a).digest();
+      const hmacB = createHmac('sha256', key).update(b).digest();
+      return timingSafeEqual(hmacA, hmacB);
     } catch {
       return false;
     }

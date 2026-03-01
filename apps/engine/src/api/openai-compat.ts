@@ -229,12 +229,9 @@ interface RouteResultLike {
  * 如：chatcmpl-xxxxxxxxxx
  */
 function generateId(prefix: string): string {
-  const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
-  let result = '';
-  for (let i = 0; i < 24; i++) {
-    result += chars[Math.floor(Math.random() * chars.length)];
-  }
-  return `${prefix}${result}`;
+  // 使用密碼學安全的隨機數產生 ID
+  const { randomBytes } = require('node:crypto');
+  return `${prefix}${(randomBytes(12) as Buffer).toString('hex')}`;
 }
 
 /**
@@ -597,6 +594,24 @@ interface StoredFile {
 
 /** 暫存檔案 Map（記憶體中，重啟後清除） */
 const fileStore = new Map<string, StoredFile>();
+
+/** 檔案上傳安全限制 */
+const FILE_LIMITS = {
+  MAX_FILES: 100,           // 最多 100 個檔案
+  MAX_FILE_SIZE: 50 * 1024 * 1024,   // 單檔 50MB
+  MAX_TOTAL_SIZE: 500 * 1024 * 1024,  // 總計 500MB
+} as const;
+let fileTotalSize = 0;
+
+/** 安全新增檔案（超過限制回傳 false） */
+function addFileToStore(id: string, file: StoredFile): boolean {
+  if (fileStore.size >= FILE_LIMITS.MAX_FILES) return false;
+  if (file.content.byteLength > FILE_LIMITS.MAX_FILE_SIZE) return false;
+  if (fileTotalSize + file.content.byteLength > FILE_LIMITS.MAX_TOTAL_SIZE) return false;
+  fileStore.set(id, file);
+  fileTotalSize += file.content.byteLength;
+  return true;
+}
 
 // ===== 輔助：安全的 HTTP 狀態碼轉型 =====
 
@@ -1148,7 +1163,11 @@ export function createOpenAICompatRouter(
       status: 'uploaded',
       content: fileContent,
     };
-    fileStore.set(fileId, stored);
+    if (!addFileToStore(fileId, stored)) {
+      return c.json({
+        error: { message: '檔案儲存已滿（上限 100 檔 / 500MB），請刪除舊檔案後重試', type: 'invalid_request_error' },
+      }, 413);
+    }
 
     const fileObj: FileObject = {
       id: fileId,

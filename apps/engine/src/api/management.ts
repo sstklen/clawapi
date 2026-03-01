@@ -37,6 +37,12 @@ import type { KeyPool } from '../core/key-pool';
 import type { SubKeyManager, IssueSubKeyParams } from '../sharing/sub-key';
 import type { AidClient, AidClientConfig } from '../sharing/mutual-aid';
 import type { AdapterLoader, AdapterConfig } from '../adapters/loader';
+
+/** 安全 JSON 解析（壞資料不會炸 500） */
+function safeJsonParse<T>(value: string | null | undefined, fallback: T): T {
+  if (!value) return fallback;
+  try { return JSON.parse(value) as T; } catch { return fallback; }
+}
 import type { TelemetryCollector } from '../intelligence/telemetry';
 import type { L0Manager } from '../l0/manager';
 import type { ClawDatabase } from '../storage/database';
@@ -491,10 +497,10 @@ export function createManagementRouter(deps: ManagementDeps): Hono {
     const row = rows[0]!;
     return c.json({
       enabled: row.enabled === 1,
-      allowed_services: row.allowed_services ? JSON.parse(row.allowed_services) as unknown : null,
+      allowed_services: safeJsonParse(row.allowed_services, null),
       daily_limit: row.daily_limit,
       daily_given: row.daily_given,
-      blackout_hours: row.blackout_hours ? JSON.parse(row.blackout_hours) as unknown : [],
+      blackout_hours: safeJsonParse(row.blackout_hours, []),
       has_helper_key: row.helper_public_key !== null,
     });
   });
@@ -568,11 +574,14 @@ export function createManagementRouter(deps: ManagementDeps): Hono {
     // 安全檢查：路徑穿越防護
     if (body.path) {
       const { resolve } = await import('node:path');
+      const { relative } = await import('node:path');
       const resolved = resolve(body.path);
       // 只允許 ~/.clawapi/adapters/ 目錄或 https:// URL
       const homeDir = process.env['HOME'] ?? process.env['USERPROFILE'] ?? '/tmp';
       const allowedDir = resolve(homeDir, '.clawapi', 'adapters');
-      if (!resolved.startsWith(allowedDir)) {
+      // 用 relative() 防止前綴繞過（如 adapters-evil/）
+      const rel = relative(allowedDir, resolved);
+      if (rel.startsWith('..') || resolve(allowedDir, rel) !== resolved) {
         return c.json({
           error: 'forbidden',
           message: `路徑受限：只允許 ${allowedDir} 目錄下的 Adapter 檔案`,
@@ -618,8 +627,8 @@ export function createManagementRouter(deps: ManagementDeps): Hono {
     const serviceId = c.req.query('service_id');
     const layer = c.req.query('layer');
     const success = c.req.query('success');
-    const limit = Math.min(parseInt(c.req.query('limit') ?? '50', 10), 500);
-    const offset = parseInt(c.req.query('offset') ?? '0', 10);
+    const limit = Math.max(1, Math.min(parseInt(c.req.query('limit') ?? '50', 10) || 50, 500));
+    const offset = Math.max(0, parseInt(c.req.query('offset') ?? '0', 10) || 0);
     const from = c.req.query('from');
     const to = c.req.query('to');
 
@@ -697,7 +706,7 @@ export function createManagementRouter(deps: ManagementDeps): Hono {
   /** GET /api/logs/export — 匯出 CSV */
   app.get('/logs/export', (c: Context) => {
     const serviceId = c.req.query('service_id');
-    const limit = Math.min(parseInt(c.req.query('limit') ?? '1000', 10), 10000);
+    const limit = Math.max(1, Math.min(parseInt(c.req.query('limit') ?? '1000', 10) || 1000, 10000));
 
     const conditions: string[] = [];
     const params: unknown[] = [];
