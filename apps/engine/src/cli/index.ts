@@ -1,3 +1,4 @@
+#!/usr/bin/env bun
 // ClawAPI CLI 主進入點
 // 使用 process.argv 手動解析，不依賴外部 CLI 框架
 // 支援全域旗標：--plain, --json, --locale
