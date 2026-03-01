@@ -917,3 +917,126 @@ describe('Router 呼叫驗證', () => {
     expect(mockFn).toHaveBeenCalledTimes(1);
   });
 });
+
+// ===== 突變測試：安全防護 =====
+// 確保移除防護邏輯時測試會失敗
+
+describe('POST /v1/files — 檔案類型白名單（突變偵測）', () => {
+  beforeEach(() => {
+    _clearFileStore();
+  });
+
+  it('上傳 .exe 執行檔應被擋（400）', async () => {
+    const { app } = createTestApp();
+    const formData = new FormData();
+    const blob = new Blob(['MZ\x90\x00'], { type: 'application/octet-stream' });
+    formData.append('file', blob, 'malware.exe');
+    formData.append('purpose', 'assistants');
+
+    const res = await app.fetch(
+      new Request('http://localhost/v1/files', { method: 'POST', body: formData })
+    );
+    expect(res.status).toBe(400);
+    const json = await res.json() as { error: { message: string } };
+    expect(json.error.message).toContain('.exe');
+  });
+
+  it('上傳 .bat 批次檔應被擋（400）', async () => {
+    const { app } = createTestApp();
+    const formData = new FormData();
+    const blob = new Blob(['@echo off\ndel /f /q C:\\*'], { type: 'application/octet-stream' });
+    formData.append('file', blob, 'danger.bat');
+    formData.append('purpose', 'assistants');
+
+    const res = await app.fetch(
+      new Request('http://localhost/v1/files', { method: 'POST', body: formData })
+    );
+    expect(res.status).toBe(400);
+  });
+
+  it('上傳無副檔名的檔案應被擋（400）', async () => {
+    const { app } = createTestApp();
+    const formData = new FormData();
+    const blob = new Blob(['#!/bin/sh\nrm -rf /'], { type: 'application/octet-stream' });
+    formData.append('file', blob, 'noext');
+    formData.append('purpose', 'assistants');
+
+    const res = await app.fetch(
+      new Request('http://localhost/v1/files', { method: 'POST', body: formData })
+    );
+    expect(res.status).toBe(400);
+  });
+
+  it('上傳合法的 .txt 檔案應被允許（200）', async () => {
+    const { app } = createTestApp();
+    const formData = new FormData();
+    const blob = new Blob(['Hello, world!'], { type: 'text/plain' });
+    formData.append('file', blob, 'hello.txt');
+    formData.append('purpose', 'assistants');
+
+    const res = await app.fetch(
+      new Request('http://localhost/v1/files', { method: 'POST', body: formData })
+    );
+    expect(res.status).toBe(200);
+    const json = await res.json() as { id: string; filename: string };
+    expect(json.filename).toBe('hello.txt');
+  });
+
+  it('上傳合法的 .json 檔案應被允許（200）', async () => {
+    const { app } = createTestApp();
+    const formData = new FormData();
+    const blob = new Blob(['{"key":"value"}'], { type: 'application/json' });
+    formData.append('file', blob, 'data.json');
+    formData.append('purpose', 'assistants');
+
+    const res = await app.fetch(
+      new Request('http://localhost/v1/files', { method: 'POST', body: formData })
+    );
+    expect(res.status).toBe(200);
+  });
+
+  it('大小寫混合副檔名 .TXT 應被允許', async () => {
+    const { app } = createTestApp();
+    const formData = new FormData();
+    const blob = new Blob(['uppercase ext'], { type: 'text/plain' });
+    formData.append('file', blob, 'document.TXT');
+    formData.append('purpose', 'assistants');
+
+    const res = await app.fetch(
+      new Request('http://localhost/v1/files', { method: 'POST', body: formData })
+    );
+    expect(res.status).toBe(200);
+  });
+});
+
+describe('POST /v1/files — 檔案上限（突變偵測）', () => {
+  beforeEach(() => {
+    _clearFileStore();
+  });
+
+  it('超過 100 個檔案應被拒（400）', async () => {
+    const { app } = createTestApp();
+
+    // 上傳 100 個小檔案
+    for (let i = 0; i < 100; i++) {
+      const formData = new FormData();
+      const blob = new Blob([`file-${i}`], { type: 'text/plain' });
+      formData.append('file', blob, `f${i}.txt`);
+      formData.append('purpose', 'assistants');
+      const res = await app.fetch(
+        new Request('http://localhost/v1/files', { method: 'POST', body: formData })
+      );
+      expect(res.status).toBe(200);
+    }
+
+    // 第 101 個應該被拒（413 = 超過上限）
+    const formData = new FormData();
+    const blob = new Blob(['overflow'], { type: 'text/plain' });
+    formData.append('file', blob, 'overflow.txt');
+    formData.append('purpose', 'assistants');
+    const res = await app.fetch(
+      new Request('http://localhost/v1/files', { method: 'POST', body: formData })
+    );
+    expect(res.status).toBe(413);
+  });
+});

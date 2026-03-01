@@ -228,10 +228,15 @@ export function createManagementRouter(deps: ManagementDeps): Hono {
     }
 
     // 更新 pinned 狀態
-    db.run(
-      'UPDATE keys SET pinned = ?, updated_at = ? WHERE id = ?',
-      [body.pinned ? 1 : 0, new Date().toISOString(), id]
-    );
+    try {
+      db.run(
+        'UPDATE keys SET pinned = ?, updated_at = ? WHERE id = ?',
+        [body.pinned ? 1 : 0, new Date().toISOString(), id]
+      );
+    } catch (err) {
+      console.error(`[Management] 更新 pinned 失敗（key id=${id}）:`, err);
+      return c.json({ error: 'db_error', message: '資料庫更新失敗' }, 500);
+    }
 
     return c.json({ success: true, id, pinned: body.pinned });
   });
@@ -341,11 +346,17 @@ export function createManagementRouter(deps: ManagementDeps): Hono {
         message: '加密模組未就緒，請先完成 clawapi setup 初始化 Master Key',
       }, 500);
     }
-    const result = db.run(
-      `INSERT INTO gold_keys (service_id, key_encrypted, model_id, is_active, daily_used, daily_limit)
-       VALUES (?, ?, ?, 1, 0, ?)`,
-      [body.service_id, encryptedKey, body.model_id, body.daily_limit ?? null]
-    );
+    let result;
+    try {
+      result = db.run(
+        `INSERT INTO gold_keys (service_id, key_encrypted, model_id, is_active, daily_used, daily_limit)
+         VALUES (?, ?, ?, 1, 0, ?)`,
+        [body.service_id, encryptedKey, body.model_id, body.daily_limit ?? null]
+      );
+    } catch (err) {
+      console.error('[Management] 新增金鑰匙失敗:', err);
+      return c.json({ error: 'db_error', message: '資料庫寫入失敗' }, 500);
+    }
 
     return c.json({ success: true, id: result.lastInsertRowid }, 201);
   });
@@ -357,7 +368,13 @@ export function createManagementRouter(deps: ManagementDeps): Hono {
       return c.json({ error: 'invalid_request', message: 'id 必須是數字' }, 400);
     }
 
-    const result = db.run('DELETE FROM gold_keys WHERE id = ?', [id]);
+    let result;
+    try {
+      result = db.run('DELETE FROM gold_keys WHERE id = ?', [id]);
+    } catch (err) {
+      console.error(`[Management] 刪除金鑰匙失敗（id=${id}）:`, err);
+      return c.json({ error: 'db_error', message: '資料庫刪除失敗' }, 500);
+    }
 
     if (result.changes === 0) {
       return c.json({ error: 'not_found', message: `找不到金鑰匙：${id}` }, 404);

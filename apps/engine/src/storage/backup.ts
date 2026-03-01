@@ -4,6 +4,8 @@
 
 import { randomBytes, pbkdf2Sync, createCipheriv, createDecipheriv } from 'node:crypto';
 import { readFileSync, writeFileSync, statSync } from 'node:fs';
+import { resolve, relative } from 'node:path';
+import { homedir } from 'node:os';
 import { CLAWAPI_VERSION, BACKUP_MAX_SIZE_BYTES } from '@clawapi/protocol';
 import type {
   BackupUploadHeaders,
@@ -250,12 +252,24 @@ export function decryptBackup(backupFile: BackupFile, password: string): BackupD
  * 從檔案讀取並解密備份
  */
 export function importBackupFromFile(filePath: string, password: string): BackupData {
+  // 安全規則：路徑穿越防護 — 只允許 ~/.clawapi/backups/ 和 /tmp/ 目錄
+  const resolved = resolve(filePath);
+  const homeBackupDir = resolve(homedir(), '.clawapi', 'backups');
+  const tmpDir = resolve('/tmp');
+  const relHome = relative(homeBackupDir, resolved);
+  const relTmp = relative(tmpDir, resolved);
+  const isInHomeBackup = !relHome.startsWith('..') && resolve(homeBackupDir, relHome) === resolved;
+  const isInTmp = !relTmp.startsWith('..') && resolve(tmpDir, relTmp) === resolved;
+  if (!isInHomeBackup && !isInTmp) {
+    throw new Error(`路徑受限：備份檔案只允許位於 ${homeBackupDir} 或 /tmp/ 目錄`);
+  }
+
   // 安全規則：先檢查檔案大小，防止大檔 DoS
-  const fileSize = statSync(filePath).size;
+  const fileSize = statSync(resolved).size;
   if (fileSize > BACKUP_MAX_SIZE_BYTES) {
     throw new Error(`備份檔案過大：${fileSize} bytes（上限 ${BACKUP_MAX_SIZE_BYTES} bytes）`);
   }
-  const json = readFileSync(filePath, 'utf8');
+  const json = readFileSync(resolved, 'utf8');
   let backupFile: BackupFile;
   try {
     backupFile = JSON.parse(json) as BackupFile;

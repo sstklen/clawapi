@@ -199,9 +199,20 @@ export class ClawEngineServer implements EngineServer {
 
     // === 全域中介層 ===
 
-    // CORS
+    // CORS — 限制為本機來源（本機引擎不應接受外部網站跨域請求）
     app.use('*', cors({
-      origin: '*',
+      origin: (origin) => {
+        // 非瀏覽器請求（curl / CLI / SDK）沒有 Origin header，一律放行
+        if (!origin) return '*';
+        try {
+          const url = new URL(origin);
+          // 只允許 localhost 和 127.0.0.1（含任意 port）
+          if (url.hostname === 'localhost' || url.hostname === '127.0.0.1') return origin;
+        } catch {
+          // URL 解析失敗，拒絕
+        }
+        return ''; // 拒絕其他來源（回傳空字串 = 不設 ACAO header）
+      },
       allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
       allowHeaders: ['Content-Type', 'Authorization', 'X-Request-ID'],
       exposeHeaders: ['X-ClawAPI-Service', 'X-ClawAPI-Model', 'X-ClawAPI-Layer', 'X-ClawAPI-Latency'],
@@ -310,6 +321,10 @@ export class ClawEngineServer implements EngineServer {
       app.use('/api/settings*', masterOnlyGuard);
       app.use('/api/backup*', masterOnlyGuard);
       app.use('/api/adapters*', masterOnlyGuard);
+      app.use('/api/aid*', masterOnlyGuard);
+      app.use('/api/logs*', masterOnlyGuard);
+      app.use('/api/telemetry*', masterOnlyGuard);
+      app.use('/api/l0*', masterOnlyGuard);
 
       const mgmtDeps: ManagementDeps = {
         keyPool: this.keyPool,

@@ -10,6 +10,7 @@ import {
   exportBackup,
   importBackup,
   importBackupToDb,
+  importBackupFromFile,
   validateBackupFileStructure,
   validateBackupData,
   CloudBackupClient,
@@ -17,6 +18,7 @@ import {
   type BackupData,
   type ImportMode,
 } from '../backup';
+import { BACKUP_MAX_SIZE_BYTES } from '@clawapi/protocol';
 
 // ===== 輔助函式 =====
 
@@ -530,5 +532,48 @@ describe('Backup — 雲端備份 Client（mock）', () => {
     await expect(client.delete()).rejects.toThrow('HTTP 500');
 
     globalThis.fetch = originalFetch;
+  });
+});
+
+// ===== 突變測試：安全防護 =====
+// 這些測試專門保護安全邏輯，確保移除防護時測試會失敗
+
+describe('Backup — 路徑穿越防護（突變偵測）', () => {
+  it('嘗試讀取 /etc/passwd 應被擋下', () => {
+    expect(() => {
+      importBackupFromFile('/etc/passwd', 'any-password');
+    }).toThrow('路徑受限');
+  });
+
+  it('嘗試 ../ 穿越應被擋下', () => {
+    expect(() => {
+      importBackupFromFile('/tmp/../etc/shadow', 'any-password');
+    }).toThrow('路徑受限');
+  });
+
+  it('嘗試讀取 home 根目錄檔案應被擋下', () => {
+    expect(() => {
+      importBackupFromFile(`${process.env.HOME}/.ssh/id_rsa`, 'any-password');
+    }).toThrow('路徑受限');
+  });
+
+  it('/tmp/ 底下的檔案路徑應被允許（不丟路徑受限錯誤）', () => {
+    // 這裡會因為檔案不存在而丟 ENOENT，但不應丟「路徑受限」
+    try {
+      importBackupFromFile('/tmp/clawapi-test-nonexistent.bak', 'password');
+    } catch (err) {
+      const msg = (err as Error).message;
+      expect(msg).not.toContain('路徑受限');
+      // 應該是 ENOENT 或其他錯誤，不是路徑拒絕
+    }
+  });
+});
+
+describe('Backup — 備份大小上限（突變偵測）', () => {
+  it('驗證 BACKUP_MAX_SIZE_BYTES 常數存在且合理', () => {
+    // 如果有人把上限改成 Infinity 或 0，這個測試會發現
+    expect(BACKUP_MAX_SIZE_BYTES).toBeGreaterThan(0);
+    expect(BACKUP_MAX_SIZE_BYTES).toBeLessThan(1024 * 1024 * 1024); // < 1GB
+    expect(Number.isFinite(BACKUP_MAX_SIZE_BYTES)).toBe(true);
   });
 });

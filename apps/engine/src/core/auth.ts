@@ -328,27 +328,31 @@ export class EngineAuth {
     const isCurrentHour = rateHourStart !== null && rateHourStart >= currentHourStart;
     const now = new Date().toISOString();
 
-    if (isCurrentHour) {
-      // 同一小時內：直接累加
-      this.db.run(
-        `UPDATE sub_keys
-         SET daily_used = daily_used + 1,
-             rate_used_this_hour = rate_used_this_hour + 1,
-             last_used_at = ?
-         WHERE id = ?`,
-        [now, subKeyId]
-      );
-    } else {
-      // 跨小時：重置速率計數器
-      this.db.run(
-        `UPDATE sub_keys
-         SET daily_used = daily_used + 1,
-             rate_used_this_hour = 1,
-             rate_hour_start = ?,
-             last_used_at = ?
-         WHERE id = ?`,
-        [now, now, subKeyId]
-      );
+    try {
+      if (isCurrentHour) {
+        // 同一小時內：直接累加
+        this.db.run(
+          `UPDATE sub_keys
+           SET daily_used = daily_used + 1,
+               rate_used_this_hour = rate_used_this_hour + 1,
+               last_used_at = ?
+           WHERE id = ?`,
+          [now, subKeyId]
+        );
+      } else {
+        // 跨小時：重置速率計數器
+        this.db.run(
+          `UPDATE sub_keys
+           SET daily_used = daily_used + 1,
+               rate_used_this_hour = 1,
+               rate_hour_start = ?,
+               last_used_at = ?
+           WHERE id = ?`,
+          [now, now, subKeyId]
+        );
+      }
+    } catch (err) {
+      console.error(`[Auth] Sub-Key 用量記錄失敗（id=${subKeyId}）:`, err);
     }
   }
 

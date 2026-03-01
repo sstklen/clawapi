@@ -601,6 +601,30 @@ const FILE_LIMITS = {
   MAX_FILE_SIZE: 50 * 1024 * 1024,   // 單檔 50MB
   MAX_TOTAL_SIZE: 500 * 1024 * 1024,  // 總計 500MB
 } as const;
+
+/** 允許的檔案副檔名白名單（OpenAI Files API 相容） */
+const ALLOWED_FILE_EXTENSIONS = new Set([
+  // 文字/程式碼
+  '.txt', '.md', '.csv', '.json', '.jsonl', '.xml', '.yaml', '.yml',
+  '.html', '.htm', '.css', '.js', '.ts', '.py', '.rb', '.go', '.java',
+  '.c', '.cpp', '.h', '.rs', '.sh', '.sql', '.log',
+  // 文件
+  '.pdf', '.doc', '.docx', '.ppt', '.pptx', '.xls', '.xlsx',
+  // 圖片
+  '.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg', '.bmp', '.ico',
+  // 音訊
+  '.mp3', '.wav', '.ogg', '.flac', '.m4a', '.aac', '.opus', '.webm',
+  // 資料
+  '.parquet', '.arrow', '.ndjson',
+]);
+
+/** 驗證檔名是否在白名單內 */
+function isAllowedFileType(filename: string): boolean {
+  const ext = filename.lastIndexOf('.') >= 0
+    ? filename.slice(filename.lastIndexOf('.')).toLowerCase()
+    : '';
+  return ext !== '' && ALLOWED_FILE_EXTENSIONS.has(ext);
+}
 let fileTotalSize = 0;
 
 /** 安全新增檔案（超過限制回傳 false） */
@@ -621,6 +645,50 @@ function addFileToStore(id: string, file: StoredFile): boolean {
  */
 function toStatusCode(code: number | undefined, fallback: number = 502): ContentfulStatusCode {
   return (code ?? fallback) as ContentfulStatusCode;
+}
+
+// ===== Sub-Key 路由後權限檢查 =====
+
+/**
+ * 路由完成後，檢查 Sub-Key 是否有權使用該服務/模型
+ * 在 middleware 階段無法得知目標服務和模型，
+ * 必須等 Router 解析後才能檢查 allowed_services / allowed_models
+ *
+ * @returns 若不允許回傳 Response，否則 null（表示通過）
+ */
+function checkSubKeyPermissions(
+  c: Context,
+  serviceId: string | undefined,
+  modelName: string | undefined
+): Response | null {
+  const subkey = c.get('subkey');
+  if (!subkey?.permissions) return null; // master token 不受限
+
+  // 檢查 allowed_services
+  if (
+    subkey.permissions.allowed_services &&
+    serviceId &&
+    !subkey.permissions.allowed_services.includes(serviceId)
+  ) {
+    return c.json(
+      { error: 'forbidden', message: '此 Sub-Key 不允許使用該服務' },
+      403
+    );
+  }
+
+  // 檢查 allowed_models
+  if (
+    subkey.permissions.allowed_models &&
+    modelName &&
+    !subkey.permissions.allowed_models.includes(modelName)
+  ) {
+    return c.json(
+      { error: 'forbidden', message: '此 Sub-Key 不允許使用該模型' },
+      403
+    );
+  }
+
+  return null;
 }
 
 // ===== 主路由工廠 =====
@@ -699,6 +767,10 @@ export function createOpenAICompatRouter(
         toStatusCode(result.status, 502)
       );
     }
+
+    // Sub-Key 路由後權限檢查（確認服務/模型是否在允許清單內）
+    const permError = checkSubKeyPermissions(c, result.serviceId, result.modelName);
+    if (permError) return permError;
 
     const xClawAPI = buildXClawAPI(requestedModel, result);
 
@@ -815,6 +887,10 @@ export function createOpenAICompatRouter(
       );
     }
 
+    // Sub-Key 路由後權限檢查
+    const embPermError = checkSubKeyPermissions(c, result.serviceId, result.modelName);
+    if (embPermError) return embPermError;
+
     const xClawAPI = buildXClawAPI(requestedModel, result);
 
     // 嘗試從後端回應中提取 embeddings
@@ -906,6 +982,10 @@ export function createOpenAICompatRouter(
         toStatusCode(result.status, 502)
       );
     }
+
+    // Sub-Key 路由後權限檢查
+    const imgPermError = checkSubKeyPermissions(c, result.serviceId, result.modelName);
+    if (imgPermError) return imgPermError;
 
     const xClawAPI = buildXClawAPI(requestedModel, result);
 
@@ -1077,6 +1157,10 @@ export function createOpenAICompatRouter(
       );
     }
 
+    // Sub-Key 路由後權限檢查
+    const speechPermError = checkSubKeyPermissions(c, result.serviceId, result.modelName);
+    if (speechPermError) return speechPermError;
+
     const xClawAPI = buildXClawAPI(requestedModel, result);
 
     // 取得音訊內容（bytes）
@@ -1145,10 +1229,18 @@ export function createOpenAICompatRouter(
       fileContent = await file.arrayBuffer();
     } else if (typeof file === 'string') {
       // 若是字串（非 multipart 情況）
-      filename = 'text_upload';
+      filename = 'text_upload.txt';
       const encoded = new TextEncoder().encode(file);
       fileSize = encoded.byteLength;
       fileContent = encoded.buffer;
+    }
+
+    // 安全規則：檔案類型白名單檢查
+    if (!isAllowedFileType(filename)) {
+      const ext = filename.lastIndexOf('.') >= 0 ? filename.slice(filename.lastIndexOf('.')) : '(無副檔名)';
+      return c.json({
+        error: { message: `不允許的檔案類型：${ext}`, type: 'invalid_request_error' },
+      }, 400);
     }
 
     const fileId = generateId('file-');
