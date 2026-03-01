@@ -64,13 +64,13 @@ export const AboutPage: FC<AboutPageProps> = ({ version, uptime, startedAt }) =>
         <div class="card" style="margin-bottom: 16px;">
           <h3 class="section-title">專案連結</h3>
           <div style="display: flex; flex-direction: column; gap: 8px; font-size: 0.875rem;">
-            <a href="https://github.com/anthropic/clawapi" target="_blank" rel="noopener">
+            <a href="https://github.com/sstklen/clawapi" target="_blank" rel="noopener">
               {'\ud83d\udc19'} GitHub Repository
             </a>
-            <a href="https://github.com/anthropic/clawapi/issues" target="_blank" rel="noopener">
+            <a href="https://github.com/sstklen/clawapi/issues" target="_blank" rel="noopener">
               {'\ud83d\udc1b'} 回報問題
             </a>
-            <a href="https://github.com/anthropic/clawapi/discussions" target="_blank" rel="noopener">
+            <a href="https://github.com/sstklen/clawapi/discussions" target="_blank" rel="noopener">
               {'\ud83d\udcac'} 社群討論
             </a>
           </div>

@@ -85,7 +85,7 @@ export const TELEMETRY_UPLOAD_JITTER_MS = 300_000;      // 隨機 0-5 分鐘
 // === 聊天常數 ===
 export const CHAT_MESSAGE_MAX_LENGTH = 500;
 
-// === 信譽常數（SPEC-B §2.2）===
+// === 信譽常數 ===
 export const REPUTATION_NEW_WEIGHT = 0.3;    // 新龍蝦（3 天內）
 export const REPUTATION_MAX_WEIGHT = 1.5;    // 老龍蝦
 

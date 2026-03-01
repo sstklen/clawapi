@@ -1250,6 +1250,11 @@ export function createOpenAICompatRouter(
       );
     }
 
+    // 刪除時回收容量計數
+    const deletedFile = fileStore.get(fileId);
+    if (deletedFile) {
+      fileTotalSize -= deletedFile.content.byteLength;
+    }
     fileStore.delete(fileId);
 
     return c.json({
@@ -1269,6 +1274,7 @@ export function createOpenAICompatRouter(
  */
 export function _clearFileStore(): void {
   fileStore.clear();
+  fileTotalSize = 0;
 }
 
 /**
