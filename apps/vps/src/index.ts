@@ -17,8 +17,8 @@ export interface VPSOptions {
 }
 
 export async function start(options?: VPSOptions): Promise<void> {
-  const port = options?.port ?? Number(process.env.VPS_PORT) || 3100;
-  const dbPath = options?.dbPath ?? process.env.DB_PATH ?? '/data/clawapi-vps.db';
+  const port = options?.port ?? (Number(process.env.VPS_PORT) || 3100);
+  const dbPath = options?.dbPath ?? (process.env.DB_PATH || '/data/clawapi-vps.db');
 
   console.log(`[ClawAPI] 正在啟動 VPS 服務...`);
   console.log(`[ClawAPI] 資料庫路徑：${dbPath}`);
