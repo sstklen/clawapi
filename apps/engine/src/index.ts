@@ -17,12 +17,14 @@ import { AdapterExecutor } from './adapters/executor';
 import { AdapterLoader } from './adapters/loader';
 import type { AdapterConfig } from './adapters/loader';
 import { Router } from './core/router';
+import { handleRoutingUpdate } from './intelligence/routing-handler';
 import { VPSClient } from './intelligence/vps-client';
 import { TelemetryCollector } from './intelligence/telemetry';
 import { L0Manager } from './l0/manager';
 import { SubKeyManager } from './sharing/sub-key';
 import { AidClient } from './sharing/mutual-aid';
 import { ClawEngineServer } from './server';
+import { NotificationManager } from './notifications/manager';
 
 // ===== 型別定義 =====
 
@@ -129,6 +131,13 @@ export async function start(options?: EngineOptions): Promise<ClawEngineServer> 
   // 7. 初始化 Key 池
   const keyPool = new KeyPool(db, crypto);
 
+  // 7.5 初始化通知管理器（Webhook + CLI + 內部回呼）
+  const notificationManager = new NotificationManager(db);
+  keyPool.setNotificationManager(notificationManager);
+  if (options?.verbose) {
+    console.log(`[ClawAPI] ✅ 通知管理器初始化完成`);
+  }
+
   // 8. 載入 Adapter（內建 YAML 定義）
   const adapterLoader = new AdapterLoader();
   const adapterSchemaDir = join(import.meta.dir, 'adapters', 'schemas');
@@ -165,6 +174,30 @@ export async function start(options?: EngineOptions): Promise<ClawEngineServer> 
       console.warn(`[ClawAPI] ⚠️ VPS 連線失敗，將以離線模式運行:`, err);
       vpsClient = null;
     }
+  }
+
+  // 9.5 接通 VPS 事件處理（路由更新 → routing_intel 表）
+  if (vpsClient) {
+    // 接收 VPS 下發的路由建議，存入 routing_intel 表
+    vpsClient.onRoutingUpdate((update: unknown) => {
+      try {
+        const count = handleRoutingUpdate(db, update);
+        if (options?.verbose) {
+          console.log(`[ClawAPI] 📡 路由更新：${count} 筆已存入 routing_intel`);
+        }
+      } catch (err) {
+        if (options?.verbose) {
+          console.warn(`[ClawAPI] ⚠️ 路由更新處理失敗:`, err);
+        }
+      }
+    });
+
+    // 接收 VPS 系統通知（目前只 log）
+    vpsClient.onNotification((notif: unknown) => {
+      if (options?.verbose) {
+        console.log(`[ClawAPI] 📢 收到系統通知:`, notif);
+      }
+    });
   }
 
   // 10. 初始化 L0 管理器

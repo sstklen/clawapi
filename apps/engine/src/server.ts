@@ -26,6 +26,7 @@ import { CLAWAPI_VERSION } from '@clawapi/protocol';
 import { t } from './cli/utils/i18n';
 import { createUIRouter } from './ui/router';
 import type { UIDeps } from './ui/router';
+import { createDocsRouter } from './api/docs';
 
 // ===== 型別定義 =====
 
@@ -296,6 +297,10 @@ export class ClawEngineServer implements EngineServer {
       app.route('/ui', uiRouter);
     }
 
+    // === 掛載 API 文件路由（/docs + /openapi.json，不需認證） ===
+    const docsRouter = createDocsRouter();
+    app.route('/', docsRouter);
+
     // === Auth 中介層（保護所有 /v1/* 和 /api/* 路由，除 /v1/health） ===
     app.use('/v1/*', engineAuth(this.auth));
     app.use('/api/*', engineAuth(this.auth));
@@ -486,6 +491,9 @@ export class ClawEngineServer implements EngineServer {
     console.log('║    GET  /api/logs                        ║');
     console.log(`║  Web UI${'：'.padEnd(36)}║`);
     console.log(`║    GET  /ui${t('server.ui_label')}`.padEnd(42) + '║');
+    console.log('║  API 文件：                               ║');
+    console.log('║    GET  /docs                            ║');
+    console.log('║    GET  /openapi.json                    ║');
     console.log('╚══════════════════════════════════════════╝');
     console.log('');
     console.log(t('server.ctrl_c_shutdown'));

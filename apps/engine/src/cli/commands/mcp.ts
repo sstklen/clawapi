@@ -1,7 +1,8 @@
 // mcp 命令 — 啟動 ClawAPI MCP Server（stdio 模式）
 // 讓 Claude Code / Cursor 等 AI 工具透過 MCP 協議直接使用 ClawAPI
 //
-// 用法：clawapi mcp
+// 用法：clawapi mcp          # 啟動 stdio 模式
+//       clawapi mcp --test   # 快速驗證 MCP Server 功能
 //
 // 行為：
 // 1. 靜默初始化引擎（不印啟動訊息到 stdout，因為 stdout 是 MCP 通道）
@@ -13,7 +14,7 @@ import { join } from 'node:path';
 import { existsSync, mkdirSync, copyFileSync } from 'node:fs';
 import type { ParsedArgs } from '../index';
 
-export async function mcpCommand(_args: ParsedArgs): Promise<void> {
+export async function mcpCommand(args: ParsedArgs): Promise<void> {
   const configDir = join(homedir(), '.clawapi');
 
   // 重要：MCP 模式下 stdout 是 JSON-RPC 通道，所有日誌必須走 stderr
@@ -21,9 +22,9 @@ export async function mcpCommand(_args: ParsedArgs): Promise<void> {
   const originalConsoleLog = console.log;
   const originalConsoleWarn = console.warn;
   const originalConsoleError = console.error;
-  console.log = (...args: unknown[]) => process.stderr.write(args.map(String).join(' ') + '\n');
-  console.warn = (...args: unknown[]) => process.stderr.write(args.map(String).join(' ') + '\n');
-  console.error = (...args: unknown[]) => process.stderr.write(args.map(String).join(' ') + '\n');
+  console.log = (...msgs: unknown[]) => process.stderr.write(msgs.map(String).join(' ') + '\n');
+  console.warn = (...msgs: unknown[]) => process.stderr.write(msgs.map(String).join(' ') + '\n');
+  console.error = (...msgs: unknown[]) => process.stderr.write(msgs.map(String).join(' ') + '\n');
 
   const log = (msg: string) => process.stderr.write(`[ClawAPI MCP] ${msg}\n`);
 
@@ -78,7 +79,45 @@ export async function mcpCommand(_args: ParsedArgs): Promise<void> {
       },
     });
 
-    log(`MCP Server 就緒（${adapters.size} 個 Adapter、12 個 Tools）`);
+    log(`MCP Server 就緒（${adapters.size} 個 Adapter）`);
+
+    // --test 模式：快速驗證 MCP Server 功能正常後退出
+    if (args.flags.test) {
+      log('測試模式：驗證 MCP Server...');
+
+      // 用 tools/list 驗證 tool 數量
+      const listResponse = await mcpServer.handleRequest({
+        jsonrpc: '2.0',
+        id: 'test-1',
+        method: 'tools/list',
+        params: {},
+      });
+      const tools = (listResponse.result as any)?.tools ?? [];
+      const toolCount = tools.length;
+
+      // 用 tools/call status 驗證引擎健康
+      const statusResponse = await mcpServer.handleRequest({
+        jsonrpc: '2.0',
+        id: 'test-2',
+        method: 'tools/call',
+        params: { name: 'status', arguments: {} },
+      });
+      const statusOk = !statusResponse.error;
+
+      // 輸出結果到 stdout（讓用戶看到，不走 stderr）
+      originalConsoleLog(`✅ MCP Server OK`);
+      originalConsoleLog(`   Tools: ${toolCount}`);
+      originalConsoleLog(`   Engine: ${statusOk ? 'healthy' : 'error'}`);
+      originalConsoleLog(`   Adapters: ${adapters.size}`);
+
+      // 清理並退出
+      try {
+        await engineModule.stop();
+      } catch {
+        // 停機失敗不影響測試結果
+      }
+      process.exit(statusOk ? 0 : 1);
+    }
 
     // 註冊優雅關機
     const shutdown = async () => {

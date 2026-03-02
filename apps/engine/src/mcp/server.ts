@@ -30,6 +30,11 @@ import { audioTranscribeToolSchema, executeAudioTranscribeTool, type AudioTransc
 import { keysListToolSchema, keysAddToolSchema, executeKeysListTool, executeKeysAddTool, type KeysListToolInput, type KeysAddToolInput } from './tools/keys';
 import { statusToolSchema, executeStatusTool, type EngineStatusDeps } from './tools/status';
 import { adaptersToolSchema, executeAdaptersTool } from './tools/adapters';
+import { setupWizardToolSchema, executeSetupWizardTool, type SetupWizardToolInput } from './tools/setup-wizard';
+import { growthGuideToolSchema, executeGrowthGuideTool, type GrowthGuideToolInput } from './tools/growth-guide';
+import type { GrowthEngine } from '../growth/engine';
+import type { SubKeyManager } from '../sharing/sub-key';
+import type { CostEngine } from '../growth/cost-engine';
 
 // ===== 型別定義（JSON-RPC 2.0 + MCP） =====
 
@@ -70,6 +75,12 @@ export interface McpServerDeps {
   keyPool: KeyPool;
   adapters: Map<string, AdapterConfig>;
   statusDeps: EngineStatusDeps;
+  /** 成長引擎（可選，向後相容） */
+  growthEngine?: GrowthEngine;
+  /** Sub-Key 管理器（可選，Gold Key 用） */
+  subKeyManager?: SubKeyManager;
+  /** 成本引擎（可選，成本分析用） */
+  costEngine?: CostEngine;
 }
 
 // ===== MCP Server 類別 =====
@@ -91,7 +102,7 @@ export class McpServer {
   private buffer = '';
 
   constructor(private deps: McpServerDeps) {
-    // 註冊所有 12 個 tools
+    // 註冊所有 14 個 tools（12 核心 + 2 成長引導）
     this.tools = [
       llmToolSchema,
       searchToolSchema,
@@ -105,6 +116,8 @@ export class McpServer {
       keysAddToolSchema,
       statusToolSchema,
       adaptersToolSchema,
+      setupWizardToolSchema,
+      growthGuideToolSchema,
     ];
   }
 
@@ -304,6 +317,20 @@ export class McpServer {
 
       case 'adapters':
         return executeAdaptersTool({}, this.deps.adapters);
+
+      case 'setup_wizard':
+        return executeSetupWizardTool(args as unknown as SetupWizardToolInput, {
+          keyPool: this.deps.keyPool,
+          adapters: this.deps.adapters,
+          subKeyManager: this.deps.subKeyManager,
+        });
+
+      case 'growth_guide':
+        return executeGrowthGuideTool(
+          args as unknown as GrowthGuideToolInput,
+          this.deps.growthEngine,
+          this.deps.costEngine
+        );
 
       default:
         throw new Error(`未知的 tool：${name}`);

@@ -20,7 +20,8 @@
     "config/**/*",
     "locales/**/*",
     "package.json",
-    "tsconfig.json"
+    "tsconfig.json",
+    "README.md"
   ],
   "scripts": {
     "dev": "bun run src/index.ts",

@@ -3,6 +3,8 @@
 
 import { CLAWAPI_VERSION } from '@clawapi/protocol';
 import type { KeyPool } from '../../core/key-pool';
+import type { GrowthEngine } from '../../growth/engine';
+import { PHASE_NAMES } from '../../growth/types';
 
 // ===== 型別定義 =====
 
@@ -24,6 +26,8 @@ export interface EngineStatusDeps {
     port: number;
     host: string;
   };
+  /** 成長引擎（可選，有就顯示成長階段） */
+  growthEngine?: GrowthEngine;
 }
 
 /** status tool 的 JSON Schema */
@@ -71,6 +75,31 @@ export async function executeStatusTool(
 
   if (deps.config) {
     lines.push(``, `監聽位址：${deps.config.host}:${deps.config.port}`);
+  }
+
+  // 成長階段 + 智慧提示（根據狀態自動觸發建議）
+  if (deps.growthEngine) {
+    try {
+      const state = await deps.growthEngine.getGrowthState();
+      lines.push(``, `成長階段：${PHASE_NAMES[state.phase]}（${state.phase}）`);
+
+      // 根據階段給出不同的自動提示
+      if (state.phase === 'onboarding' && keys.length === 0) {
+        lines.push('');
+        lines.push('💡 提示：Key 池為空。使用 setup_wizard(action=auto) 一鍵掃描環境並匯入 Key。');
+      } else if (state.phase === 'awakening' && state.next_actions.length > 0) {
+        const topAction = state.next_actions[0]!;
+        lines.push('');
+        lines.push(`💡 提示：加 ${topAction.title} 可解鎖更多路由功能。`);
+        lines.push(`   使用 growth_guide(view=recommend) 查看完整推薦。`);
+      } else if (state.pool_health.rate_limited_count > 0) {
+        lines.push('');
+        lines.push(`⚠️ ${state.pool_health.rate_limited_count} 把 Key 限速中。`);
+        lines.push(`   使用 growth_guide(view=pool) 查看額度池詳情和擴容建議。`);
+      }
+    } catch {
+      // 成長引擎出錯不影響 status 輸出
+    }
   }
 
   return {

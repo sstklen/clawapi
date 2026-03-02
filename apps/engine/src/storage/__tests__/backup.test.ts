@@ -396,7 +396,7 @@ describe('Backup — 雲端備份 Client（mock）', () => {
   it('upload 成功時應回傳上傳結果', async () => {
     // Mock fetch
     const originalFetch = globalThis.fetch;
-    globalThis.fetch = async () => new Response(
+    globalThis.fetch = (async () => new Response(
       JSON.stringify({
         uploaded: true,
         backup_size: 1024,
@@ -404,7 +404,7 @@ describe('Backup — 雲端備份 Client（mock）', () => {
         stored_at: new Date().toISOString(),
       }),
       { status: 200, headers: { 'Content-Type': 'application/json' } }
-    );
+    )) as any;
 
     const client = new CloudBackupClient({
       baseUrl: 'https://api.clawapi.com',
@@ -431,7 +431,7 @@ describe('Backup — 雲端備份 Client（mock）', () => {
 
   it('upload 失敗時應拋出錯誤', async () => {
     const originalFetch = globalThis.fetch;
-    globalThis.fetch = async () => new Response('Forbidden', { status: 403 });
+    globalThis.fetch = (async () => new Response('Forbidden', { status: 403 })) as any;
 
     const client = new CloudBackupClient({
       baseUrl: 'https://api.clawapi.com',
@@ -466,10 +466,10 @@ describe('Backup — 雲端備份 Client（mock）', () => {
     };
 
     const originalFetch = globalThis.fetch;
-    globalThis.fetch = async () => new Response(
+    globalThis.fetch = (async () => new Response(
       JSON.stringify(expectedBackup),
       { status: 200, headers: { 'Content-Type': 'application/json' } }
-    );
+    )) as any;
 
     const client = new CloudBackupClient({
       baseUrl: 'https://api.clawapi.com',
@@ -486,7 +486,7 @@ describe('Backup — 雲端備份 Client（mock）', () => {
 
   it('download 失敗時應拋出錯誤', async () => {
     const originalFetch = globalThis.fetch;
-    globalThis.fetch = async () => new Response('Not Found', { status: 404 });
+    globalThis.fetch = (async () => new Response('Not Found', { status: 404 })) as any;
 
     const client = new CloudBackupClient({
       baseUrl: 'https://api.clawapi.com',
@@ -501,10 +501,10 @@ describe('Backup — 雲端備份 Client（mock）', () => {
 
   it('delete 成功時應回傳刪除結果', async () => {
     const originalFetch = globalThis.fetch;
-    globalThis.fetch = async () => new Response(
+    globalThis.fetch = (async () => new Response(
       JSON.stringify({ deleted: true, message: '備份已刪除' }),
       { status: 200, headers: { 'Content-Type': 'application/json' } }
-    );
+    )) as any;
 
     const client = new CloudBackupClient({
       baseUrl: 'https://api.clawapi.com',
@@ -521,7 +521,7 @@ describe('Backup — 雲端備份 Client（mock）', () => {
 
   it('delete 失敗時應拋出錯誤', async () => {
     const originalFetch = globalThis.fetch;
-    globalThis.fetch = async () => new Response('Server Error', { status: 500 });
+    globalThis.fetch = (async () => new Response('Server Error', { status: 500 })) as any;
 
     const client = new CloudBackupClient({
       baseUrl: 'https://api.clawapi.com',

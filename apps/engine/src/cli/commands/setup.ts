@@ -24,6 +24,23 @@ const CONFIG_PATH = join(CONFIG_DIR, 'config.yaml');
 // ===== 主命令 =====
 
 export async function setupCommand(args: ParsedArgs): Promise<void> {
+  // --defaults 模式：跳過互動，直接用預設值寫 config
+  if (args.flags.defaults) {
+    if (!existsSync(CONFIG_DIR)) {
+      mkdirSync(CONFIG_DIR, { recursive: true });
+    }
+    const configYaml = generateConfig('en', true);
+    writeFileSync(CONFIG_PATH, configYaml, 'utf8');
+
+    if (!isJsonMode()) {
+      success('Config created with defaults at ' + CONFIG_PATH);
+      print(`  Next: ${color.bold('clawapi start')} or ${color.bold('clawapi mcp')}`);
+    } else {
+      jsonOutput({ success: true, config_path: CONFIG_PATH });
+    }
+    return;
+  }
+
   // JSON 模式不支援互動式
   if (isJsonMode()) {
     jsonOutput({ error: 'not_supported', message: t('cmd.setup.no_json_mode') });

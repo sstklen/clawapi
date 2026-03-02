@@ -433,6 +433,13 @@ export class VPSClient {
     this.ws.onAidRequest(handler as MessageHandler);
   }
 
+  /**
+   * 訂閱聊天室訊息事件
+   */
+  onChatMessage(handler: (msg: unknown) => void): void {
+    this.ws.onChatMessage(handler as MessageHandler);
+  }
+
   // ===== 私有輔助方法 =====
 
   /**

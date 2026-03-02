@@ -167,7 +167,7 @@ describe('MCP Server — tools/list', () => {
     server = createMcpServer(createMockDeps());
   });
 
-  it('應列出全部 12 個 tools', async () => {
+  it('應列出全部 14 個 tools（12 核心 + 2 成長引導）', async () => {
     const request: JsonRpcRequest = {
       jsonrpc: '2.0',
       id: 1,
@@ -178,7 +178,7 @@ describe('MCP Server — tools/list', () => {
     expect(response.error).toBeUndefined();
 
     const result = response.result as { tools: Array<{ name: string }> };
-    expect(result.tools).toHaveLength(12);
+    expect(result.tools).toHaveLength(14);
 
     // 驗證所有 tool 名稱
     const names = result.tools.map(t => t.name);
@@ -194,6 +194,8 @@ describe('MCP Server — tools/list', () => {
     expect(names).toContain('keys_add');
     expect(names).toContain('status');
     expect(names).toContain('adapters');
+    expect(names).toContain('setup_wizard');
+    expect(names).toContain('growth_guide');
   });
 
   it('每個 tool 應有正確的 inputSchema', async () => {
@@ -658,6 +660,102 @@ describe('MCP Server — 錯誤處理', () => {
     const result = response.result as { content: Array<{ text: string }>; isError?: boolean };
     expect(result.isError).toBe(true);
     expect(result.content[0]!.text).toContain('Router 內部錯誤');
+  });
+});
+
+describe('MCP Server — tools/call 成長引導 Tools', () => {
+  it('setup_wizard(scan) 應回傳環境掃描結果', async () => {
+    // mock fetch 以免 Ollama 偵測掛掉
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = (async () => { throw new Error('no ollama'); }) as any;
+    try {
+      const server = createMcpServer(createMockDeps());
+
+      const response = await server.handleRequest({
+        jsonrpc: '2.0',
+        id: 1,
+        method: 'tools/call',
+        params: {
+          name: 'setup_wizard',
+          arguments: { action: 'scan' },
+        },
+      });
+
+      expect(response.error).toBeUndefined();
+      const result = response.result as { content: Array<{ text: string }> };
+      expect(result.content).toHaveLength(1);
+      expect(result.content[0]!.text).toContain('環境掃描結果');
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
+  it('setup_wizard(validate) 缺參數應提示', async () => {
+    const server = createMcpServer(createMockDeps());
+
+    const response = await server.handleRequest({
+      jsonrpc: '2.0',
+      id: 1,
+      method: 'tools/call',
+      params: {
+        name: 'setup_wizard',
+        arguments: { action: 'validate' },
+      },
+    });
+
+    const result = response.result as { content: Array<{ text: string }> };
+    expect(result.content[0]!.text).toContain('service');
+    expect(result.content[0]!.text).toContain('key');
+  });
+
+  it('growth_guide 未初始化 growthEngine 時應回傳警告', async () => {
+    const server = createMcpServer(createMockDeps());
+
+    const response = await server.handleRequest({
+      jsonrpc: '2.0',
+      id: 1,
+      method: 'tools/call',
+      params: {
+        name: 'growth_guide',
+        arguments: { view: 'overview' },
+      },
+    });
+
+    expect(response.error).toBeUndefined();
+    const result = response.result as { content: Array<{ text: string }> };
+    expect(result.content).toHaveLength(1);
+    expect(result.content[0]!.text).toContain('未初始化');
+  });
+
+  it('growth_guide 有 growthEngine 時應回傳成長總覽', async () => {
+    // 建立 mock GrowthEngine
+    const mockGrowthEngine = {
+      getGrowthState: async () => ({
+        phase: 'awakening' as const,
+        layers_unlocked: ['L1'],
+        layer_progress: { L0: 0, L1: 1, L2: 0.33, L3: 1, L4: 0 },
+        next_actions: [],
+        pool_health: { services: [], total_keys: 1, total_services: 1, rate_limited_count: 0 },
+      }),
+      getUsageInsights: async () => [],
+    } as any;
+
+    const server = createMcpServer(createMockDeps({ growthEngine: mockGrowthEngine }));
+
+    const response = await server.handleRequest({
+      jsonrpc: '2.0',
+      id: 1,
+      method: 'tools/call',
+      params: {
+        name: 'growth_guide',
+        arguments: { view: 'overview' },
+      },
+    });
+
+    expect(response.error).toBeUndefined();
+    const result = response.result as { content: Array<{ text: string }> };
+    expect(result.content[0]!.text).toContain('成長總覽');
+    expect(result.content[0]!.text).toContain('awakening');
   });
 });
 

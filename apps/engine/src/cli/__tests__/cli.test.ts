@@ -451,9 +451,9 @@ describe('doctor command', () => {
     const parsed = JSON.parse(logs[0]!);
     expect(parsed.results).toBeDefined();
     expect(Array.isArray(parsed.results)).toBe(true);
-    expect(parsed.results.length).toBe(6);
+    expect(parsed.results.length).toBe(7);
     expect(parsed.summary).toBeDefined();
-    expect(parsed.summary.total).toBe(6);
+    expect(parsed.summary.total).toBe(7);
   });
 
   test('doctor 結果每項都有 name, pass, detail', async () => {

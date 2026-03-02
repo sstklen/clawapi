@@ -93,13 +93,36 @@ chmod +x clawapi && ./clawapi setup
 
 ## 🔌 Use with AI Coding Tools
 
-### Claude Code (MCP)
+### Claude Code (MCP) — Recommended
+
+**Prerequisites:** [Bun](https://bun.sh) or Node.js 20+ · [Claude Code](https://docs.anthropic.com/en/docs/claude-code) installed
+
+**Step 1: Add ClawAPI to Claude Code**
 
 ```bash
-claude mcp add clawapi --scope user -- clawapi mcp
+claude mcp add clawapi --scope user -- bunx @clawapi/engine mcp
 ```
 
-That's it. Restart Claude Code — you now have 12 AI tools available:
+**Step 2: Restart Claude Code** (close and reopen your terminal)
+
+**Step 3: Verify it works**
+
+```bash
+clawapi mcp --test
+```
+
+You should see: `✅ MCP Server OK` with tool count and engine status.
+
+> **Where is the config stored?** Claude Code saves MCP config at `~/.claude.json`.
+> You can check it with `cat ~/.claude.json`.
+
+**Quick setup (optional):** Generate default config without interactive prompts:
+
+```bash
+clawapi setup --defaults
+```
+
+You now have **14 AI tools** available. Ask Claude: *"What tools do you have from ClawAPI?"*
 
 | Tool | What it does |
 |------|-------------|
@@ -113,6 +136,8 @@ That's it. Restart Claude Code — you now have 12 AI tools available:
 | `keys_add` | Add a new API key |
 | `status` | Check engine health |
 | `adapters` | List supported providers |
+| `setup_wizard` | First-time setup: scan env for keys, validate, Gold Key |
+| `growth_guide` | Growth guide: progress, recommendations, pool health |
 | `ask` | Ask ClawAPI anything |
 | `task` | Execute multi-step AI tasks |
 

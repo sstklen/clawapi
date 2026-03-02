@@ -4,6 +4,7 @@
 
 import type { ClawDatabase } from '../storage/database';
 import type { CryptoModule } from './encryption';
+import type { NotificationManager } from '../notifications/manager';
 
 // ===== 型別定義 =====
 
@@ -112,12 +113,19 @@ export class RoundRobinSelector {
  */
 export class KeyPool {
   private selector: RoundRobinSelector;
+  /** 通知管理器（可選，注入後自動發送 Key 狀態通知） */
+  private notifier?: NotificationManager;
 
   constructor(
     private db: ClawDatabase,
     private crypto: CryptoModule
   ) {
     this.selector = new RoundRobinSelector();
+  }
+
+  /** 注入通知管理器（在 index.ts 啟動後設定） */
+  setNotificationManager(notifier: NotificationManager): void {
+    this.notifier = notifier;
   }
 
   // ===== CRUD =====
@@ -285,6 +293,16 @@ export class KeyPool {
    * - daily_used++
    */
   async reportSuccess(keyId: number): Promise<void> {
+    // 先查原狀態（如果從 rate_limited/dead 恢復，要發通知）
+    let wasUnhealthy = false;
+    if (this.notifier) {
+      const rows = this.db.query<{ status: string }>(
+        'SELECT status FROM keys WHERE id = ?',
+        [keyId]
+      );
+      wasUnhealthy = rows[0]?.status !== 'active';
+    }
+
     const now = new Date().toISOString();
     this.db.run(
       `UPDATE keys
@@ -297,6 +315,16 @@ export class KeyPool {
        WHERE id = ?`,
       [now, now, keyId]
     );
+
+    // Key 恢復通知（從 rate_limited 或 dead 恢復到 active）
+    if (this.notifier && wasUnhealthy) {
+      const serviceId = this.getKeyServiceId(keyId);
+      this.notifier.notify('key.recovered', {
+        service_id: serviceId,
+        key_id: keyId,
+        message: `${serviceId} Key #${keyId} 已恢復正常 ✅`,
+      }).catch(() => {});
+    }
   }
 
   /**
@@ -326,6 +354,16 @@ export class KeyPool {
        WHERE id = ?`,
       [rateLimitUntil, now.toISOString(), keyId]
     );
+
+    // 觸發通知（非同步，不影響主流程）
+    if (this.notifier) {
+      const serviceId = this.getKeyServiceId(keyId);
+      this.notifier.notify('key.rate_limited', {
+        service_id: serviceId,
+        key_id: keyId,
+        message: `${serviceId} Key #${keyId} 被限速，退避 ${backoffSeconds} 秒`,
+      }).catch(() => {});
+    }
   }
 
   /**
@@ -342,6 +380,16 @@ export class KeyPool {
        WHERE id = ?`,
       [now, keyId]
     );
+
+    // 觸發通知（Key 死亡 — 認證失敗是永久性的）
+    if (this.notifier) {
+      const serviceId = this.getKeyServiceId(keyId);
+      this.notifier.notify('key.dead', {
+        service_id: serviceId,
+        key_id: keyId,
+        message: `${serviceId} Key #${keyId} 已死亡（認證失敗 401/403）`,
+      }).catch(() => {});
+    }
   }
 
   /**
@@ -378,7 +426,30 @@ export class KeyPool {
          WHERE id = ?`,
         [`累計錯誤 ${failures} 次`, now, keyId]
       );
+
+      // 觸發通知（累計錯誤死亡）
+      if (this.notifier) {
+        const serviceId = this.getKeyServiceId(keyId);
+        this.notifier.notify('key.dead', {
+          service_id: serviceId,
+          key_id: keyId,
+          message: `${serviceId} Key #${keyId} 已死亡（累計 ${failures} 次錯誤）`,
+        }).catch(() => {});
+      }
     }
+  }
+
+  // ===== 通知輔助 =====
+
+  /**
+   * 查詢 Key 的 service_id（用於通知，查不到就回傳 unknown）
+   */
+  private getKeyServiceId(keyId: number): string {
+    const rows = this.db.query<{ service_id: string }>(
+      'SELECT service_id FROM keys WHERE id = ?',
+      [keyId]
+    );
+    return rows[0]?.service_id ?? 'unknown';
   }
 
   // ===== 每日重置 =====
