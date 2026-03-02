@@ -17,7 +17,7 @@ import { AdapterExecutor } from './adapters/executor';
 import { AdapterLoader } from './adapters/loader';
 import type { AdapterConfig } from './adapters/loader';
 import { Router } from './core/router';
-import { handleRoutingUpdate } from './intelligence/routing-handler';
+import { handleRoutingUpdate, loadCollectiveIntelFromDB } from './intelligence/routing-handler';
 import { VPSClient } from './intelligence/vps-client';
 import { TelemetryCollector } from './intelligence/telemetry';
 import { L0Manager } from './l0/manager';
@@ -176,22 +176,8 @@ export async function start(options?: EngineOptions): Promise<ClawEngineServer> 
     }
   }
 
-  // 9.5 接通 VPS 事件處理（路由更新 → routing_intel 表）
+  // 9.5 接通 VPS 事件處理（通知類事件，路由更新留到 router 建好後處理）
   if (vpsClient) {
-    // 接收 VPS 下發的路由建議，存入 routing_intel 表
-    vpsClient.onRoutingUpdate((update: unknown) => {
-      try {
-        const count = handleRoutingUpdate(db, update);
-        if (options?.verbose) {
-          console.log(`[ClawAPI] 📡 路由更新：${count} 筆已存入 routing_intel`);
-        }
-      } catch (err) {
-        if (options?.verbose) {
-          console.warn(`[ClawAPI] ⚠️ 路由更新處理失敗:`, err);
-        }
-      }
-    });
-
     // 接收 VPS 系統通知（目前只 log）
     vpsClient.onNotification((notif: unknown) => {
       if (options?.verbose) {
@@ -213,6 +199,36 @@ export async function start(options?: EngineOptions): Promise<ClawEngineServer> 
 
   // 12. 初始化路由器
   const router = new Router(keyPool, executor, adapters, l0Manager);
+
+  // 12.5 爽點四：接通路由智慧回灌（VPS → routing_intel → L2 路由器）
+  // a. 啟動時載入 DB 中已有的路由智慧
+  const existingIntel = loadCollectiveIntelFromDB(db);
+  if (existingIntel) {
+    router.updateCollectiveIntel(existingIntel);
+    if (options?.verbose) {
+      console.log(`[ClawAPI] 📡 已載入 ${Object.keys(existingIntel).length} 個服務的路由智慧`);
+    }
+  }
+
+  // b. 監聽 VPS 路由更新事件：存 DB + 即時回灌 L2
+  if (vpsClient) {
+    vpsClient.onRoutingUpdate((update: unknown) => {
+      try {
+        const count = handleRoutingUpdate(db, update);
+        if (count > 0) {
+          // 回灌最新路由智慧給 L2 路由器
+          const latestIntel = loadCollectiveIntelFromDB(db);
+          router.updateCollectiveIntel(latestIntel);
+        }
+        if (options?.verbose) {
+          console.log(`[ClawAPI] 📡 路由更新：${count} 筆已存入 + 回灌 L2`);
+        }
+      } catch (err) {
+        // 路由更新失敗是運營層級問題，始終記錄（不受 verbose 限制）
+        console.warn(`[ClawAPI] ⚠️ 路由更新處理失敗:`, err);
+      }
+    });
+  }
 
   // 13. 初始化管理功能
   const subKeyManager = new SubKeyManager(db, auth);

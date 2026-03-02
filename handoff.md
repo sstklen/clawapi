@@ -1,70 +1,58 @@
 # ClawAPI 交接文件
-> 日期：2026-03-02 | 摘要：三爽點體驗引導完成（一鍵全自動 + 主動推薦 + 限額引導）
+> 日期：2026-03-02 | 摘要：四爽點全部完成 + 三軍品質審查 + 修復 4 個 CRITICAL/HIGH 問題
 
 ## ✅ 已完成（本 session）
 
-### 爽點一：一鍵全自動（handleAuto 重寫）
-- [x] `setup-wizard.ts` handleAuto 改為真正的一鍵完成
-- [x] 掃描 → 驗證 → **全部自動匯入**（不再逐一確認）→ 自動產 Gold Key
-- [x] 結尾訊息：「搞定！以後用這把 Gold Key 就能通吃所有服務」
-- [x] 沒找到 Key 時推薦免費服務（Groq/Gemini）
+### 爽點四：群體智慧數據共享（兩條斷路修復）
+- [x] **斷路一修復**：`openai-compat.ts` 所有 5 個端點（chat/embeddings/images/audio×2）成功/失敗後寫入 `usage_log`
+- [x] 新增 `recordUsageLog()` 函式，用 WriteBuffer 非同步寫入（不阻塞回應）
+- [x] `server.ts` 傳入 `writeBuffer` 給 `createOpenAICompatRouter`
+- [x] **斷路二修復**：`index.ts` 啟動時載入 DB 已有的 `routing_intel` → 餵給 L2 路由器
+- [x] VPS 推送路由更新時：寫 DB + 即時回灌 `router.updateCollectiveIntel()`
+- [x] `routing-handler.ts` 新增 `loadCollectiveIntelFromDB()` — 從 DB 轉換為 L2 格式
 
-### 爽點二：主動推薦免費服務
-- [x] `setup-wizard.ts` 新增 `getProactiveRecommendation()` — 根據用戶已有服務推薦下一個
-- [x] handleAuto 結尾自動推薦
-- [x] handleImport 成功後自動推薦
-- [x] `keys.ts` executeKeysAddTool 成功後自動推薦
-- [x] 推薦包含：服務名、理由、解鎖什麼、申請 URL
-- [x] 不推薦付費服務（只推免費和需註冊的）
+### 三軍品質審查（Code + Security + Architecture）
+- [x] **CRITICAL 修復**：5 個 catch block 漏記 usage_log → 全部補上 recordUsageLog
+- [x] **HIGH 安全修復**：routing_intel 值未 clamp → 加白名單 + Math.max/min 防護
+- [x] **HIGH 修復**：路由更新錯誤被 verbose 吃掉 → 改為始終 console.warn
+- [x] 新增 2 個安全防護測試（status clamp + 數值 clamp）
+- [x] 測試中 `'healthy'` status 全部改為合法的 `'preferred'`
 
-### 爽點三：碰限額建議加 Key
-- [x] `l1-proxy.ts` — 所有 Key 都 429 時，回應加「加更多 Key 翻倍額度」引導
-- [x] `l2-gateway.ts` — 全部服務失敗時，列出只有 1 把 Key 的服務建議加第 2 把
+### 爽點一～三（前 session 已完成，commit: `61e2d94`）
+- [x] 一鍵全自動：handleAuto 掃描 → 驗證 → 全部自動匯入 → Gold Key → 搞定
+- [x] 主動推薦：handleAuto/handleImport/keys_add 成功後推薦下一個免費服務
+- [x] 碰限額引導：L1 429 + L2 全失敗時建議加 Key
 
 ### 測試 + Build
-- [x] 新測試：`delight-points.test.ts`（11 個測試覆蓋三爽點）
-- [x] 全量測試：1635 pass / 4 fail（4 個預存的 VPS deploy 測試，非本次改動）
+- [x] 全量測試：1641 pass / 4 fail（4 個預存的 deploy 測試，非本次改動）
 - [x] 四平台 build 全部成功
-
-## ✅ 已完成（前 session）
-
-### 階段轉換慶祝系統（配角）
-- [x] `phase-relay.ts` + `group5.json` + 三語翻譯
-- [x] commits: `e81a2af` + `97a3eea`
 
 ## 📋 改動檔案清單
 
 | 檔案 | 改動 |
 |------|------|
-| `src/mcp/tools/setup-wizard.ts` | handleAuto 重寫 + getProactiveRecommendation 新函式 + handleImport 加推薦 |
-| `src/mcp/tools/keys.ts` | executeKeysAddTool 加主動推薦 |
-| `src/layers/l1-proxy.ts` | 429 失敗回應加引導訊息 |
-| `src/layers/l2-gateway.ts` | 全部失敗回應加引導訊息 |
-| `src/mcp/__tests__/delight-points.test.ts` | 新增 11 個爽點測試 |
+| `src/api/openai-compat.ts` | `recordUsageLog()` + 5 端點 + 5 catch block 記錄 |
+| `src/server.ts` | 傳入 writeBuffer |
+| `src/index.ts` | 啟動載入 routing_intel + VPS 事件回灌 + 錯誤始終記錄 |
+| `src/intelligence/routing-handler.ts` | `loadCollectiveIntelFromDB()` + 值 clamp 安全防護 |
+| `src/intelligence/__tests__/routing-handler.test.ts` | 6 個新測試（4 回灌 + 2 安全） |
 
 ## 🔴 下一步
 
-### 1. Commit 本次改動
+### 1. Commit 爽點四 + 審查修復
 ```bash
-cd ~/Desktop/ClawAPI && git add -A && git commit -m "feat: implement 3 delight points — auto import, proactive recommendations, rate limit guidance"
+cd ~/Desktop/ClawAPI && git add -A && git commit -m "feat: delight point 4 — wire usage_log recording + routing_intel feedback + security hardening"
 ```
 
-### 2. 爽點四：群體智慧數據共享
-目前狀態：VPS 端 intelligence-engine.ts 886 行已完成，個人端 engine.ts getIntelligenceReport 已完成。
-需要確認：bootstrap.ts 有沒有初始化 WebSocket 連線到 VPS。
+### 2. 端到端整合測試
+確認完整數據鏈：proxy 請求 → usage_log 有記錄 → TelemetryCollector 可打包 → VPS 回傳 routing_intel → L2 路由器收到
 
-### 3. 測試員體驗驗證
-```bash
-# 模擬全新用戶
-npx clawapi setup_wizard --action auto
-
-# 手動加 Key 看推薦
-npx clawapi keys_add --service groq --key gsk_xxx
-
-# 看成長總覽
-npx clawapi growth_guide --view overview
-```
+### 3. 未來改善（非急）
+- `Record<string, unknown>` → 正式 `CollectiveIntel` 型別（消除 `as any`）
+- `loadCollectiveIntelFromDB` 加入 region 維度過濾
+- 統一 `recordEvent()` 和 `recordUsageLog()` 的匿名化策略
+- 考慮移除未使用的 `TelemetryCollector.recordEvent()` 方法
 
 ## 已知問題
-- deploy.test.ts 有 4 個預存失敗（Dockerfile.vps + Caddyfile 結構驗證），與本次改動無關
-- 慶祝 banner 是配角不是主角（前 session 做的，保留錦上添花）
+- deploy.test.ts 有 4 個預存失敗（Dockerfile.vps + Caddyfile），與本次改動無關
+- `recordEvent()` 和 `recordUsageLog()` 是兩條獨立 usage_log 寫入路徑（目前 recordEvent 未被呼叫，無重複風險）

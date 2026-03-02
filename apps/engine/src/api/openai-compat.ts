@@ -17,6 +17,7 @@ import type { RoutingStrategy } from '@clawapi/protocol';
 import type { Router } from '../core/router';
 import type { KeyPool } from '../core/key-pool';
 import type { AdapterConfig } from '../adapters/loader';
+import type { WriteBuffer } from '../storage/write-buffer';
 
 // ===== 型別定義 =====
 
@@ -781,6 +782,42 @@ function checkSubKeyPermissions(
   return null;
 }
 
+// ===== 爽點四：usage_log 記錄（群體智慧的數據源） =====
+
+/**
+ * 將請求結果寫入 usage_log 表
+ * 這是集體智慧數據鏈的第一步：proxy 完成 → 寫 usage_log → 遙測打包 → VPS 彙整 → 路由建議
+ */
+function recordUsageLog(
+  writeBuffer: WriteBuffer | undefined,
+  result: RouteResultLike,
+  requestedModel: string,
+  strategy?: string,
+  tokensInput?: number | null,
+  tokensOutput?: number | null,
+): void {
+  if (!writeBuffer) return;
+  writeBuffer.enqueue({
+    sql: `INSERT INTO usage_log
+      (service_id, model, layer, success, latency_ms, error_code,
+       tokens_input, tokens_output, routing_strategy, retry_count)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    params: [
+      result.serviceId ?? 'unknown',
+      result.modelName ?? requestedModel,
+      result.layer,
+      result.success ? 1 : 0,
+      result.latency_ms,
+      result.success ? null : String(result.status ?? 'error'),
+      tokensInput ?? null,
+      tokensOutput ?? null,
+      strategy ?? 'smart',
+      Math.max(0, (result.tried?.length ?? 1) - 1),
+    ],
+    priority: 'buffered',
+  });
+}
+
 // ===== 主路由工廠 =====
 
 /**
@@ -794,7 +831,8 @@ function checkSubKeyPermissions(
 export function createOpenAICompatRouter(
   router: Router,
   keyPool: KeyPool,
-  adapters: Map<string, AdapterConfig>
+  adapters: Map<string, AdapterConfig>,
+  writeBuffer?: WriteBuffer
 ): Hono {
   const app = new Hono();
 
@@ -839,6 +877,11 @@ export function createOpenAICompatRouter(
         },
       });
     } catch (err) {
+      // 路由器異常也要記錄，讓遙測看到完整的失敗圖景
+      recordUsageLog(writeBuffer, {
+        success: false, layer: 'L1', latency_ms: Date.now() - created * 1000,
+        status: 500, error: (err as Error).message,
+      }, requestedModel, body.x_strategy);
       return c.json(
         {
           error: 'internal_error',
@@ -849,6 +892,7 @@ export function createOpenAICompatRouter(
     }
 
     if (!result.success) {
+      recordUsageLog(writeBuffer, result, requestedModel, body.x_strategy);
       return c.json(
         {
           error: 'routing_failed',
@@ -886,6 +930,9 @@ export function createOpenAICompatRouter(
         );
       }
 
+      // Streaming 沒有即時 token 計數，先記錄基本資訊
+      recordUsageLog(writeBuffer, result, requestedModel, body.x_strategy);
+
       return new Response(stream, {
         headers: {
           'Content-Type': 'text/event-stream',
@@ -900,6 +947,10 @@ export function createOpenAICompatRouter(
     const message = extractMessage(result.data);
     const usage = extractUsage(result.data);
     const finishReason = extractFinishReason(result.data);
+
+    // 非 Streaming 成功：帶 token 計數記錄
+    recordUsageLog(writeBuffer, result, requestedModel, body.x_strategy,
+      usage.prompt_tokens, usage.completion_tokens);
 
     const response: ChatCompletionResponse = {
       id: completionId,
@@ -964,6 +1015,9 @@ export function createOpenAICompatRouter(
         },
       });
     } catch (err) {
+      recordUsageLog(writeBuffer, {
+        success: false, layer: 'L1', latency_ms: 0, status: 500,
+      }, requestedModel, body.x_strategy);
       return c.json(
         { error: 'internal_error', message: `路由錯誤：${(err as Error).message}` },
         500
@@ -971,6 +1025,7 @@ export function createOpenAICompatRouter(
     }
 
     if (!result.success) {
+      recordUsageLog(writeBuffer, result, requestedModel, body.x_strategy);
       return c.json(
         { error: 'routing_failed', message: result.error ?? '路由失敗' },
         toStatusCode(result.status, 502)
@@ -1014,6 +1069,9 @@ export function createOpenAICompatRouter(
     }
 
     const usage = extractUsage(backendData);
+    recordUsageLog(writeBuffer, result, requestedModel, body.x_strategy,
+      usage.prompt_tokens, usage.completion_tokens);
+
     const response: EmbeddingsResponse = {
       object: 'list',
       data: embeddingData,
@@ -1060,6 +1118,9 @@ export function createOpenAICompatRouter(
         },
       });
     } catch (err) {
+      recordUsageLog(writeBuffer, {
+        success: false, layer: 'L1', latency_ms: 0, status: 500,
+      }, requestedModel, body.x_strategy);
       return c.json(
         { error: 'internal_error', message: `路由錯誤：${(err as Error).message}` },
         500
@@ -1067,6 +1128,7 @@ export function createOpenAICompatRouter(
     }
 
     if (!result.success) {
+      recordUsageLog(writeBuffer, result, requestedModel, body.x_strategy);
       return c.json(
         { error: 'routing_failed', message: result.error ?? '路由失敗' },
         toStatusCode(result.status, 502)
@@ -1093,6 +1155,8 @@ export function createOpenAICompatRouter(
     if (imageData.length === 0) {
       imageData = [{ url: '', revised_prompt: body.prompt }];
     }
+
+    recordUsageLog(writeBuffer, result, requestedModel, body.x_strategy);
 
     const response: ImageGenerationResponse = {
       created: Math.floor(Date.now() / 1000),
@@ -1154,6 +1218,9 @@ export function createOpenAICompatRouter(
         },
       });
     } catch (err) {
+      recordUsageLog(writeBuffer, {
+        success: false, layer: 'L1', latency_ms: 0, status: 500,
+      }, requestedModel);
       return c.json(
         { error: 'internal_error', message: `路由錯誤：${(err as Error).message}` },
         500
@@ -1161,11 +1228,14 @@ export function createOpenAICompatRouter(
     }
 
     if (!result.success) {
+      recordUsageLog(writeBuffer, result, requestedModel);
       return c.json(
         { error: 'routing_failed', message: result.error ?? '路由失敗' },
         toStatusCode(result.status, 502)
       );
     }
+
+    recordUsageLog(writeBuffer, result, requestedModel);
 
     // 提取轉錄文字
     let transcriptionText = '';
@@ -1234,6 +1304,9 @@ export function createOpenAICompatRouter(
         },
       });
     } catch (err) {
+      recordUsageLog(writeBuffer, {
+        success: false, layer: 'L1', latency_ms: 0, status: 500,
+      }, requestedModel, body.x_strategy);
       return c.json(
         { error: 'internal_error', message: `路由錯誤：${(err as Error).message}` },
         500
@@ -1241,6 +1314,7 @@ export function createOpenAICompatRouter(
     }
 
     if (!result.success) {
+      recordUsageLog(writeBuffer, result, requestedModel, body.x_strategy);
       return c.json(
         { error: 'routing_failed', message: result.error ?? '路由失敗' },
         toStatusCode(result.status, 502)
@@ -1250,6 +1324,8 @@ export function createOpenAICompatRouter(
     // Sub-Key 路由後權限檢查
     const speechPermError = checkSubKeyPermissions(c, result.serviceId, result.modelName);
     if (speechPermError) return speechPermError;
+
+    recordUsageLog(writeBuffer, result, requestedModel, body.x_strategy);
 
     const xClawAPI = buildXClawAPI(requestedModel, result);
 

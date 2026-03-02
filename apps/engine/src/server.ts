@@ -310,11 +310,12 @@ export class ClawEngineServer implements EngineServer {
     app.use('/v1/*', engineAuth(this.auth));
     app.use('/api/*', engineAuth(this.auth));
 
-    // === 掛載 OpenAI 相容路由 ===
+    // === 掛載 OpenAI 相容路由（傳入 writeBuffer 以記錄 usage_log） ===
     const openaiRouter = createOpenAICompatRouter(
       this.router,
       this.keyPool,
-      this.adapters
+      this.adapters,
+      this.writeBuffer
     );
     app.route('/v1', openaiRouter);
 
