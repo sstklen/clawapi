@@ -1,7 +1,7 @@
 // OpenAPI 3.1.0 規格檔（自動產生 JSON 供 Scalar UI 使用）
 // 涵蓋 ClawAPI 引擎所有 50+ 端點
 
-import { CLAWAPI_VERSION } from '@clawapi/protocol';
+import { getEngineVersion } from '../version';
 
 // ===== 共用元件 =====
 
@@ -41,7 +41,7 @@ export function generateOpenAPISpec(): Record<string, unknown> {
     openapi: '3.1.0',
     info: {
       title: 'ClawAPI Engine',
-      version: CLAWAPI_VERSION,
+      version: getEngineVersion(),
       description: `🦞 開源 AI API 鑰匙管理器 + 智慧路由器
 
 ClawAPI 是一個本機運行的 AI API 閘道器，提供：

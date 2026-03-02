@@ -11,8 +11,9 @@
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { existsSync, accessSync, constants } from 'node:fs';
-import { color, print, blank, success, error, info, check, jsonOutput, isJsonMode } from '../utils/output';
+import { color, print, blank, success, error, info, warn, check, jsonOutput, isJsonMode } from '../utils/output';
 import { t } from '../utils/i18n';
+import { getEngineVersion } from '../utils/version';
 import type { ParsedArgs } from '../index';
 
 // ===== 型別 =====
@@ -20,6 +21,7 @@ import type { ParsedArgs } from '../index';
 interface CheckResult {
   name: string;
   pass: boolean;
+  warn?: boolean;  // 警告狀態：pass=true 但需要注意（黃色 WARN）
   detail: string;
 }
 
@@ -57,13 +59,14 @@ export async function doctorCommand(args: ParsedArgs): Promise<void> {
   }
 
   // 輸出結果
-  const totalPass = results.filter(r => r.pass).length;
+  const totalWarn = results.filter(r => r.warn).length;
+  const totalPass = results.filter(r => r.pass && !r.warn).length;
   const totalFail = results.filter(r => !r.pass).length;
 
   if (isJsonMode()) {
     jsonOutput({
       results,
-      summary: { total: results.length, pass: totalPass, fail: totalFail },
+      summary: { total: results.length, pass: totalPass, warn: totalWarn, fail: totalFail },
     });
     return;
   }
@@ -74,13 +77,16 @@ export async function doctorCommand(args: ParsedArgs): Promise<void> {
   blank();
 
   for (const r of results) {
-    check(r.pass, r.name, r.detail);
+    check(r.pass, r.name, r.detail, r.warn);
   }
 
   blank();
 
-  if (totalFail === 0) {
+  if (totalFail === 0 && totalWarn === 0) {
     success(t('cmd.doctor.all_passed', { count: results.length }));
+  } else if (totalFail === 0) {
+    // 有警告但沒有失敗 → 整體通過，但提示注意
+    warn(`${totalPass} passed, ${totalWarn} warning(s)`);
   } else {
     error(t('cmd.doctor.some_failed', { fail: totalFail, pass: totalPass }));
   }
@@ -124,9 +130,12 @@ function checkMasterKey(configDir: string): CheckResult {
     return { name: t('cmd.doctor.check_master_key'), pass: true, detail: keyPath };
   }
 
+  // 首次安裝還沒啟動過，master.key 尚未產生是正常的
+  // 用 WARN 而非 FAIL，避免嚇到新使用者
   return {
     name: t('cmd.doctor.check_master_key'),
-    pass: false,
+    pass: true,
+    warn: true,
     detail: t('cmd.doctor.master_key_not_created'),
   };
 }
@@ -261,7 +270,7 @@ async function checkMcpReady(): Promise<CheckResult> {
       params: {
         protocolVersion: '2024-11-05',
         capabilities: {},
-        clientInfo: { name: 'clawapi-doctor', version: '0.1.0' },
+        clientInfo: { name: 'clawapi-doctor', version: getEngineVersion() },
       },
     }) + '\n';
 

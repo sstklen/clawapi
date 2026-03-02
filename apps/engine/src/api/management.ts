@@ -48,7 +48,7 @@ import type { L0Manager } from '../l0/manager';
 import type { ClawDatabase } from '../storage/database';
 import type { ClawConfig } from '../core/config';
 import { getCrypto } from '../core/encryption';
-import { CLAWAPI_VERSION } from '@clawapi/protocol';
+import { getEngineVersion } from '../version';
 
 // ===== 型別定義 =====
 
@@ -133,7 +133,7 @@ export function createManagementRouter(deps: ManagementDeps): Hono {
 
     return c.json({
       status: 'ok',
-      version: CLAWAPI_VERSION,
+      version: getEngineVersion(),
       uptime_seconds: uptime,
       started_at: startedAt.toISOString(),
       port: config.server.port,

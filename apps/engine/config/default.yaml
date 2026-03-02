@@ -115,5 +115,5 @@ advanced:
     - null
   # 每個服務最多管理的 Key 數量
   max_keys_per_service: 5
-  # HTTP 請求的 User-Agent 字串
-  user_agent: 'ClawAPI/0.1.0'
+  # HTTP 請求的 User-Agent 字串（不設定時自動使用 ClawAPI/版號）
+  # user_agent: 'ClawAPI/0.1.5'

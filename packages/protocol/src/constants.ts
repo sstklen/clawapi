@@ -95,4 +95,4 @@ export const OFFLINE_PROBE_INTERVAL_MS = 300_000; // 5 分鐘探測
 export const OFFLINE_QUEUE_MAX_DAYS = 30;          // 佇列最多 30 天
 
 // === 版本 ===
-export const CLAWAPI_VERSION = '0.1.5';
+export const CLAWAPI_VERSION = '0.1.6';

@@ -2,7 +2,7 @@
 
 import { homedir } from 'node:os';
 import { join } from 'node:path';
-import { CLAWAPI_VERSION } from '@clawapi/protocol';
+import { getEngineVersion } from '../utils/version';
 import { color, print, blank, success, error, info, warn, jsonOutput, isJsonMode, output } from '../utils/output';
 import { t } from '../utils/i18n';
 import { confirm, ask } from '../utils/prompt';
@@ -11,15 +11,16 @@ import type { ParsedArgs } from '../index';
 // ===== version =====
 
 export async function versionCommand(_args: ParsedArgs): Promise<void> {
+  const version = getEngineVersion();
   const versionInfo = {
-    version: CLAWAPI_VERSION,
+    version,
     runtime: `Bun ${Bun.version}`,
     platform: `${process.platform} ${process.arch}`,
   };
 
   output(
     () => {
-      print(`ClawAPI v${CLAWAPI_VERSION}`);
+      print(`ClawAPI v${version}`);
       print(`Runtime: Bun ${Bun.version}`);
       print(`Platform: ${process.platform} ${process.arch}`);
     },

@@ -205,10 +205,15 @@ export function step(current: number, total: number, message: string): void {
   print(`${color.cyan(`[${current}/${total}]`)} ${message}`);
 }
 
-/** 印出檢查結果 */
-export function check(pass: boolean, label: string, detail?: string): void {
+/** 印出檢查結果（支援 PASS / WARN / FAIL 三種狀態） */
+export function check(pass: boolean, label: string, detail?: string, isWarn?: boolean): void {
   if (_json) return;
-  const icon = pass ? color.green('PASS') : color.red('FAIL');
+  let icon: string;
+  if (isWarn) {
+    icon = color.yellow('WARN');
+  } else {
+    icon = pass ? color.green('PASS') : color.red('FAIL');
+  }
   const suffix = detail ? ` ${color.dim(`(${detail})`)}` : '';
   print(`  ${icon}  ${label}${suffix}`);
 }

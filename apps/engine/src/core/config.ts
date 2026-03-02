@@ -6,7 +6,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { homedir } from 'node:os';
 import yaml from 'js-yaml';
-import { CLAWAPI_VERSION } from '@clawapi/protocol';
+import { getEngineVersion } from '../version';
 
 // ===== 型別定義 =====
 
@@ -163,7 +163,7 @@ export function getDefaultConfig(): ClawConfig {
       db_path: null,
       adapter_dirs: [null],
       max_keys_per_service: 5,
-      user_agent: `ClawAPI/${CLAWAPI_VERSION}`,
+      user_agent: `ClawAPI/${getEngineVersion()}`,
     },
   };
 }

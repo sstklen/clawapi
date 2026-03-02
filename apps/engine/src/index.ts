@@ -4,7 +4,7 @@
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { existsSync, mkdirSync } from 'node:fs';
-import { CLAWAPI_VERSION } from '@clawapi/protocol';
+import { getEngineVersion } from './version';
 import { loadConfig } from './core/config';
 import type { ClawConfig, LoadConfigOptions } from './core/config';
 import { CryptoModule } from './core/encryption';
@@ -161,7 +161,7 @@ export async function start(options?: EngineOptions): Promise<ClawEngineServer> 
         {
           baseUrl: config.vps.base_url,
           wsUrl: config.vps.websocket_url,
-          clientVersion: CLAWAPI_VERSION,
+          clientVersion: getEngineVersion(),
         },
         db
       );

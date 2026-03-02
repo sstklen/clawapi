@@ -22,7 +22,7 @@ import type { AidClient } from './sharing/mutual-aid';
 import type { TelemetryCollector } from './intelligence/telemetry';
 import type { L0Manager } from './l0/manager';
 import type { ClawConfig } from './core/config';
-import { CLAWAPI_VERSION } from '@clawapi/protocol';
+import { getEngineVersion } from './version';
 import { t } from './cli/utils/i18n';
 import { createUIRouter } from './ui/router';
 import type { UIDeps } from './ui/router';
@@ -264,7 +264,7 @@ export class ClawEngineServer implements EngineServer {
     app.get('/health', (c) => {
       return c.json({
         status: 'ok',
-        version: CLAWAPI_VERSION,
+        version: getEngineVersion(),
         uptime: process.uptime(),
         timestamp: new Date().toISOString(),
       });
@@ -273,7 +273,7 @@ export class ClawEngineServer implements EngineServer {
     app.get('/v1/health', (c) => {
       return c.json({
         status: 'ok',
-        version: CLAWAPI_VERSION,
+        version: getEngineVersion(),
         uptime: process.uptime(),
         timestamp: new Date().toISOString(),
       });
@@ -461,7 +461,7 @@ export class ClawEngineServer implements EngineServer {
     console.log('╔══════════════════════════════════════════╗');
     console.log(`║        ${t('server.engine_started').padEnd(34)}║`);
     console.log('╠══════════════════════════════════════════╣');
-    console.log(`║  ${t('server.label_version')}${CLAWAPI_VERSION.padEnd(34 - t('server.label_version').length)}║`);
+    console.log(`║  ${t('server.label_version')}${getEngineVersion().padEnd(34 - t('server.label_version').length)}║`);
     console.log(`║  ${t('server.label_address')}http://${this.host}:${this.port}`.padEnd(44) + '║');
     console.log(`║  ${t('server.label_token')}${tokenDisplay.padEnd(34 - t('server.label_token').length)}║`);
     console.log('╠══════════════════════════════════════════╣');

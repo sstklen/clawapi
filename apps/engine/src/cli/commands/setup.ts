@@ -9,7 +9,7 @@
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
-import { CLAWAPI_VERSION } from '@clawapi/protocol';
+import { getEngineVersion } from '../utils/version';
 import { color, print, blank, success, error, info, warn, step, box, jsonOutput, isJsonMode, output } from '../utils/output';
 import { t } from '../utils/i18n';
 import { ask, password, confirm, select } from '../utils/prompt';
@@ -49,7 +49,7 @@ export async function setupCommand(args: ParsedArgs): Promise<void> {
 
   blank();
   box([
-    `ClawAPI v${CLAWAPI_VERSION}`,
+    `ClawAPI v${getEngineVersion()}`,
     t('cmd.setup.first_run_title'),
   ], 'Welcome');
   blank();

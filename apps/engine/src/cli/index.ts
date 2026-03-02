@@ -3,7 +3,7 @@
 // 使用 process.argv 手動解析，不依賴外部 CLI 框架
 // 支援全域旗標：--plain, --json, --locale
 
-import { CLAWAPI_VERSION } from '@clawapi/protocol';
+import { getEngineVersion } from './utils/version';
 import { setOutputMode, print, color, blank, error } from './utils/output';
 import { initCliI18n, t } from './utils/i18n';
 
@@ -122,7 +122,7 @@ function isValueFlag(flag: string): boolean {
 
 function printHelp(): void {
   blank();
-  print(color.bold(`ClawAPI v${CLAWAPI_VERSION}`));
+  print(color.bold(`ClawAPI v${getEngineVersion()}`));
   print(color.dim(t('help.subtitle')));
   blank();
   print(color.bold(t('help.usage_title')));
@@ -182,6 +182,8 @@ function printHelp(): void {
   print(`  setup              ${t('help.misc.setup')}`);
   print(`  doctor             ${t('help.misc.doctor')}`);
   print(`  mcp                啟動 MCP Server（供 Claude Code 等 AI 工具使用）`);
+  print(`  mcp --install      將 ClawAPI 註冊到 Claude Code（可重複執行）`);
+  print(`  mcp --uninstall    從 Claude Code 移除 ClawAPI MCP 設定`);
   blank();
   print(color.bold(t('help.section.global_options')));
   print(`  --plain            ${t('help.options.plain')}`);

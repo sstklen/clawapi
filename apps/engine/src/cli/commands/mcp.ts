@@ -1,8 +1,10 @@
 // mcp 命令 — 啟動 ClawAPI MCP Server（stdio 模式）
 // 讓 Claude Code / Cursor 等 AI 工具透過 MCP 協議直接使用 ClawAPI
 //
-// 用法：clawapi mcp          # 啟動 stdio 模式
-//       clawapi mcp --test   # 快速驗證 MCP Server 功能
+// 用法：clawapi mcp              # 啟動 stdio 模式
+//       clawapi mcp --test       # 快速驗證 MCP Server 功能
+//       clawapi mcp --install    # 將 ClawAPI 註冊到 Claude Code 的 MCP 設定（idempotent）
+//       clawapi mcp --uninstall  # 從 Claude Code 移除 ClawAPI MCP 設定
 //
 // 行為：
 // 1. 靜默初始化引擎（不印啟動訊息到 stdout，因為 stdout 是 MCP 通道）
@@ -11,10 +13,131 @@
 
 import { homedir } from 'node:os';
 import { join } from 'node:path';
-import { existsSync, mkdirSync, copyFileSync } from 'node:fs';
+import { existsSync, mkdirSync, copyFileSync, readFileSync, writeFileSync, renameSync } from 'node:fs';
+import { success, error, info, warn, blank } from '../utils/output';
 import type { ParsedArgs } from '../index';
 
+// ===== MCP 設定管理（解決重裝殘留問題） =====
+
+/**
+ * 將 ClawAPI 註冊到 Claude Code 的 MCP 設定
+ * 直接操作 ~/.claude.json，不依賴 claude CLI
+ * Idempotent：已存在則更新，不存在則新增
+ */
+function mcpInstall(): void {
+  const claudeJsonPath = join(homedir(), '.claude.json');
+
+  let config: Record<string, unknown> = {};
+
+  if (existsSync(claudeJsonPath)) {
+    try {
+      const parsed = JSON.parse(readFileSync(claudeJsonPath, 'utf8'));
+      // 驗證是 JSON 物件（不是 array、string、null 等）
+      if (parsed === null || typeof parsed !== 'object' || Array.isArray(parsed)) {
+        error('~/.claude.json 不是 JSON 物件，拒絕修改（避免破壞設定檔）');
+        process.exit(1);
+      }
+      config = parsed as Record<string, unknown>;
+    } catch (e) {
+      if ((e as Error).message?.includes('JSON')) {
+        error('~/.claude.json 格式錯誤，無法解析');
+      } else {
+        error(`讀取 ~/.claude.json 失敗：${(e as Error).message}`);
+      }
+      process.exit(1);
+    }
+  }
+
+  // 確保 mcpServers 物件存在
+  if (!config.mcpServers || typeof config.mcpServers !== 'object' || Array.isArray(config.mcpServers)) {
+    config.mcpServers = {};
+  }
+
+  const servers = config.mcpServers as Record<string, unknown>;
+  const existed = 'clawapi' in servers;
+
+  // 寫入（或覆蓋）clawapi MCP 設定
+  servers.clawapi = {
+    type: 'stdio',
+    command: 'clawapi',
+    args: ['mcp'],
+  };
+
+  // 原子寫入：先寫 .tmp 再 rename，避免寫到一半斷電造成檔案損壞
+  const tmpPath = claudeJsonPath + '.tmp';
+  writeFileSync(tmpPath, JSON.stringify(config, null, 2) + '\n', 'utf8');
+  renameSync(tmpPath, claudeJsonPath);
+
+  blank();
+  if (existed) {
+    success('已更新 ClawAPI MCP 設定（~/.claude.json）');
+  } else {
+    success('已新增 ClawAPI MCP 設定（~/.claude.json）');
+  }
+  info('重啟 Claude Code 即生效');
+  blank();
+}
+
+/**
+ * 從 Claude Code 移除 ClawAPI MCP 設定
+ */
+function mcpUninstall(): void {
+  const claudeJsonPath = join(homedir(), '.claude.json');
+
+  if (!existsSync(claudeJsonPath)) {
+    info('~/.claude.json 不存在，無需清理');
+    return;
+  }
+
+  let config: Record<string, unknown>;
+  try {
+    const parsed = JSON.parse(readFileSync(claudeJsonPath, 'utf8'));
+    if (parsed === null || typeof parsed !== 'object' || Array.isArray(parsed)) {
+      error('~/.claude.json 不是 JSON 物件，拒絕修改');
+      process.exit(1);
+    }
+    config = parsed as Record<string, unknown>;
+  } catch (e) {
+    if ((e as Error).message?.includes('JSON')) {
+      error('~/.claude.json 格式錯誤，無法解析');
+    } else {
+      error(`讀取 ~/.claude.json 失敗：${(e as Error).message}`);
+    }
+    process.exit(1);
+  }
+
+  const servers = config.mcpServers as Record<string, unknown> | undefined;
+  if (!servers || !('clawapi' in servers)) {
+    info('ClawAPI MCP 設定不存在，無需清理');
+    return;
+  }
+
+  delete servers.clawapi;
+
+  // 原子寫入
+  const tmpPath = claudeJsonPath + '.tmp';
+  writeFileSync(tmpPath, JSON.stringify(config, null, 2) + '\n', 'utf8');
+  renameSync(tmpPath, claudeJsonPath);
+
+  blank();
+  success('已移除 ClawAPI MCP 設定（~/.claude.json）');
+  info('重啟 Claude Code 即生效');
+  blank();
+}
+
+// ===== 主命令 =====
+
 export async function mcpCommand(args: ParsedArgs): Promise<void> {
+  // --install / --uninstall：管理 MCP 設定，不啟動 Server
+  if (args.flags.install) {
+    mcpInstall();
+    return;
+  }
+  if (args.flags.uninstall) {
+    mcpUninstall();
+    return;
+  }
+
   const configDir = join(homedir(), '.clawapi');
 
   // 重要：MCP 模式下 stdout 是 JSON-RPC 通道，所有日誌必須走 stderr

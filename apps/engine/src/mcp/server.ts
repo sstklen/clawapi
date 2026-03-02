@@ -13,7 +13,7 @@
 //   }
 // }
 
-import { CLAWAPI_VERSION } from '@clawapi/protocol';
+import { getEngineVersion } from '../version';
 import type { Router } from '../core/router';
 import type { KeyPool } from '../core/key-pool';
 import type { AdapterConfig } from '../adapters/loader';
@@ -210,7 +210,7 @@ export class McpServer {
         },
         serverInfo: {
           name: 'clawapi',
-          version: CLAWAPI_VERSION,
+          version: getEngineVersion(),
         },
       },
     };

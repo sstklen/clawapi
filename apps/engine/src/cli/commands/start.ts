@@ -4,7 +4,7 @@
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { existsSync, writeFileSync, readFileSync } from 'node:fs';
-import { CLAWAPI_VERSION } from '@clawapi/protocol';
+import { getEngineVersion } from '../../version';
 import { color, print, blank, info, error, success, box, jsonOutput, isJsonMode } from '../utils/output';
 import { t } from '../utils/i18n';
 import type { ParsedArgs } from '../index';
@@ -142,7 +142,7 @@ async function startForeground(options: StartOptions): Promise<void> {
       status: 'starting',
       port,
       host,
-      version: CLAWAPI_VERSION,
+      version: getEngineVersion(),
       pid: process.pid,
       vps: !options.noVps,
     });
@@ -152,7 +152,7 @@ async function startForeground(options: StartOptions): Promise<void> {
   if (!isJsonMode()) {
     blank();
     box([
-      `ClawAPI Engine v${CLAWAPI_VERSION}`,
+      `ClawAPI Engine v${getEngineVersion()}`,
       t('cmd.start.starting'),
     ], 'ClawAPI');
     blank();

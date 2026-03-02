@@ -1,7 +1,7 @@
 // MCP Tool: status — 查看引擎狀態
 // 直接讀取引擎內部狀態
 
-import { CLAWAPI_VERSION } from '@clawapi/protocol';
+import { getEngineVersion } from '../../version';
 import type { KeyPool } from '../../core/key-pool';
 import type { GrowthEngine } from '../../growth/engine';
 import { PHASE_NAMES } from '../../growth/types';
@@ -61,7 +61,7 @@ export async function executeStatusTool(
   const lines = [
     `ClawAPI 引擎狀態`,
     `═══════════════════════`,
-    `版本：${CLAWAPI_VERSION}`,
+    `版本：${getEngineVersion()}`,
     `運行時間：${uptimeStr}`,
     ``,
     `Key 池：`,

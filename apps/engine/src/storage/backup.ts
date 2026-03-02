@@ -6,7 +6,8 @@ import { randomBytes, pbkdf2Sync, createCipheriv, createDecipheriv } from 'node:
 import { readFileSync, writeFileSync, statSync } from 'node:fs';
 import { resolve, relative } from 'node:path';
 import { homedir } from 'node:os';
-import { CLAWAPI_VERSION, BACKUP_MAX_SIZE_BYTES } from '@clawapi/protocol';
+import { BACKUP_MAX_SIZE_BYTES } from '@clawapi/protocol';
+import { getEngineVersion } from '../version';
 import type {
   BackupUploadHeaders,
   BackupUploadResponse,
@@ -171,7 +172,7 @@ export function encryptBackup(data: BackupData, password: string): BackupFile {
   return {
     version: 1,
     created_at: new Date().toISOString(),
-    engine_version: CLAWAPI_VERSION,
+    engine_version: getEngineVersion(),
     salt: salt.toString('hex'),
     iv: iv.toString('hex'),
     auth_tag: authTag.toString('hex'),

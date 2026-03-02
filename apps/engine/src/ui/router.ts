@@ -42,7 +42,7 @@ import type { TelemetryCollector } from '../intelligence/telemetry';
 import type { L0Manager } from '../l0/manager';
 import type { ClawDatabase } from '../storage/database';
 import type { ClawConfig } from '../core/config';
-import { CLAWAPI_VERSION } from '@clawapi/protocol';
+import { getEngineVersion } from '../version';
 
 import { DashboardPage } from './pages/dashboard';
 import type { DashboardData } from './pages/dashboard';
@@ -385,7 +385,7 @@ export function createUIRouter(deps: UIDeps): Hono {
     const uptime = Math.floor((Date.now() - startedAt.getTime()) / 1000);
 
     return renderPage(c, AboutPage({
-      version: CLAWAPI_VERSION,
+      version: getEngineVersion(),
       uptime,
       startedAt: startedAt.toISOString(),
     }));
