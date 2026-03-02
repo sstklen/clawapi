@@ -13,6 +13,7 @@ import type {
   KeyValidationResult,
   GoldKeySetupResult,
 } from '../../growth/types';
+import { SERVICE_RECOMMENDATIONS } from '../../growth/types';
 import { scanEnvVars, detectOllama, fullScan } from '../../growth/env-scanner';
 import { validateKey } from '../../growth/key-validator';
 import { setupAutoGoldKey, getExistingGoldKey } from '../../growth/gold-key-setup';
@@ -178,6 +179,12 @@ async function handleImport(
       }
     }
 
+    // 爽點二：主動推薦下一個服務
+    const recommendation = await getProactiveRecommendation(deps);
+    if (recommendation) {
+      text += `\n\n${recommendation}`;
+    }
+
     return {
       content: [
         {
@@ -277,16 +284,16 @@ async function handleGoldKey(
 }
 
 /**
- * auto — 全自動流程：掃描 → 驗證 → 列出待匯入清單 → 產生 Gold Key
+ * auto — 一鍵全自動：掃描 → 驗證 → 全部匯入 → 產生 Gold Key
  *
- * 注意：auto 不會直接匯入所有 Key，而是回傳清單讓 Claude 詢問用戶確認。
- * 只有用戶確認後，才會用 import action 逐一匯入。
+ * 爽點一的核心：用戶什麼都不用做，掃完直接全部搞定，
+ * 最後給一把 Gold Key 告訴用戶「以後用這把就好」。
  */
 async function handleAuto(
   deps: SetupWizardDeps
 ): Promise<{ content: Array<{ type: 'text'; text: string }> }> {
   const lines: string[] = [];
-  lines.push('🔍 自動設定引導');
+  lines.push('🔑 一鍵自動設定');
   lines.push('═══════════════════════\n');
 
   // Step 1: 掃描環境
@@ -306,27 +313,32 @@ async function handleAuto(
     lines.push('建議：');
     lines.push('  1. 到 https://console.groq.com/keys 免費申請 Groq Key');
     lines.push('  2. 到 https://aistudio.google.com/apikey 免費申請 Gemini Key');
-    lines.push('  3. 設定環境變數後再跑一次 setup_wizard(action=scan)');
+    lines.push('  3. 設定環境變數後再跑一次 setup_wizard(action=auto)');
+
+    // 如果已有管理的 Key 但沒新 Key，也推薦下一步
+    if (managedKeys.length > 0) {
+      const recommendation = await getProactiveRecommendation(deps);
+      if (recommendation) {
+        lines.push('');
+        lines.push(recommendation);
+      }
+    }
+
     return { content: [{ type: 'text', text: lines.join('\n') }] };
   }
 
   // Step 2: 驗證找到的 Key
+  const validKeys: Array<{ key: FoundKey; result: KeyValidationResult }> = [];
   if (newKeys.length > 0) {
-    lines.push(`  🔑 找到 ${newKeys.length} 把新 Key：\n`);
+    lines.push(`  🔑 找到 ${newKeys.length} 把新 Key\n`);
 
-    lines.push('【Step 2】驗證 Key...');
-    const validationResults: Array<{
-      key: FoundKey;
-      result: KeyValidationResult;
-    }> = [];
-
+    lines.push('【Step 2】驗證...');
     for (const foundKey of newKeys) {
       const result = await validateKey(
         foundKey.service_id,
         foundKey.key_value,
         deps.adapters
       );
-      validationResults.push({ key: foundKey, result });
 
       const status = result.valid ? '✅' : '❌';
       const models = result.models_available?.length
@@ -336,27 +348,26 @@ async function handleAuto(
       lines.push(
         `  ${status} ${foundKey.service_id} [${foundKey.key_preview}]${models}${error}`
       );
-    }
 
-    // 列出可匯入的清單
-    const validKeys = validationResults.filter(v => v.result.valid);
-    if (validKeys.length > 0) {
-      lines.push('');
-      lines.push(
-        `找到 ${validKeys.length} 把有效 Key，可以匯入：`
-      );
-      for (const { key } of validKeys) {
-        lines.push(
-          `  → ${key.service_id}（${key.env_var}）[${key.key_preview}]`
-        );
+      if (result.valid) {
+        validKeys.push({ key: foundKey, result });
       }
-      lines.push('');
-      lines.push(
-        '💡 請確認是否要匯入以上 Key。匯入後 ClawAPI 會幫你管理額度和路由。'
-      );
-      lines.push(
-        '   確認後使用 setup_wizard(action=import, service=xxx, key=xxx) 逐一匯入。'
-      );
+    }
+  }
+
+  // Step 3: 全部匯入（不問用戶，直接做）
+  const importedServices: string[] = [];
+  if (validKeys.length > 0) {
+    lines.push('');
+    lines.push('【Step 3】匯入...');
+    for (const { key } of validKeys) {
+      try {
+        const id = await deps.keyPool.addKey(key.service_id, key.key_value, 'king');
+        lines.push(`  ✅ ${key.service_id} 已匯入（ID: ${id}）`);
+        importedServices.push(key.service_id);
+      } catch (err) {
+        lines.push(`  ❌ ${key.service_id} 匯入失敗：${(err as Error).message}`);
+      }
     }
   }
 
@@ -373,26 +384,67 @@ async function handleAuto(
     }
   }
 
-  // Step 3: Gold Key（如果有 subKeyManager 且已有 key）
+  // Step 4: Gold Key（如果有 subKeyManager 且匯入了 Key 或已有 Key）
+  let goldKeyToken: string | null = null;
   if (deps.subKeyManager) {
     const existingKeys = await deps.keyPool.listKeys();
     if (existingKeys.length > 0) {
       lines.push('');
-      lines.push('【Step 3】Gold Key...');
+      lines.push('【Step 4】Gold Key...');
       try {
         const goldResult = await setupAutoGoldKey(
           deps.subKeyManager,
           deps.keyPool
         );
+        goldKeyToken = goldResult.token;
         const status = goldResult.is_new ? '🆕 新產生' : '✅ 已存在';
         lines.push(`  ${status} Gold Key: ${goldResult.token}`);
         lines.push(
           `  包含服務：${goldResult.services_included.join(', ')}`
         );
+        lines.push('');
         lines.push(`  ${goldResult.usage_example}`);
       } catch (err) {
         lines.push(`  ⚠️ Gold Key 產生失敗：${(err as Error).message}`);
       }
+    }
+  }
+
+  // === 結尾訊息 ===
+  lines.push('');
+  lines.push('═══════════════════════');
+
+  if (importedServices.length > 0 && goldKeyToken) {
+    // 最完美的情況：匯入了 Key + 有 Gold Key
+    lines.push(`🎉 搞定！已匯入 ${importedServices.length} 把 Key。`);
+    lines.push('以後只要用上面那把 Gold Key 就能通吃所有服務。');
+    lines.push('不用記每個 API Key，ClawAPI 幫你自動管理和路由。');
+  } else if (importedServices.length > 0) {
+    // 匯入了 Key 但沒有 Gold Key
+    lines.push(`🎉 搞定！已匯入 ${importedServices.length} 把 Key。`);
+    lines.push('ClawAPI 開始幫你自動管理額度和路由。');
+  } else if (managedKeys.length > 0) {
+    // 沒有新 Key 但已有管理的 Key
+    lines.push('✅ 你的 Key 都已在管理中，沒有新的需要匯入。');
+  }
+
+  // 爽點二：主動推薦下一個服務（不等用戶問）
+  const recommendation = await getProactiveRecommendation(deps);
+  if (recommendation) {
+    lines.push('');
+    lines.push(recommendation);
+  }
+
+  // 接力棒：偵測階段轉換
+  if (deps.db && deps.growthEngine && importedServices.length > 0) {
+    try {
+      const currentPhase = await deps.growthEngine.getPhase();
+      const transition = checkTransition(deps.db, currentPhase);
+      if (transition) {
+        lines.push(formatTransitionBanner(transition));
+      }
+    } catch {
+      // 接力棒失敗不影響主功能
     }
   }
 
@@ -461,4 +513,42 @@ function formatGoldKeyResult(result: GoldKeySetupResult): string {
   );
 
   return lines.join('\n');
+}
+
+// ===== 爽點二：主動推薦 =====
+
+/**
+ * 取得主動推薦訊息（爽點二）
+ * 根據用戶已有的服務，推薦最有價值的下一個免費/高CP服務
+ * 包含具體的 signup URL 和解鎖什麼
+ */
+export async function getProactiveRecommendation(
+  deps: { keyPool: KeyPool; growthEngine?: GrowthEngine }
+): Promise<string | null> {
+  try {
+    const keys = await deps.keyPool.listKeys();
+    const existingServices = new Set(keys.map(k => k.service_id));
+
+    // 從推薦清單中找用戶還沒有的，優先免費的
+    const nextService = SERVICE_RECOMMENDATIONS.find(
+      item => !existingServices.has(item.service_id) && item.effort !== 'paid'
+    );
+
+    if (!nextService) return null;
+
+    // 根據階段調整措辭
+    const phase = deps.growthEngine ? await deps.growthEngine.getPhase() : null;
+    const urgency = phase === 'awakening'
+      ? '解鎖智慧路由'
+      : phase === 'scaling'
+        ? '進入群體智慧'
+        : '加速成長';
+
+    return `💡 下一步：加個 ${nextService.title} → ${urgency}\n` +
+      `   ${nextService.reason}\n` +
+      `   解鎖：${nextService.unlocks}\n` +
+      `   申請：${nextService.signup_url}`;
+  } catch {
+    return null;
+  }
 }

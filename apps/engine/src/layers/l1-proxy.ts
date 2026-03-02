@@ -152,11 +152,23 @@ export class L1Proxy {
     }
 
     // === 所有 Key 都嘗試過，全部失敗 ===
+    let errorMsg = `服務 '${serviceId}' 所有 ${keysAttempted} 個 Key 均嘗試失敗，最後錯誤：${lastError}`;
+
+    // 爽點三：碰限額時建議加 Key
+    if (lastStatus === 429) {
+      const totalKeys = await this.keyPool.listKeys(serviceId);
+      const keyCount = totalKeys.length;
+      if (keyCount <= 2) {
+        errorMsg += `\n\n💡 ${serviceId} 只有 ${keyCount} 把 Key，加更多可以翻倍額度、減少限速。`;
+        errorMsg += `\n   使用 keys_add(service=${serviceId}, key=YOUR_KEY) 新增。`;
+      }
+    }
+
     return {
       success: false,
       serviceId,
       modelName,
-      error: `服務 '${serviceId}' 所有 ${keysAttempted} 個 Key 均嘗試失敗，最後錯誤：${lastError}`,
+      error: errorMsg,
       status: lastStatus,
       latency_ms: Date.now() - startTime,
       keysAttempted,

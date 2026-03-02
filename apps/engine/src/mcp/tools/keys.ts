@@ -5,6 +5,7 @@
 import type { KeyPool, KeyListItem } from '../../core/key-pool';
 import type { GrowthEngine } from '../../growth/engine';
 import type { ClawDatabase } from '../../storage/database';
+import { SERVICE_RECOMMENDATIONS } from '../../growth/types';
 import { checkTransition, getTeaser, formatTransitionBanner } from '../../growth/phase-relay';
 
 // ===== 型別定義 =====
@@ -141,6 +142,25 @@ export async function executeKeysAddTool(
         }
       } catch {
         // 接力棒失敗不影響主功能
+      }
+    }
+
+    // 爽點二：主動推薦下一個服務
+    if (relayDeps) {
+      try {
+        const allKeys = await keyPool.listKeys();
+        const existingServices = new Set(allKeys.map(k => k.service_id));
+        const nextService = SERVICE_RECOMMENDATIONS.find(
+          item => !existingServices.has(item.service_id) && item.effort !== 'paid'
+        );
+        if (nextService) {
+          text += `\n\n💡 下一步：加個 ${nextService.title}\n`;
+          text += `   ${nextService.reason}\n`;
+          text += `   解鎖：${nextService.unlocks}\n`;
+          text += `   申請：${nextService.signup_url}`;
+        }
+      } catch {
+        // 推薦失敗不影響主功能
       }
     }
 

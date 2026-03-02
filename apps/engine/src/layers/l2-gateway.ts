@@ -191,10 +191,29 @@ export class L2Gateway {
     }
 
     // === 全部嘗試完畢，均失敗 ===
+    let errorMsg = `所有可用服務均嘗試失敗（已嘗試：${tried.join('、')}），請稍後再試`;
+
+    // 爽點三：碰限額時建議加 Key（檢查各服務 Key 數量）
+    try {
+      const singleKeyServices: string[] = [];
+      for (const serviceId of tried) {
+        const serviceKeys = await this.keyPool.listKeys(serviceId);
+        if (serviceKeys.length === 1) {
+          singleKeyServices.push(serviceId);
+        }
+      }
+      if (singleKeyServices.length > 0) {
+        errorMsg += `\n\n💡 以下服務只有 1 把 Key，加第 2 把可以翻倍額度：${singleKeyServices.join('、')}`;
+        errorMsg += `\n   使用 keys_add(service=xxx, key=YOUR_KEY) 新增。`;
+      }
+    } catch {
+      // 查詢失敗不影響主流程
+    }
+
     return {
       success: false,
       strategy,
-      error: `所有可用服務均嘗試失敗（已嘗試：${tried.join('、')}），請稍後再試`,
+      error: errorMsg,
       latency_ms: Date.now() - startTime,
       tried,
     };
