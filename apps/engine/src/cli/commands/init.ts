@@ -194,21 +194,31 @@ export async function initCommand(args: ParsedArgs): Promise<void> {
     }
   }
 
-  // ── Step 5: 下一步指引 ──
+  // ── Step 5: 下一步指引（三國語言，讓全世界的龍蝦都知道下一步） ──
   blank();
   print('─'.repeat(50));
   blank();
-  success('初始化完成！');
+  success('初始化完成！ / Setup complete! / セットアップ完了！');
   blank();
   if (!noMcp) {
-    print(`  ${color.bold('👉 下一步：')}`);
-    print(`    1. ${color.bold('重啟 Claude Code')}（關掉終端再開，讓 MCP 生效）`);
-    print(`    2. 對 Claude 說：${color.cyan('「幫我搜一下今天的科技新聞」')}`);
-    print(`       ${color.dim('↑ DuckDuckGo 搜尋免費，裝完直接能用 🦆')}`);
+    print(`  ${color.bold('⚠️  重啟 Claude Code / Restart Claude Code / Claude Code を再起動')}`);
+    print(`  ${color.dim('     關掉終端再開新的 session，MCP 才會生效')}`);
+    print(`  ${color.dim('     Close terminal and open a new session for MCP to take effect')}`);
+    print(`  ${color.dim('     ターミナルを閉じて新しいセッションを開くと MCP が有効になります')}`);
+    blank();
+    print(`  ${color.bold('🦞 然後對 Claude 說 / Then tell Claude / Claude に伝えてください：')}`);
+    blank();
+    print(`     🇹🇼  ${color.cyan('「幫我設定 ClawAPI」')}`);
+    print(`     🇺🇸  ${color.cyan('"Set up ClawAPI for me"')}`);
+    print(`     🇯🇵  ${color.cyan('「ClawAPI をセットアップして」')}`);
+    blank();
+    print(`  ${color.dim('     ↑ 自動掃描你的 API Key → 驗證 → 一鍵匯入 → 搞定')}`);
+    print(`  ${color.dim('       Auto-scan your API keys → validate → import → done')}`);
+    print(`  ${color.dim('       API Key を自動スキャン → 検証 → インポート → 完了')}`);
   } else {
-    print(`  ${color.bold('👉 下一步：')}`);
-    print(`    1. ${color.bold('clawapi start')} 啟動引擎`);
-    print(`    2. 用你的 OpenAI SDK client 連 ${color.cyan('http://localhost:4141/v1')}`);
+    print(`  ${color.bold('👉 下一步 / Next / 次のステップ：')}`);
+    print(`    1. ${color.bold('clawapi start')}`);
+    print(`    2. OpenAI SDK → ${color.cyan('http://localhost:4141/v1')}`);
   }
   blank();
 }
