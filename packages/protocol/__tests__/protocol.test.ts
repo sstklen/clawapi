@@ -192,7 +192,7 @@ describe('常數值驗證', () => {
   });
 
   test('CLAWAPI_VERSION = 0.1.9', () => {
-    expect(CLAWAPI_VERSION).toBe('0.1.9');
+    expect(CLAWAPI_VERSION).toBe('0.1.10');
   });
 });
 
