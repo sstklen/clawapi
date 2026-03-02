@@ -74,9 +74,16 @@ export function checkTransition(
     // settings 表可能不存在，忽略
   }
 
-  // 第一次：初始化並回傳 null（不觸發慶祝）
+  // 第一次見面：初始化
   if (lastPhase === null) {
     savePhase(db, currentPhase);
+
+    // 特殊處理：如果當前已是 awakening（= 剛加完第一把 Key），
+    // 視為全新用戶從 onboarding 升級，觸發第一個爽點慶祝。
+    // 如果是更高階段（scaling/mastery），則是舊用戶更新版本，靜默初始化。
+    if (currentPhase === 'awakening') {
+      return buildCelebration('onboarding', 'awakening');
+    }
     return null;
   }
 
@@ -93,28 +100,33 @@ export function checkTransition(
 
   // 升級了！
   savePhase(db, currentPhase);
+  return buildCelebration(lastPhase, currentPhase);
+}
 
-  // 嘗試取得對應的慶祝訊息（i18n key: relay.celebrate.{from}_{to}）
-  const celebKey = `relay.celebrate.${lastPhase}_${currentPhase}`;
-  const hintKey = `relay.hint.${lastPhase}_${currentPhase}`;
+/**
+ * 產出慶祝訊息（從 i18n 取翻譯，無翻譯時走 generic）
+ */
+function buildCelebration(from: GrowthPhase, to: GrowthPhase): TransitionResult {
+  const celebKey = `relay.celebrate.${from}_${to}`;
+  const hintKey = `relay.hint.${from}_${to}`;
   const celebration = t(celebKey);
   const hint = t(hintKey);
 
   // 如果 i18n 有翻譯（key 不等於回傳值 = 有翻譯）
   if (celebration !== celebKey) {
     return {
-      from: lastPhase,
-      to: currentPhase,
+      from,
+      to,
       celebration,
       next_hint: hint !== hintKey ? hint : 'growth_guide(view=overview)',
     };
   }
 
   // 跳級或 i18n 沒有對應的翻譯，用通用訊息
-  const phaseName = t(`relay.phase.${currentPhase}`);
+  const phaseName = t(`relay.phase.${to}`);
   return {
-    from: lastPhase,
-    to: currentPhase,
+    from,
+    to,
     celebration: t('relay.celebrate.generic', { phase: phaseName }),
     next_hint: t('relay.hint.generic'),
   };

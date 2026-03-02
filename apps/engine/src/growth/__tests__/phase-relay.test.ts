@@ -65,12 +65,39 @@ function createMockKeyPool(services: string[]): KeyPool {
 // ===== checkTransition 測試 =====
 
 describe('checkTransition', () => {
-  it('第一次呼叫（無歷史紀錄）應初始化並回傳 null', () => {
+  it('全新用戶還沒加 Key（onboarding）應初始化並回傳 null', () => {
     const db = createMockDb();
     const result = checkTransition(db, 'onboarding');
     expect(result).toBeNull();
     // 但應該已存入 settings
     expect(db._store.get('growth_last_phase')).toBe('onboarding');
+  });
+
+  it('全新用戶加了第一把 Key（awakening）應觸發慶祝', () => {
+    // 模擬：settings 表沒有紀錄，但 phase 已是 awakening（剛加完第一把 Key）
+    const db = createMockDb();
+    const result = checkTransition(db, 'awakening');
+    expect(result).not.toBeNull();
+    expect(result!.from).toBe('onboarding');
+    expect(result!.to).toBe('awakening');
+    expect(result!.celebration.length).toBeGreaterThan(0);
+    expect(result!.next_hint.length).toBeGreaterThan(0);
+    // 存儲應更新為 awakening
+    expect(db._store.get('growth_last_phase')).toBe('awakening');
+  });
+
+  it('舊用戶更新版本（已有多把 Key = scaling）應靜默初始化', () => {
+    const db = createMockDb();
+    const result = checkTransition(db, 'scaling');
+    expect(result).toBeNull();
+    expect(db._store.get('growth_last_phase')).toBe('scaling');
+  });
+
+  it('舊用戶更新版本（已是 mastery）應靜默初始化', () => {
+    const db = createMockDb();
+    const result = checkTransition(db, 'mastery');
+    expect(result).toBeNull();
+    expect(db._store.get('growth_last_phase')).toBe('mastery');
   });
 
   it('階段未變化應回傳 null', () => {
@@ -153,14 +180,36 @@ describe('checkTransition', () => {
     expect(db._store.get('growth_last_phase')).toBe('scaling');
   });
 
-  it('db 壞掉不應爆炸', () => {
+  it('db 壞掉不應爆炸（onboarding 階段）', () => {
     const db = {
       query: () => { throw new Error('DB 壞了'); },
       run: () => { throw new Error('DB 壞了'); },
     } as unknown as ClawDatabase;
-    // 讀取失敗 = 沒有歷史 = 初始化 = null（寫入也會靜默失敗）
-    const result = checkTransition(db, 'awakening');
+    // 讀取失敗 + onboarding = 靜默初始化
+    const result = checkTransition(db, 'onboarding');
     expect(result).toBeNull();
+  });
+
+  it('db 壞掉不應爆炸（高階段靜默初始化）', () => {
+    const db = {
+      query: () => { throw new Error('DB 壞了'); },
+      run: () => { throw new Error('DB 壞了'); },
+    } as unknown as ClawDatabase;
+    // 讀取失敗 + scaling = 靜默初始化（舊用戶）
+    const result = checkTransition(db, 'scaling');
+    expect(result).toBeNull();
+  });
+
+  it('db 壞掉 + awakening 仍觸發慶祝（不爆炸）', () => {
+    const db = {
+      query: () => { throw new Error('DB 壞了'); },
+      run: () => { throw new Error('DB 壞了'); },
+    } as unknown as ClawDatabase;
+    // 讀取失敗 + awakening = 全新用戶第一把 Key，照慶祝
+    const result = checkTransition(db, 'awakening');
+    expect(result).not.toBeNull();
+    expect(result!.from).toBe('onboarding');
+    expect(result!.to).toBe('awakening');
   });
 });
 
