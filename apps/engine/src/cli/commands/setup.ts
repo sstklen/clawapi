@@ -13,6 +13,7 @@ import { getEngineVersion } from '../utils/version';
 import { color, print, blank, success, error, info, warn, step, box, jsonOutput, isJsonMode, output } from '../utils/output';
 import { t } from '../utils/i18n';
 import { ask, password, confirm, select } from '../utils/prompt';
+import { mcpInstall, type McpInstallResult } from './mcp';
 import type { ParsedArgs } from '../index';
 
 // ===== 常數 =====
@@ -32,19 +33,52 @@ export async function setupCommand(args: ParsedArgs): Promise<void> {
     const configYaml = generateConfig('en', true);
     writeFileSync(CONFIG_PATH, configYaml, 'utf8');
 
+    // 自動註冊 MCP（idempotent，quiet 避免重複訊息）
+    // config.yaml 已在上面寫入，mcpInstall 的 ensureConfigExists 會偵測到並跳過
+    const mcpResult = mcpInstall({ quiet: true });
+
     if (!isJsonMode()) {
       success('Config created with defaults at ' + CONFIG_PATH);
-      print(`  Next: ${color.bold('clawapi start')} or ${color.bold('clawapi mcp')}`);
+      if (mcpResult.ok) {
+        info('MCP 已自動註冊到 Claude Code（重啟 Claude Code 即生效）');
+      } else {
+        warn(`MCP 自動註冊失敗：${mcpResult.error}（可稍後用 clawapi mcp --install 手動註冊）`);
+      }
+      print(`  Next: ${color.bold('clawapi start')} or restart Claude Code`);
     } else {
-      jsonOutput({ success: true, config_path: CONFIG_PATH });
+      jsonOutput({ success: true, config_path: CONFIG_PATH, mcp_installed: mcpResult.ok });
     }
     return;
   }
 
-  // JSON 模式不支援互動式
+  // JSON 模式不支援互動式（必須在非 TTY 偵測之前，否則 --json 會走到自動 defaults）
   if (isJsonMode()) {
     jsonOutput({ error: 'not_supported', message: t('cmd.setup.no_json_mode') });
     process.exit(1);
+  }
+
+  // 非 TTY 偵測：CI / AI Agent 環境自動走 --defaults（P3 修復）
+  if (!process.stdin.isTTY) {
+    info('偵測到非互動環境（CI / AI Agent），自動使用預設設定...');
+    blank();
+
+    if (!existsSync(CONFIG_DIR)) {
+      mkdirSync(CONFIG_DIR, { recursive: true });
+    }
+    const configYaml = generateConfig('en', true);
+    writeFileSync(CONFIG_PATH, configYaml, 'utf8');
+
+    // 自動註冊 MCP（quiet 模式，setup 自己印訊息）
+    const mcpResult = mcpInstall({ quiet: true });
+
+    success('Config created with defaults at ' + CONFIG_PATH);
+    if (mcpResult.ok) {
+      info('MCP 已自動註冊到 Claude Code');
+    } else {
+      warn(`MCP 自動註冊失敗：${mcpResult.error}（可稍後用 clawapi mcp --install 手動註冊）`);
+    }
+    print(`  Next: restart Claude Code`);
+    return;
   }
 
   blank();
@@ -170,12 +204,20 @@ export async function setupCommand(args: ParsedArgs): Promise<void> {
   const configYaml = generateConfig(locale, enableVps);
   writeFileSync(CONFIG_PATH, configYaml, 'utf8');
 
+  // 自動註冊 MCP 到 Claude Code（quiet 模式，在 box 裡顯示結果）
+  const mcpResult = mcpInstall({ quiet: true });
+
+  const mcpLine = mcpResult.ok
+    ? '✅ MCP 已自動註冊（重啟 Claude Code 即生效）'
+    : '⚠️ MCP 註冊失敗，請稍後跑 clawapi mcp --install';
+
   blank();
   box([
     t('cmd.setup.complete'),
     '',
     t('cmd.setup.hint_start', { cmd: color.bold('clawapi start') }),
     t('cmd.setup.hint_doctor', { cmd: color.bold('clawapi doctor') }),
+    mcpLine,
     t('cmd.setup.hint_help', { cmd: color.bold('clawapi --help') }),
   ], 'All Done');
   blank();

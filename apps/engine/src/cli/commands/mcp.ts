@@ -17,36 +17,103 @@ import { existsSync, mkdirSync, copyFileSync, readFileSync, writeFileSync, renam
 import { success, error, info, warn, blank } from '../utils/output';
 import type { ParsedArgs } from '../index';
 
+// ===== 自動初始化 =====
+
+const CONFIG_DIR = join(homedir(), '.clawapi');
+const CONFIG_PATH = join(CONFIG_DIR, 'config.yaml');
+
+/**
+ * 確保 ~/.clawapi/config.yaml 存在
+ * 如果不存在，自動從套件內建的 default.yaml 複製一份
+ * @returns true 表示新建了 config，false 表示已存在
+ */
+function ensureConfigExists(): boolean {
+  if (existsSync(CONFIG_PATH)) return false;
+
+  if (!existsSync(CONFIG_DIR)) {
+    mkdirSync(CONFIG_DIR, { recursive: true });
+  }
+
+  // 從套件內建的 default.yaml 複製
+  const defaultYaml = join(import.meta.dir, '..', '..', 'config', 'default.yaml');
+  if (existsSync(defaultYaml)) {
+    copyFileSync(defaultYaml, CONFIG_PATH);
+    return true;
+  }
+
+  // fallback：寫一份最小 config
+  writeFileSync(CONFIG_PATH, `# ClawAPI 設定檔（自動產生）
+server:
+  port: 4141
+  host: 127.0.0.1
+  auto_port: true
+routing:
+  default_strategy: smart
+  failover_enabled: true
+ui:
+  locale: zh-TW
+  theme: system
+`, 'utf8');
+  return true;
+}
+
 // ===== MCP 設定管理（解決重裝殘留問題） =====
+
+/** mcpInstall 的回傳結果 */
+export interface McpInstallResult {
+  ok: boolean;
+  error?: string;
+  configCreated?: boolean;
+  mcpUpdated?: boolean;
+}
+
+/**
+ * 讀取並驗證 ~/.claude.json
+ * @returns 解析後的物件，或 null（檔案不存在），或 Error（格式錯誤）
+ */
+function readClaudeJson(claudeJsonPath: string): Record<string, unknown> | null | Error {
+  if (!existsSync(claudeJsonPath)) return null;
+
+  try {
+    const parsed = JSON.parse(readFileSync(claudeJsonPath, 'utf8'));
+    if (parsed === null || typeof parsed !== 'object' || Array.isArray(parsed)) {
+      return new Error('~/.claude.json 不是 JSON 物件，拒絕修改（避免破壞設定檔）');
+    }
+    return parsed as Record<string, unknown>;
+  } catch (e) {
+    const msg = (e as Error).message?.includes('JSON')
+      ? '~/.claude.json 格式錯誤，無法解析'
+      : `讀取 ~/.claude.json 失敗：${(e as Error).message}`;
+    return new Error(msg);
+  }
+}
 
 /**
  * 將 ClawAPI 註冊到 Claude Code 的 MCP 設定
  * 直接操作 ~/.claude.json，不依賴 claude CLI
  * Idempotent：已存在則更新，不存在則新增
+ *
+ * @param options.quiet 靜默模式，被其他命令呼叫時不印重複訊息
+ * @returns 結果物件，由呼叫者決定如何處理錯誤（不再 process.exit）
  */
-function mcpInstall(): void {
+export function mcpInstall(options?: { quiet?: boolean }): McpInstallResult {
+  const quiet = options?.quiet ?? false;
+
+  // 自動初始化：確保 config.yaml 存在（用戶不用先跑 setup）
+  const configCreated = ensureConfigExists();
+  if (configCreated && !quiet) {
+    success('已自動建立設定檔（~/.clawapi/config.yaml）');
+  }
+
   const claudeJsonPath = join(homedir(), '.claude.json');
 
-  let config: Record<string, unknown> = {};
-
-  if (existsSync(claudeJsonPath)) {
-    try {
-      const parsed = JSON.parse(readFileSync(claudeJsonPath, 'utf8'));
-      // 驗證是 JSON 物件（不是 array、string、null 等）
-      if (parsed === null || typeof parsed !== 'object' || Array.isArray(parsed)) {
-        error('~/.claude.json 不是 JSON 物件，拒絕修改（避免破壞設定檔）');
-        process.exit(1);
-      }
-      config = parsed as Record<string, unknown>;
-    } catch (e) {
-      if ((e as Error).message?.includes('JSON')) {
-        error('~/.claude.json 格式錯誤，無法解析');
-      } else {
-        error(`讀取 ~/.claude.json 失敗：${(e as Error).message}`);
-      }
-      process.exit(1);
-    }
+  const readResult = readClaudeJson(claudeJsonPath);
+  if (readResult instanceof Error) {
+    error(readResult.message);
+    return { ok: false, error: readResult.message, configCreated };
   }
+
+  let config: Record<string, unknown> = readResult ?? {};
 
   // 確保 mcpServers 物件存在
   if (!config.mcpServers || typeof config.mcpServers !== 'object' || Array.isArray(config.mcpServers)) {
@@ -64,18 +131,22 @@ function mcpInstall(): void {
   };
 
   // 原子寫入：先寫 .tmp 再 rename，避免寫到一半斷電造成檔案損壞
-  const tmpPath = claudeJsonPath + '.tmp';
+  const tmpPath = claudeJsonPath + `.tmp.${process.pid}`;
   writeFileSync(tmpPath, JSON.stringify(config, null, 2) + '\n', 'utf8');
   renameSync(tmpPath, claudeJsonPath);
 
-  blank();
-  if (existed) {
-    success('已更新 ClawAPI MCP 設定（~/.claude.json）');
-  } else {
-    success('已新增 ClawAPI MCP 設定（~/.claude.json）');
+  if (!quiet) {
+    blank();
+    if (existed) {
+      success('已更新 ClawAPI MCP 設定（~/.claude.json）');
+    } else {
+      success('已新增 ClawAPI MCP 設定（~/.claude.json）');
+    }
+    info('重啟 Claude Code 即生效');
+    blank();
   }
-  info('重啟 Claude Code 即生效');
-  blank();
+
+  return { ok: true, configCreated, mcpUpdated: !existed };
 }
 
 /**
@@ -84,28 +155,17 @@ function mcpInstall(): void {
 function mcpUninstall(): void {
   const claudeJsonPath = join(homedir(), '.claude.json');
 
-  if (!existsSync(claudeJsonPath)) {
+  const readResult = readClaudeJson(claudeJsonPath);
+  if (readResult === null) {
     info('~/.claude.json 不存在，無需清理');
     return;
   }
-
-  let config: Record<string, unknown>;
-  try {
-    const parsed = JSON.parse(readFileSync(claudeJsonPath, 'utf8'));
-    if (parsed === null || typeof parsed !== 'object' || Array.isArray(parsed)) {
-      error('~/.claude.json 不是 JSON 物件，拒絕修改');
-      process.exit(1);
-    }
-    config = parsed as Record<string, unknown>;
-  } catch (e) {
-    if ((e as Error).message?.includes('JSON')) {
-      error('~/.claude.json 格式錯誤，無法解析');
-    } else {
-      error(`讀取 ~/.claude.json 失敗：${(e as Error).message}`);
-    }
+  if (readResult instanceof Error) {
+    error(readResult.message);
     process.exit(1);
   }
 
+  const config = readResult;
   const servers = config.mcpServers as Record<string, unknown> | undefined;
   if (!servers || !('clawapi' in servers)) {
     info('ClawAPI MCP 設定不存在，無需清理');
@@ -115,7 +175,7 @@ function mcpUninstall(): void {
   delete servers.clawapi;
 
   // 原子寫入
-  const tmpPath = claudeJsonPath + '.tmp';
+  const tmpPath = claudeJsonPath + `.tmp.${process.pid}`;
   writeFileSync(tmpPath, JSON.stringify(config, null, 2) + '\n', 'utf8');
   renameSync(tmpPath, claudeJsonPath);
 
@@ -130,15 +190,15 @@ function mcpUninstall(): void {
 export async function mcpCommand(args: ParsedArgs): Promise<void> {
   // --install / --uninstall：管理 MCP 設定，不啟動 Server
   if (args.flags.install) {
-    mcpInstall();
-    return;
+    const result = mcpInstall();
+    process.exit(result.ok ? 0 : 1);
   }
   if (args.flags.uninstall) {
     mcpUninstall();
     return;
   }
 
-  const configDir = join(homedir(), '.clawapi');
+  const configDir = CONFIG_DIR;
 
   // 重要：MCP 模式下 stdout 是 JSON-RPC 通道，所有日誌必須走 stderr
   // 劫持 console.log/warn/error 全部導向 stderr，防止引擎初始化時的 console.log 污染通道
@@ -152,22 +212,10 @@ export async function mcpCommand(args: ParsedArgs): Promise<void> {
   const log = (msg: string) => process.stderr.write(`[ClawAPI MCP] ${msg}\n`);
 
   try {
-    // 自動初始化：不需要先跑 setup，MCP 模式自動建立必要目錄和設定
-    if (!existsSync(configDir)) {
-      mkdirSync(configDir, { recursive: true });
-      log(`已建立資料目錄 ${configDir}`);
-    }
-
-    const configPath = join(configDir, 'config.yaml');
-    if (!existsSync(configPath)) {
-      // 從套件內建的 default.yaml 複製一份到使用者目錄
-      const defaultYaml = join(import.meta.dir, '..', '..', 'config', 'default.yaml');
-      if (existsSync(defaultYaml)) {
-        copyFileSync(defaultYaml, configPath);
-        log('已自動建立 config.yaml（使用預設值）');
-      } else {
-        log('找不到 default.yaml，使用程式內建預設值');
-      }
+    // 自動初始化：確保 config 目錄和檔案存在（共用 ensureConfigExists）
+    const configCreated = ensureConfigExists();
+    if (configCreated) {
+      log('已自動建立 config.yaml（使用預設值）');
     }
 
     log('初始化引擎...');
