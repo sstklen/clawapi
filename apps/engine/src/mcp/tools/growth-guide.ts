@@ -12,6 +12,8 @@ import type {
 import { PHASE_NAMES, PHASE_DESCRIPTIONS } from '../../growth/types';
 import type { GrowthEngine, IntelligenceReport, UsageInsight } from '../../growth/engine';
 import type { CostEngine, CostReport } from '../../growth/cost-engine';
+import type { KeyPool } from '../../core/key-pool';
+import { getTeaser } from '../../growth/phase-relay';
 
 // ===== 型別定義 =====
 
@@ -54,7 +56,8 @@ export const growthGuideToolSchema = {
 export async function executeGrowthGuideTool(
   input: GrowthGuideToolInput,
   growthEngine?: GrowthEngine,
-  costEngine?: CostEngine
+  costEngine?: CostEngine,
+  keyPool?: KeyPool
 ): Promise<{ content: Array<{ type: 'text'; text: string }> }> {
   if (!growthEngine) {
     return {
@@ -72,7 +75,7 @@ export async function executeGrowthGuideTool(
   try {
     switch (view) {
       case 'overview':
-        return await handleOverview(growthEngine);
+        return await handleOverview(growthEngine, keyPool);
 
       case 'recommend':
         return await handleRecommend(growthEngine, input.route ?? 'balanced');
@@ -114,7 +117,8 @@ export async function executeGrowthGuideTool(
  * overview — 成長總覽：階段 + L1-L4 進度條 + 精選推薦
  */
 async function handleOverview(
-  engine: GrowthEngine
+  engine: GrowthEngine,
+  keyPool?: KeyPool
 ): Promise<{ content: Array<{ type: 'text'; text: string }> }> {
   const state = await engine.getGrowthState();
   const lines: string[] = [];
@@ -126,6 +130,19 @@ async function handleOverview(
     `階段：${PHASE_NAMES[state.phase]}（${state.phase}）`
   );
   lines.push(`說明：${PHASE_DESCRIPTIONS[state.phase]}`);
+
+  // 接力棒 teaser：離下一階段還差多少
+  if (keyPool) {
+    try {
+      const teaser = await getTeaser(state.phase, keyPool);
+      if (teaser) {
+        lines.push(teaser);
+      }
+    } catch {
+      // teaser 失敗不影響 overview
+    }
+  }
+
   lines.push('');
 
   // L0-L4 進度條

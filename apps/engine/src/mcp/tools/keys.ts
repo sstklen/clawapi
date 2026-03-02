@@ -1,7 +1,11 @@
 // MCP Tool: keys_list + keys_add — API Key 池管理
 // 直接呼叫 KeyPool 模組
+// 加 Key 後自動偵測成長階段轉換，注入接力訊息
 
 import type { KeyPool, KeyListItem } from '../../core/key-pool';
+import type { GrowthEngine } from '../../growth/engine';
+import type { ClawDatabase } from '../../storage/database';
+import { checkTransition, getTeaser, formatTransitionBanner } from '../../growth/phase-relay';
 
 // ===== 型別定義 =====
 
@@ -98,21 +102,52 @@ export async function executeKeysListTool(
   };
 }
 
+/** keys_add 的接力棒依賴（可選，向後相容） */
+export interface KeysAddRelayDeps {
+  db: ClawDatabase;
+  growthEngine: GrowthEngine;
+}
+
 /**
  * 執行 keys_add tool
+ * 成功後自動偵測成長階段轉換，注入慶祝或 teaser 訊息
  */
 export async function executeKeysAddTool(
   input: KeysAddToolInput,
-  keyPool: KeyPool
+  keyPool: KeyPool,
+  relayDeps?: KeysAddRelayDeps
 ): Promise<{ content: Array<{ type: 'text'; text: string }> }> {
   const poolType = input.pool ?? 'king';
 
   try {
     const id = await keyPool.addKey(input.service, input.key, poolType, input.label);
+    let text = `已新增 API Key（ID: ${id}）到 ${input.service} 的 ${poolType} 池。`;
+
+    // 接力棒：偵測階段轉換
+    if (relayDeps) {
+      try {
+        const currentPhase = await relayDeps.growthEngine.getPhase();
+        const transition = checkTransition(relayDeps.db, currentPhase);
+
+        if (transition) {
+          // 升級了！加慶祝 banner
+          text += formatTransitionBanner(transition);
+        } else {
+          // 沒升級，加 teaser（離下一階段還差多少）
+          const teaser = await getTeaser(currentPhase, keyPool);
+          if (teaser) {
+            text += `\n\n${teaser}`;
+          }
+        }
+      } catch {
+        // 接力棒失敗不影響主功能
+      }
+    }
+
     return {
       content: [{
         type: 'text',
-        text: `已新增 API Key（ID: ${id}）到 ${input.service} 的 ${poolType} 池。`,
+        text,
       }],
     };
   } catch (err) {

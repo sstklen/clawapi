@@ -132,6 +132,11 @@ export class ClawEngineServer implements EngineServer {
     return this.adapters;
   }
 
+  /** 取得 Database（接力棒系統需要） */
+  getDatabase(): ClawDatabase {
+    return this.db;
+  }
+
   // ===== 公開方法 =====
 
   /** 啟動 Server */

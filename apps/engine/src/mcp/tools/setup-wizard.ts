@@ -5,6 +5,8 @@
 import type { KeyPool } from '../../core/key-pool';
 import type { AdapterConfig } from '../../adapters/loader';
 import type { SubKeyManager } from '../../sharing/sub-key';
+import type { GrowthEngine } from '../../growth/engine';
+import type { ClawDatabase } from '../../storage/database';
 import type {
   EnvScanResult,
   FoundKey,
@@ -14,6 +16,7 @@ import type {
 import { scanEnvVars, detectOllama, fullScan } from '../../growth/env-scanner';
 import { validateKey } from '../../growth/key-validator';
 import { setupAutoGoldKey, getExistingGoldKey } from '../../growth/gold-key-setup';
+import { checkTransition, getTeaser, formatTransitionBanner } from '../../growth/phase-relay';
 
 // ===== 型別定義 =====
 
@@ -32,6 +35,10 @@ export interface SetupWizardDeps {
   keyPool: KeyPool;
   adapters: Map<string, AdapterConfig>;
   subKeyManager?: SubKeyManager;
+  /** 資料庫（可選，接力棒系統用） */
+  db?: ClawDatabase;
+  /** 成長引擎（可選，接力棒系統用） */
+  growthEngine?: GrowthEngine;
 }
 
 /** setup_wizard tool 的 JSON Schema */
@@ -151,11 +158,31 @@ async function handleImport(
       ? `\n可用模型：${validation.models_available.slice(0, 5).join(', ')}${validation.models_available.length > 5 ? '...' : ''}`
       : '';
 
+    let text = `✅ 已匯入 ${input.service} 的 API Key（ID: ${id}）${modelInfo}\n\nKey 已加入 King 池，可開始使用。`;
+
+    // 接力棒：偵測階段轉換
+    if (deps.db && deps.growthEngine) {
+      try {
+        const currentPhase = await deps.growthEngine.getPhase();
+        const transition = checkTransition(deps.db, currentPhase);
+        if (transition) {
+          text += formatTransitionBanner(transition);
+        } else {
+          const teaser = await getTeaser(currentPhase, deps.keyPool);
+          if (teaser) {
+            text += `\n\n${teaser}`;
+          }
+        }
+      } catch {
+        // 接力棒失敗不影響主功能
+      }
+    }
+
     return {
       content: [
         {
           type: 'text',
-          text: `✅ 已匯入 ${input.service} 的 API Key（ID: ${id}）${modelInfo}\n\nKey 已加入 King 池，可開始使用。`,
+          text,
         },
       ],
     };

@@ -81,6 +81,8 @@ export interface McpServerDeps {
   subKeyManager?: SubKeyManager;
   /** 成本引擎（可選，成本分析用） */
   costEngine?: CostEngine;
+  /** 資料庫（可選，接力棒系統用） */
+  db?: import('../storage/database').ClawDatabase;
 }
 
 // ===== MCP Server 類別 =====
@@ -310,7 +312,13 @@ export class McpServer {
         return executeKeysListTool(args as unknown as KeysListToolInput, this.deps.keyPool);
 
       case 'keys_add':
-        return executeKeysAddTool(args as unknown as KeysAddToolInput, this.deps.keyPool);
+        return executeKeysAddTool(
+          args as unknown as KeysAddToolInput,
+          this.deps.keyPool,
+          this.deps.growthEngine && this.deps.db
+            ? { db: this.deps.db, growthEngine: this.deps.growthEngine }
+            : undefined
+        );
 
       case 'status':
         return executeStatusTool({}, this.deps.statusDeps);
@@ -323,13 +331,16 @@ export class McpServer {
           keyPool: this.deps.keyPool,
           adapters: this.deps.adapters,
           subKeyManager: this.deps.subKeyManager,
+          db: this.deps.db,
+          growthEngine: this.deps.growthEngine,
         });
 
       case 'growth_guide':
         return executeGrowthGuideTool(
           args as unknown as GrowthGuideToolInput,
           this.deps.growthEngine,
-          this.deps.costEngine
+          this.deps.costEngine,
+          this.deps.keyPool
         );
 
       default:

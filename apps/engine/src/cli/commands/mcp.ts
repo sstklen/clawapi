@@ -236,12 +236,19 @@ export async function mcpCommand(args: ParsedArgs): Promise<void> {
     const keyPool = server.getKeyPool();
     const adapters = server.getAdapters();
 
+    // 取得 DB 和成長引擎（接力棒系統需要）
+    const db = server.getDatabase();
+    const { GrowthEngine } = await import('../../growth/engine');
+    const growthEngine = new GrowthEngine(keyPool, adapters, db);
+
     // 建立 MCP Server
     const { createMcpServer } = await import('../../mcp/server');
     const mcpServer = createMcpServer({
       router,
       keyPool,
       adapters,
+      db,
+      growthEngine,
       statusDeps: {
         keyPool,
         startedAt: new Date(),

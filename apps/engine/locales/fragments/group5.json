@@ -1,0 +1,87 @@
+{
+  "relay.phase.onboarding": {
+    "zh-TW": "秒速上手",
+    "en": "Quick Start",
+    "ja": "クイックスタート"
+  },
+  "relay.phase.awakening": {
+    "zh-TW": "路由覺醒",
+    "en": "Routing Awakening",
+    "ja": "ルーティング覚醒"
+  },
+  "relay.phase.scaling": {
+    "zh-TW": "額度擴張",
+    "en": "Quota Scaling",
+    "ja": "クォータ拡張"
+  },
+  "relay.phase.mastery": {
+    "zh-TW": "群體智慧",
+    "en": "Collective Intelligence",
+    "ja": "集合知性"
+  },
+  "relay.celebrate.onboarding_awakening": {
+    "zh-TW": "🎉 路由覺醒！\n你加了第一把 Key，ClawAPI 已就位。",
+    "en": "🎉 Routing Awakening!\nYour first key is in — ClawAPI is ready to roll.",
+    "ja": "🎉 ルーティング覚醒！\n最初のキーが追加されました。ClawAPI の準備完了。"
+  },
+  "relay.hint.onboarding_awakening": {
+    "zh-TW": "加更多 provider，解鎖智慧路由 → growth_guide(view=recommend)",
+    "en": "Add more providers to unlock smart routing → growth_guide(view=recommend)",
+    "ja": "プロバイダーを追加してスマートルーティングを解放 → growth_guide(view=recommend)"
+  },
+  "relay.celebrate.awakening_scaling": {
+    "zh-TW": "🚀 額度擴張！\n多服務 + 多 Key = 額度翻倍 + 自動容錯。",
+    "en": "🚀 Quota Scaling!\nMultiple services + multiple keys = doubled quota + auto-failover.",
+    "ja": "🚀 クォータ拡張！\n複数サービス + 複数キー = クォータ倍増 + 自動フェイルオーバー。"
+  },
+  "relay.hint.awakening_scaling": {
+    "zh-TW": "同一個服務加第 2 把 Key，或繼續擴展 → keys_add",
+    "en": "Add a 2nd key for the same service, or expand further → keys_add",
+    "ja": "同じサービスに2本目のキーを追加、または拡張を続行 → keys_add"
+  },
+  "relay.celebrate.scaling_mastery": {
+    "zh-TW": "🧠 群體智慧！\n5+ 服務在線，數據驅動路由已啟動。",
+    "en": "🧠 Collective Intelligence!\n5+ services online — data-driven routing is live.",
+    "ja": "🧠 集合知性！\n5+ サービスがオンライン。データ駆動ルーティングが稼働中。"
+  },
+  "relay.hint.scaling_mastery": {
+    "zh-TW": "查看龍蝦實測數據 → growth_guide(view=intel)",
+    "en": "See community benchmarks → growth_guide(view=intel)",
+    "ja": "コミュニティベンチマークを確認 → growth_guide(view=intel)"
+  },
+  "relay.celebrate.generic": {
+    "zh-TW": "🎉 升級到「{phase}」！",
+    "en": "🎉 Upgraded to \"{phase}\"!",
+    "ja": "🎉「{phase}」にアップグレード！"
+  },
+  "relay.hint.generic": {
+    "zh-TW": "growth_guide(view=overview) 看看目前進度",
+    "en": "Check your progress → growth_guide(view=overview)",
+    "ja": "進捗を確認 → growth_guide(view=overview)"
+  },
+  "relay.teaser.onboarding": {
+    "zh-TW": "💡 加第一把 Key 就升級到「路由覺醒」",
+    "en": "💡 Add your first key to unlock \"Routing Awakening\"",
+    "ja": "💡 最初のキーを追加して「ルーティング覚醒」を解放"
+  },
+  "relay.teaser.awakening": {
+    "zh-TW": "💡 再加 {needed} 個不同服務（目前 {current}/3），或同服務加第 2 把 Key → 解鎖「額度擴張」",
+    "en": "💡 Add {needed} more service(s) ({current}/3), or add a 2nd key for any service → unlock \"Quota Scaling\"",
+    "ja": "💡 あと {needed} サービス追加（現在 {current}/3）、または同サービスに2本目のキー追加 →「クォータ拡張」解放"
+  },
+  "relay.teaser.scaling": {
+    "zh-TW": "💡 再加 {needed} 個不同服務就進入「群體智慧」（目前 {current}/5）",
+    "en": "💡 Add {needed} more unique service(s) to enter \"Collective Intelligence\" ({current}/5)",
+    "ja": "💡 あと {needed} の異なるサービス追加で「集合知性」に到達（現在 {current}/5）"
+  },
+  "relay.teaser.mastery": {
+    "zh-TW": "🏆 已達最高階段，持續使用讓路由越來越聰明",
+    "en": "🏆 Max level reached — keep using to make routing smarter",
+    "ja": "🏆 最高段階に到達 — 使い続けてルーティングをより賢く"
+  },
+  "relay.banner.next": {
+    "zh-TW": "接下來：",
+    "en": "Next: ",
+    "ja": "次のステップ："
+  }
+}

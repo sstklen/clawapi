@@ -166,6 +166,14 @@ export class KeyPool {
       [serviceId, encrypted, poolType, label ?? null]
     );
 
+    // 成長里程碑通知（CLI + Webhook，非同步不阻塞）
+    if (this.notifier) {
+      this.notifier.notify('growth.milestone', {
+        service_id: serviceId,
+        message: `新增 ${serviceId} Key — Key 池成長中 🌱`,
+      }).catch(() => {});
+    }
+
     return result.lastInsertRowid;
   }
 
