@@ -1,6 +1,6 @@
 {
   "name": "@clawapi/engine",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "Open-source AI API Key Manager + Smart Router. Manage multiple AI provider keys and route requests intelligently.",
   "keywords": ["ai", "api", "openai", "anthropic", "gemini", "router", "proxy", "mcp", "claude-code"],
   "homepage": "https://github.com/sstklen/clawapi",
@@ -16,6 +16,7 @@
   "files": [
     "bin/**/*",
     "src/**/*.ts",
+    "src/**/*.tsx",
     "src/adapters/schemas/**/*.yaml",
     "config/**/*",
     "locales/**/*",
