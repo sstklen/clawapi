@@ -131,6 +131,9 @@ function printHelp(): void {
   print(color.bold('  ⚡ 快速開始'));
   print(`  init               一行完成初始化（建 config + 註冊 MCP）`);
   print(`  init --force       強制重新初始化（覆蓋已有 config）`);
+  print(`  init --no-mcp      只建 config，不動 MCP 設定`);
+  print(`  uninstall          清除 ClawAPI 所有設定和 MCP 註冊`);
+  print(`  uninstall --all    完全移除（含 API Key 和資料庫）`);
   blank();
   print(color.bold(t('help.section.engine')));
   print(`  start              ${t('help.engine.start')}`);
@@ -254,6 +257,10 @@ async function route(parsed: ParsedArgs): Promise<void> {
     case 'init': {
       const { initCommand } = await import('./commands/init');
       return initCommand(parsed);
+    }
+    case 'uninstall': {
+      const { uninstallCommand } = await import('./commands/uninstall');
+      return uninstallCommand(parsed);
     }
     case 'setup': {
       const { setupCommand } = await import('./commands/setup');
