@@ -128,6 +128,10 @@ function printHelp(): void {
   print(color.bold(t('help.usage_title')));
   print(`  ${t('help.usage_line')}`);
   blank();
+  print(color.bold('  ⚡ 快速開始'));
+  print(`  init               一行完成初始化（建 config + 註冊 MCP）`);
+  print(`  init --force       強制重新初始化（覆蓋已有 config）`);
+  blank();
   print(color.bold(t('help.section.engine')));
   print(`  start              ${t('help.engine.start')}`);
   print(`  stop               ${t('help.engine.stop')}`);
@@ -247,6 +251,10 @@ async function route(parsed: ParsedArgs): Promise<void> {
       const { configCommand } = await import('./commands/config');
       return configCommand(parsed);
     }
+    case 'init': {
+      const { initCommand } = await import('./commands/init');
+      return initCommand(parsed);
+    }
     case 'setup': {
       const { setupCommand } = await import('./commands/setup');
       return setupCommand(parsed);
@@ -282,6 +290,17 @@ async function route(parsed: ParsedArgs): Promise<void> {
     case 'help':
     case '': {
       printHelp();
+      // 如果沒有 config，提示跑 init
+      if (!command) {
+        const { existsSync } = await import('node:fs');
+        const { homedir } = await import('node:os');
+        const { join } = await import('node:path');
+        if (!existsSync(join(homedir(), '.clawapi', 'config.yaml'))) {
+          blank();
+          print(color.yellow('💡 尚未初始化。跑 clawapi init 一行搞定！'));
+          blank();
+        }
+      }
       break;
     }
     default: {

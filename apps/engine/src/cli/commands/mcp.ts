@@ -27,7 +27,7 @@ const CONFIG_PATH = join(CONFIG_DIR, 'config.yaml');
  * 如果不存在，自動從套件內建的 default.yaml 複製一份
  * @returns true 表示新建了 config，false 表示已存在
  */
-function ensureConfigExists(): boolean {
+export function ensureConfigExists(): boolean {
   if (existsSync(CONFIG_PATH)) return false;
 
   if (!existsSync(CONFIG_DIR)) {
