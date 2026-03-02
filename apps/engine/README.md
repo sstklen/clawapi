@@ -5,6 +5,20 @@
 Open-source AI API Key Manager + Smart Router.
 Manage 15+ AI providers from a single local engine — keys never leave your machine.
 
+## Install
+
+```bash
+npm install -g @clawapi/engine
+clawapi init
+```
+
+That's it. Two commands, zero config files to create manually.
+
+`clawapi init` automatically creates your config and registers the MCP server with Claude Code.
+Run `clawapi doctor` to verify everything is working.
+
+> **Package name:** `@clawapi/engine` (not `clawapi` — that's a different package)
+
 ---
 
 ## Quick Start
@@ -12,25 +26,20 @@ Manage 15+ AI providers from a single local engine — keys never leave your mac
 ### For Claude Code (MCP)
 
 ```bash
-# 1. Add to Claude Code
-claude mcp add clawapi --scope user -- bunx @clawapi/engine mcp
-
-# 2. Restart Claude Code (close and reopen your terminal)
-
-# 3. Verify it works
-clawapi mcp --test
+npm install -g @clawapi/engine   # Install the CLI
+clawapi init                      # Create config + register MCP
+# Restart Claude Code (close and reopen your terminal)
+clawapi doctor                    # Verify setup
 ```
 
-You should see: `✅ MCP Server OK` with tool count and engine status.
+After restart, Claude Code can use 14 ClawAPI tools (search, translate, image generation, and more).
 
 ### For any OpenAI SDK client
 
 ```bash
-# Quick setup with defaults (no interactive prompts)
-clawapi setup --defaults
-
-# Start the engine
-clawapi start
+npm install -g @clawapi/engine
+clawapi init --no-mcp     # Setup without MCP registration
+clawapi start              # Start the engine on localhost:4141
 
 # Use as OpenAI-compatible API
 # base_url: http://localhost:4141/v1
@@ -71,34 +80,42 @@ OpenRouter · Ollama · Brave Search · Tavily · DuckDuckGo · DeepL · and mor
 | `ask` | Ask ClawAPI anything |
 | `task` | Execute multi-step AI tasks |
 
-## MCP Config Location
-
-Claude Code stores MCP config at `~/.claude.json`:
-
-```json
-{
-  "mcpServers": {
-    "clawapi": {
-      "command": "bunx",
-      "args": ["@clawapi/engine", "mcp"]
-    }
-  }
-}
-```
-
 ## CLI Commands
 
 ```bash
-clawapi setup              # Interactive first-time setup
-clawapi setup --defaults   # Quick setup with defaults (no prompts)
+# Setup
+clawapi init               # One-command setup (config + MCP)
+clawapi init --force       # Reinitialize (overwrite config)
+clawapi init --no-mcp      # Setup without MCP registration
+clawapi setup              # Interactive first-time setup (5-step wizard)
+clawapi doctor             # Diagnose issues
+
+# Engine
 clawapi start              # Start the engine
 clawapi stop               # Stop the engine
 clawapi status             # Check engine health
+
+# Keys
 clawapi keys list          # List your API keys
 clawapi keys add           # Add a new API key
+clawapi keys check         # Validate all keys
+
+# MCP
 clawapi mcp                # Start MCP server (stdio mode)
-clawapi mcp --test         # Quick health check
-clawapi doctor             # Diagnose issues
+clawapi mcp --test         # Quick MCP health check
+clawapi mcp --install      # Register MCP with Claude Code
+clawapi mcp --uninstall    # Remove MCP from Claude Code
+
+# Cleanup
+clawapi uninstall          # Remove config + MCP settings
+clawapi uninstall --all    # Remove everything (including API keys and data)
+```
+
+## Uninstall
+
+```bash
+clawapi uninstall              # Remove config and MCP settings
+bun remove -g @clawapi/engine  # Remove the CLI
 ```
 
 ## Links
