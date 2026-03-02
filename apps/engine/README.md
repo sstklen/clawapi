@@ -3,7 +3,7 @@
 **One command. Every AI. Your keys stay home.**
 
 Open-source AI API Key Manager + Smart Router.
-Manage 15+ AI providers from a single local engine — keys never leave your machine.
+Manage 20+ AI providers from a single local engine — keys never leave your machine.
 
 ## Install
 
@@ -59,6 +59,7 @@ clawapi start              # Start the engine on localhost:4141
 ## Supported Providers
 
 OpenAI · Anthropic · Google Gemini · DeepSeek · Groq · Cerebras · SambaNova ·
+Mistral · Cohere · Together AI · Fireworks · Perplexity · xAI (Grok) ·
 OpenRouter · Ollama · Brave Search · Tavily · DuckDuckGo · DeepL · and more
 
 ## MCP Tools

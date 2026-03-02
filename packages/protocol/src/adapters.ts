@@ -1,6 +1,6 @@
 // Adapter 型別 + 官方清單（SPEC-C §4.8 + 附錄 B）
 
-// 15 個官方 Adapter
+// 21 個官方 Adapter（v0.1.11: +mistral, +cohere, +together, +fireworks, +perplexity, +xai）
 export const OFFICIAL_ADAPTERS = [
   'groq',
   'gemini',
@@ -17,6 +17,12 @@ export const OFFICIAL_ADAPTERS = [
   'serper',
   'openrouter',
   'deepl',
+  'mistral',
+  'cohere',
+  'together',
+  'fireworks',
+  'perplexity',
+  'xai',
 ] as const;
 
 export type OfficialAdapterId = typeof OFFICIAL_ADAPTERS[number];

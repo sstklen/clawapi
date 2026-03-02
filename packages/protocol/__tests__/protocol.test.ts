@@ -121,10 +121,10 @@ describe('ErrorCode', () => {
   });
 });
 
-// 3. OFFICIAL_ADAPTERS 有 15 個
+// 3. OFFICIAL_ADAPTERS 有 21 個
 describe('OFFICIAL_ADAPTERS', () => {
-  test('共有 15 個官方 Adapter', () => {
-    expect(OFFICIAL_ADAPTERS.length).toBe(15);
+  test('共有 21 個官方 Adapter', () => {
+    expect(OFFICIAL_ADAPTERS.length).toBe(21);
   });
 
   test('包含所有預期的 Adapter', () => {
@@ -132,6 +132,7 @@ describe('OFFICIAL_ADAPTERS', () => {
       'groq', 'gemini', 'cerebras', 'sambanova', 'qwen',
       'ollama', 'duckduckgo', 'openai', 'anthropic', 'deepseek',
       'brave-search', 'tavily', 'serper', 'openrouter', 'deepl',
+      'mistral', 'cohere', 'together', 'fireworks', 'perplexity', 'xai',
     ];
     const adapters = OFFICIAL_ADAPTERS as readonly string[];
     for (const adapter of expected) {
@@ -192,7 +193,7 @@ describe('常數值驗證', () => {
   });
 
   test('CLAWAPI_VERSION = 0.1.9', () => {
-    expect(CLAWAPI_VERSION).toBe('0.1.10');
+    expect(CLAWAPI_VERSION).toBe('0.1.11');
   });
 });
 

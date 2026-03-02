@@ -19,7 +19,7 @@ export interface ScanResult {
 // ===== 官方域名白名單 =====
 
 /**
- * 15 個官方 Adapter 的域名白名單
+ * 21 個官方 Adapter 的域名白名單
  * 未在此列表中的 base_url → warning（不是 error，允許自訂 Adapter）
  */
 const OFFICIAL_DOMAINS = new Set([
@@ -40,6 +40,13 @@ const OFFICIAL_DOMAINS = new Set([
   'openrouter.ai',
   'api-free.deepl.com',
   'api.deepl.com',
+  // v0.1.11 新增
+  'api.mistral.ai',
+  'api.cohere.com',
+  'api.together.xyz',
+  'api.fireworks.ai',
+  'api.perplexity.ai',
+  'api.x.ai',
 ]);
 
 // ===== 危險關鍵字 =====
@@ -235,9 +242,9 @@ export class AdapterScanner {
 
 // ===== 驗證官方 Adapter 數量 =====
 
-// 確認官方域名白名單涵蓋所有 15 個官方 Adapter
+// 確認官方域名白名單涵蓋所有 21 個官方 Adapter
 // （在 module 載入時做靜態驗證）
 const _officialAdaptersCount = OFFICIAL_ADAPTERS.length;
-if (_officialAdaptersCount !== 15) {
-  console.warn(`[Scanner] 官方 Adapter 數量異常：期望 15，實際 ${_officialAdaptersCount}`);
+if (_officialAdaptersCount !== 21) {
+  console.warn(`[Scanner] 官方 Adapter 數量異常：期望 21，實際 ${_officialAdaptersCount}`);
 }

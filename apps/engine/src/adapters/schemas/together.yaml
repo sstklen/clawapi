@@ -1,0 +1,71 @@
+schema_version: 1
+
+adapter:
+  id: together
+  name: Together AI
+  version: "1.0.0"
+  category: llm
+  requires_key: true
+  free_tier: true
+
+auth:
+  type: bearer
+  key_url: https://api.together.xyz/settings/api-keys
+
+base_url: https://api.together.xyz
+
+endpoints:
+  chat:
+    method: POST
+    path: /v1/chat/completions
+    response_type: json
+    body:
+      model: "{{ model }}"
+      messages: "{{ messages }}"
+      temperature: "{{ temperature | default: 0.7 }}"
+      max_tokens: "{{ max_tokens | default: 4096 }}"
+      stream: false
+
+  chat_stream:
+    method: POST
+    path: /v1/chat/completions
+    response_type: sse
+    body:
+      model: "{{ model }}"
+      messages: "{{ messages }}"
+      temperature: "{{ temperature | default: 0.7 }}"
+      max_tokens: "{{ max_tokens | default: 4096 }}"
+      stream: true
+
+  models:
+    method: GET
+    path: /v1/models
+    response_type: json
+
+capabilities:
+  chat: true
+  streaming: true
+  embeddings: true
+  images: true
+  audio: false
+  models:
+    - id: meta-llama/Llama-3.3-70B-Instruct-Turbo
+      name: Llama 3.3 70B Turbo
+      context_window: 131072
+      max_output_tokens: 8192
+    - id: Qwen/Qwen2.5-72B-Instruct-Turbo
+      name: Qwen 2.5 72B Turbo
+      context_window: 131072
+      max_output_tokens: 8192
+    - id: deepseek-ai/DeepSeek-R1
+      name: DeepSeek R1
+      context_window: 131072
+      max_output_tokens: 8192
+    - id: google/gemma-2-27b-it
+      name: Gemma 2 27B
+      context_window: 8192
+      max_output_tokens: 8192
+
+rate_limits:
+  requests_per_minute: 60
+  cooldown_on_429: 60

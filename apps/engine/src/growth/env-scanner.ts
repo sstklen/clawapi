@@ -14,9 +14,11 @@ export function maskKey(key: string): string {
 
 /**
  * 掃描環境變數中的 API Key
+ * 去重：同一個 service_id 只保留第一個找到的（避免 GOOGLE_API_KEY 和 GEMINI_API_KEY 重複）
  */
 export function scanEnvVars(): FoundKey[] {
   const found: FoundKey[] = [];
+  const seen = new Set<string>(); // 以 service_id 去重
 
   for (const item of ENV_KEY_MAP) {
     const value = process.env[item.env_var];
@@ -24,12 +26,20 @@ export function scanEnvVars(): FoundKey[] {
       continue;
     }
 
+    // 同一個 service_id 只計一次（如 GOOGLE_API_KEY 和 GEMINI_API_KEY 都是 gemini）
+    if (seen.has(item.service_id)) {
+      continue;
+    }
+    seen.add(item.service_id);
+
     found.push({
       service_id: item.service_id,
       env_var: item.env_var,
       key_preview: maskKey(value),
       key_value: value,
       already_managed: false,
+      display_name: item.display_name,
+      category: item.category,
     });
   }
 

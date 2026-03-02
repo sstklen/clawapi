@@ -95,6 +95,10 @@ export interface FoundKey {
   key_value: string;
   /** 是否已在 KeyPool 中管理 */
   already_managed: boolean;
+  /** 顯示名稱（如 'OpenAI', 'Groq'） */
+  display_name?: string;
+  /** 服務分類 */
+  category?: string;
 }
 
 /** Ollama 偵測結果 */
@@ -179,39 +183,113 @@ export interface PersonalizedSuggestion {
 
 // ===== 環境變數 → 服務 ID 對照表 =====
 
-/** 已知的環境變數 → 服務 ID 對照 */
-export const ENV_KEY_MAP: ReadonlyArray<{ env_var: string; service_id: string }> = [
-  { env_var: 'OPENAI_API_KEY', service_id: 'openai' },
-  { env_var: 'ANTHROPIC_API_KEY', service_id: 'anthropic' },
-  { env_var: 'GOOGLE_API_KEY', service_id: 'gemini' },
-  { env_var: 'GEMINI_API_KEY', service_id: 'gemini' },
-  { env_var: 'GROQ_API_KEY', service_id: 'groq' },
-  { env_var: 'DEEPSEEK_API_KEY', service_id: 'deepseek' },
-  { env_var: 'CEREBRAS_API_KEY', service_id: 'cerebras' },
-  { env_var: 'SAMBANOVA_API_KEY', service_id: 'sambanova' },
-  { env_var: 'QWEN_API_KEY', service_id: 'qwen' },
-  { env_var: 'DASHSCOPE_API_KEY', service_id: 'qwen' },
-  { env_var: 'OPENROUTER_API_KEY', service_id: 'openrouter' },
-  { env_var: 'BRAVE_API_KEY', service_id: 'brave-search' },
-  { env_var: 'TAVILY_API_KEY', service_id: 'tavily' },
-  { env_var: 'SERPER_API_KEY', service_id: 'serper' },
-  { env_var: 'DEEPL_API_KEY', service_id: 'deepl' },
+/** 環境變數 → 服務 ID 對照項目 */
+export interface EnvKeyMapping {
+  /** 環境變數名稱 */
+  env_var: string;
+  /** 對應的服務 ID */
+  service_id: string;
+  /** 服務分類（用於分組顯示） */
+  category: 'llm' | 'search' | 'image' | 'audio' | 'embedding' | 'translate' | 'code' | 'tool';
+  /** 顯示名稱（人話） */
+  display_name: string;
+  /** 是否有免費方案 */
+  free_tier: boolean;
+  /** 是否 OpenAI API 相容 */
+  openai_compatible: boolean;
+}
+
+/** 已知的環境變數 → 服務 ID 對照（掃一片龍蝦，全部都對上） */
+export const ENV_KEY_MAP: ReadonlyArray<EnvKeyMapping> = [
+  // ===== LLM 提供商 =====
+  { env_var: 'OPENAI_API_KEY',      service_id: 'openai',      category: 'llm', display_name: 'OpenAI',           free_tier: false, openai_compatible: true },
+  { env_var: 'ANTHROPIC_API_KEY',   service_id: 'anthropic',   category: 'llm', display_name: 'Anthropic',        free_tier: false, openai_compatible: false },
+  { env_var: 'GOOGLE_API_KEY',      service_id: 'gemini',      category: 'llm', display_name: 'Google Gemini',    free_tier: true,  openai_compatible: true },
+  { env_var: 'GEMINI_API_KEY',      service_id: 'gemini',      category: 'llm', display_name: 'Google Gemini',    free_tier: true,  openai_compatible: true },
+  { env_var: 'GROQ_API_KEY',        service_id: 'groq',        category: 'llm', display_name: 'Groq',             free_tier: true,  openai_compatible: true },
+  { env_var: 'DEEPSEEK_API_KEY',    service_id: 'deepseek',    category: 'llm', display_name: 'DeepSeek',         free_tier: true,  openai_compatible: true },
+  { env_var: 'CEREBRAS_API_KEY',    service_id: 'cerebras',    category: 'llm', display_name: 'Cerebras',         free_tier: true,  openai_compatible: true },
+  { env_var: 'SAMBANOVA_API_KEY',   service_id: 'sambanova',   category: 'llm', display_name: 'SambaNova',        free_tier: true,  openai_compatible: true },
+  { env_var: 'QWEN_API_KEY',        service_id: 'qwen',        category: 'llm', display_name: 'Qwen (阿里通義)',  free_tier: true,  openai_compatible: true },
+  { env_var: 'DASHSCOPE_API_KEY',   service_id: 'qwen',        category: 'llm', display_name: 'Qwen (阿里通義)',  free_tier: true,  openai_compatible: true },
+  { env_var: 'OPENROUTER_API_KEY',  service_id: 'openrouter',  category: 'llm', display_name: 'OpenRouter',       free_tier: true,  openai_compatible: true },
+  { env_var: 'MISTRAL_API_KEY',     service_id: 'mistral',     category: 'llm', display_name: 'Mistral AI',       free_tier: true,  openai_compatible: true },
+  { env_var: 'COHERE_API_KEY',      service_id: 'cohere',      category: 'llm', display_name: 'Cohere',           free_tier: true,  openai_compatible: true },
+  { env_var: 'CO_API_KEY',          service_id: 'cohere',      category: 'llm', display_name: 'Cohere',           free_tier: true,  openai_compatible: true },
+  { env_var: 'TOGETHER_API_KEY',    service_id: 'together',    category: 'llm', display_name: 'Together AI',      free_tier: true,  openai_compatible: true },
+  { env_var: 'TOGETHERAI_API_KEY',  service_id: 'together',    category: 'llm', display_name: 'Together AI',      free_tier: true,  openai_compatible: true },
+  { env_var: 'FIREWORKS_API_KEY',   service_id: 'fireworks',   category: 'llm', display_name: 'Fireworks AI',     free_tier: true,  openai_compatible: true },
+  { env_var: 'PERPLEXITY_API_KEY',  service_id: 'perplexity',  category: 'llm', display_name: 'Perplexity',       free_tier: true,  openai_compatible: true },
+  { env_var: 'PPLX_API_KEY',        service_id: 'perplexity',  category: 'llm', display_name: 'Perplexity',       free_tier: true,  openai_compatible: true },
+  { env_var: 'XAI_API_KEY',         service_id: 'xai',         category: 'llm', display_name: 'xAI (Grok)',       free_tier: true,  openai_compatible: true },
+  { env_var: 'AI21_API_KEY',        service_id: 'ai21',        category: 'llm', display_name: 'AI21 Labs',        free_tier: true,  openai_compatible: true },
+
+  // ===== 中國 AI 提供商 =====
+  { env_var: 'MOONSHOT_API_KEY',    service_id: 'moonshot',    category: 'llm', display_name: 'Moonshot (月之暗面)', free_tier: true, openai_compatible: true },
+  { env_var: 'ZHIPU_API_KEY',       service_id: 'zhipu',       category: 'llm', display_name: 'Zhipu (智譜 GLM)',   free_tier: true, openai_compatible: true },
+  { env_var: 'ZHIPUAI_API_KEY',     service_id: 'zhipu',       category: 'llm', display_name: 'Zhipu (智譜 GLM)',   free_tier: true, openai_compatible: true },
+  { env_var: 'MINIMAX_API_KEY',     service_id: 'minimax',     category: 'llm', display_name: 'MiniMax',            free_tier: true, openai_compatible: true },
+  { env_var: 'BAICHUAN_API_KEY',    service_id: 'baichuan',    category: 'llm', display_name: 'Baichuan (百川)',     free_tier: true, openai_compatible: true },
+  { env_var: 'YI_API_KEY',          service_id: 'yi',          category: 'llm', display_name: 'Yi (零一萬物)',       free_tier: true, openai_compatible: true },
+
+  // ===== 搜尋 API =====
+  { env_var: 'BRAVE_API_KEY',       service_id: 'brave-search', category: 'search', display_name: 'Brave Search',   free_tier: true,  openai_compatible: false },
+  { env_var: 'TAVILY_API_KEY',      service_id: 'tavily',       category: 'search', display_name: 'Tavily',         free_tier: true,  openai_compatible: false },
+  { env_var: 'SERPER_API_KEY',      service_id: 'serper',       category: 'search', display_name: 'Serper',         free_tier: true,  openai_compatible: false },
+  { env_var: 'SERPAPI_API_KEY',     service_id: 'serpapi',       category: 'search', display_name: 'SerpAPI',       free_tier: true,  openai_compatible: false },
+  { env_var: 'EXA_API_KEY',         service_id: 'exa',           category: 'search', display_name: 'Exa',          free_tier: true,  openai_compatible: false },
+  { env_var: 'JINA_API_KEY',        service_id: 'jina',          category: 'search', display_name: 'Jina AI',      free_tier: true,  openai_compatible: false },
+
+  // ===== 翻譯 =====
+  { env_var: 'DEEPL_API_KEY',       service_id: 'deepl',        category: 'translate', display_name: 'DeepL',       free_tier: true,  openai_compatible: false },
+
+  // ===== 圖片生成 =====
+  { env_var: 'STABILITY_API_KEY',   service_id: 'stability',    category: 'image', display_name: 'Stability AI',    free_tier: true,  openai_compatible: false },
+  { env_var: 'REPLICATE_API_TOKEN', service_id: 'replicate',    category: 'image', display_name: 'Replicate',       free_tier: true,  openai_compatible: false },
+
+  // ===== 語音 =====
+  { env_var: 'ELEVENLABS_API_KEY',  service_id: 'elevenlabs',   category: 'audio', display_name: 'ElevenLabs',     free_tier: true,  openai_compatible: false },
+  { env_var: 'ASSEMBLYAI_API_KEY',  service_id: 'assemblyai',   category: 'audio', display_name: 'AssemblyAI',     free_tier: true,  openai_compatible: false },
+
+  // ===== Embedding =====
+  { env_var: 'VOYAGE_API_KEY',          service_id: 'voyage',       category: 'embedding', display_name: 'Voyage AI',      free_tier: true,  openai_compatible: false },
+  { env_var: 'HUGGINGFACE_API_KEY',     service_id: 'huggingface',  category: 'embedding', display_name: 'Hugging Face',   free_tier: true,  openai_compatible: false },
+  { env_var: 'HUGGINGFACE_API_TOKEN',   service_id: 'huggingface',  category: 'embedding', display_name: 'Hugging Face',   free_tier: true,  openai_compatible: false },
+  { env_var: 'HF_TOKEN',               service_id: 'huggingface',  category: 'embedding', display_name: 'Hugging Face',   free_tier: true,  openai_compatible: false },
 ];
 
 /** LLM 類服務 ID（用於判斷 L3/L4 解鎖） */
 export const LLM_SERVICES = new Set([
   'openai', 'anthropic', 'groq', 'gemini', 'deepseek',
   'cerebras', 'sambanova', 'qwen', 'openrouter', 'ollama',
+  'mistral', 'cohere', 'together', 'fireworks', 'perplexity',
+  'xai', 'ai21', 'moonshot', 'zhipu', 'minimax', 'baichuan', 'yi',
 ]);
 
 /** 搜尋類服務 ID */
 export const SEARCH_SERVICES = new Set([
   'brave-search', 'tavily', 'serper', 'duckduckgo',
+  'serpapi', 'exa', 'jina',
 ]);
 
 /** 翻譯類服務 ID */
 export const TRANSLATE_SERVICES = new Set([
   'deepl',
+]);
+
+/** 圖片類服務 ID */
+export const IMAGE_SERVICES = new Set([
+  'stability', 'replicate',
+]);
+
+/** 語音類服務 ID */
+export const AUDIO_SERVICES = new Set([
+  'elevenlabs', 'assemblyai',
+]);
+
+/** Embedding 類服務 ID */
+export const EMBEDDING_SERVICES = new Set([
+  'voyage', 'huggingface', 'jina', 'cohere',
 ]);
 
 // ===== 推薦服務資訊（三路線） =====

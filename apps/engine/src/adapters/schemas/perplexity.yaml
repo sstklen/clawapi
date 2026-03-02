@@ -1,0 +1,62 @@
+schema_version: 1
+
+adapter:
+  id: perplexity
+  name: Perplexity
+  version: "1.0.0"
+  category: llm
+  requires_key: true
+  free_tier: true
+
+auth:
+  type: bearer
+  key_url: https://www.perplexity.ai/settings/api
+
+base_url: https://api.perplexity.ai
+
+endpoints:
+  chat:
+    method: POST
+    path: /chat/completions
+    response_type: json
+    body:
+      model: "{{ model }}"
+      messages: "{{ messages }}"
+      temperature: "{{ temperature | default: 0.7 }}"
+      max_tokens: "{{ max_tokens | default: 4096 }}"
+      stream: false
+
+  chat_stream:
+    method: POST
+    path: /chat/completions
+    response_type: sse
+    body:
+      model: "{{ model }}"
+      messages: "{{ messages }}"
+      temperature: "{{ temperature | default: 0.7 }}"
+      max_tokens: "{{ max_tokens | default: 4096 }}"
+      stream: true
+
+capabilities:
+  chat: true
+  streaming: true
+  embeddings: false
+  images: false
+  audio: false
+  models:
+    - id: sonar-pro
+      name: Sonar Pro（搜尋增強）
+      context_window: 200000
+      max_output_tokens: 8192
+    - id: sonar
+      name: Sonar（輕量搜尋）
+      context_window: 128000
+      max_output_tokens: 8192
+    - id: sonar-reasoning-pro
+      name: Sonar Reasoning Pro
+      context_window: 128000
+      max_output_tokens: 8192
+
+rate_limits:
+  requests_per_minute: 50
+  cooldown_on_429: 60

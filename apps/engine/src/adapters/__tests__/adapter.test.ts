@@ -311,15 +311,16 @@ describe('官方 Adapter YAML', () => {
     'groq', 'gemini', 'cerebras', 'sambanova', 'qwen',
     'ollama', 'duckduckgo', 'openai', 'anthropic', 'deepseek',
     'brave-search', 'tavily', 'serper', 'openrouter', 'deepl',
+    'mistral', 'cohere', 'together', 'fireworks', 'perplexity', 'xai',
   ];
 
-  // --- 測試 9：15 個 YAML 全部載入成功 ---
-  it('應可成功載入所有 15 個官方 Adapter', async () => {
+  // --- 測試 9：21 個 YAML 全部載入成功 ---
+  it('應可成功載入所有 21 個官方 Adapter', async () => {
     const loader = new AdapterLoader();
     const adapters = await loader.loadFromDirectory(SCHEMAS_DIR);
 
-    // 確認 15 個都有
-    expect(adapters.size).toBe(15);
+    // 確認 21 個都有
+    expect(adapters.size).toBe(21);
 
     for (const id of OFFICIAL_ADAPTER_IDS) {
       expect(adapters.has(id)).toBe(true);

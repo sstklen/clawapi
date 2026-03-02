@@ -1,0 +1,67 @@
+schema_version: 1
+
+adapter:
+  id: fireworks
+  name: Fireworks AI
+  version: "1.0.0"
+  category: llm
+  requires_key: true
+  free_tier: true
+
+auth:
+  type: bearer
+  key_url: https://fireworks.ai/account/api-keys
+
+base_url: https://api.fireworks.ai/inference
+
+endpoints:
+  chat:
+    method: POST
+    path: /v1/chat/completions
+    response_type: json
+    body:
+      model: "{{ model }}"
+      messages: "{{ messages }}"
+      temperature: "{{ temperature | default: 0.7 }}"
+      max_tokens: "{{ max_tokens | default: 4096 }}"
+      stream: false
+
+  chat_stream:
+    method: POST
+    path: /v1/chat/completions
+    response_type: sse
+    body:
+      model: "{{ model }}"
+      messages: "{{ messages }}"
+      temperature: "{{ temperature | default: 0.7 }}"
+      max_tokens: "{{ max_tokens | default: 4096 }}"
+      stream: true
+
+  models:
+    method: GET
+    path: /v1/models
+    response_type: json
+
+capabilities:
+  chat: true
+  streaming: true
+  embeddings: true
+  images: true
+  audio: false
+  models:
+    - id: accounts/fireworks/models/llama-v3p3-70b-instruct
+      name: Llama 3.3 70B
+      context_window: 131072
+      max_output_tokens: 8192
+    - id: accounts/fireworks/models/qwen2p5-72b-instruct
+      name: Qwen 2.5 72B
+      context_window: 131072
+      max_output_tokens: 8192
+    - id: accounts/fireworks/models/deepseek-r1
+      name: DeepSeek R1
+      context_window: 131072
+      max_output_tokens: 8192
+
+rate_limits:
+  requests_per_minute: 60
+  cooldown_on_429: 60
