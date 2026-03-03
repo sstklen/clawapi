@@ -152,7 +152,8 @@ async function checkVpsReachable(): Promise<CheckResult> {
     clearTimeout(timeoutId);
 
     if (response.ok) {
-      return { name: t('cmd.doctor.check_vps'), pass: true, detail: 'clawapi.washinmura.jp' };
+      // 顯示 VPS 用途，讓用戶知道這個連線做什麼
+      return { name: t('cmd.doctor.check_vps'), pass: true, detail: t('cmd.doctor.vps_ok') };
     }
     return { name: t('cmd.doctor.check_vps'), pass: false, detail: `HTTP ${response.status}` };
   } catch (err) {
@@ -199,9 +200,22 @@ function checkKeyHealth(configDir: string): CheckResult {
     return { name: t('cmd.doctor.check_keys'), pass: true, detail: t('cmd.doctor.no_keys_yet') };
   }
 
-  // 實際實作需要讀取 DB 查詢 Key 狀態
-  // 這裡返回通過（因為 DB 可讀代表基本功能正常）
-  return { name: t('cmd.doctor.check_keys'), pass: true, detail: t('cmd.doctor.keys_need_engine') };
+  // 嘗試讀 DB 查詢 Key 數量（輕量檢查，不啟動引擎）
+  try {
+    const { Database } = require('bun:sqlite');
+    const db = new Database(dbPath, { readonly: true });
+    const rows = db.prepare('SELECT COUNT(*) as cnt FROM keys WHERE status = ?').all('active') as Array<{ cnt: number }>;
+    const count = rows[0]?.cnt ?? 0;
+    db.close();
+
+    if (count === 0) {
+      return { name: t('cmd.doctor.check_keys'), pass: true, detail: t('cmd.doctor.no_keys_yet') };
+    }
+    return { name: t('cmd.doctor.check_keys'), pass: true, detail: t('cmd.doctor.keys_count', { count }) };
+  } catch {
+    // DB 讀不了就顯示需要引擎
+    return { name: t('cmd.doctor.check_keys'), pass: true, detail: t('cmd.doctor.keys_need_engine') };
+  }
 }
 
 /** 6. port 可用（獨立模式用，MCP 模式不需要） */

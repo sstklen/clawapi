@@ -13,9 +13,13 @@ server:
 
 # ===== 路由策略 =====
 routing:
-  # 預設路由策略：fast（最快）| smart（智慧，預設）| cheap（最省錢）
+  # 預設路由策略：
+  #   fast  — 選回應最快的服務（適合即時對話）
+  #   smart — 綜合考慮速度、成本、成功率（預設，適合大多數場景）
+  #   cheap — 選最便宜的服務（適合批量處理）
+  # 需要 2 個以上服務才有路由效果（L2 智慧路由）
   default_strategy: 'smart'
-  # 啟用自動 failover
+  # 啟用自動 failover（某服務失敗時自動切換到下一個）
   failover_enabled: true
   # 每個 key 最多重試次數
   max_retries_per_key: 1

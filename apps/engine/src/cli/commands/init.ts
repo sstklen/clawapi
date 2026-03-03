@@ -170,6 +170,7 @@ export async function initCommand(args: ParsedArgs): Promise<void> {
   if (noMcp) {
     info('跳過 MCP 註冊（--no-mcp）');
   } else {
+    info('正在將 ClawAPI 註冊到 Claude Code MCP 設定（~/.claude.json）...');
     const mcpResult = mcpInstall({ quiet: true });
     if (mcpResult.ok) {
       if (mcpResult.mcpUpdated) {
@@ -196,6 +197,7 @@ export async function initCommand(args: ParsedArgs): Promise<void> {
     displayFoundKeys(foundKeys);
     blank();
     info(`重啟 Claude Code 後，用 ${color.bold('setup_wizard')} 工具一鍵匯入`);
+    info(`${color.dim('（setup_wizard 會真正呼叫 API 驗證每把 Key 是否有效）')}`);
   } else {
     info('沒有在環境變數中找到 API Key');
     blank();

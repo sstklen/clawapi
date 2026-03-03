@@ -3,7 +3,7 @@
 
 import { Database, type Statement } from 'bun:sqlite';
 import { homedir } from 'node:os';
-import { existsSync, mkdirSync } from 'node:fs';
+import { existsSync, mkdirSync, chmodSync } from 'node:fs';
 import { join } from 'node:path';
 import { migration001 } from './migrations/001-init';
 import { migration002 } from './migrations/002-rename-gold-to-claw';
@@ -51,12 +51,27 @@ class ClawDatabase implements DatabaseModule {
     }
 
     // 開啟 DB
+    const isNew = !existsSync(this.dbPath);
     this.db = new Database(this.dbPath, { create: true });
+
+    // 限制 DB 檔案權限為 600（只有擁有者可讀寫）
+    // 與 auth.token / master.key 一致，因為 DB 內含加密的 API Key
+    if (isNew) {
+      try { chmodSync(this.dbPath, 0o600); } catch { /* Windows 等不支援 chmod 的平台 */ }
+    }
 
     // 設定 WAL 模式和基本 PRAGMA
     this.db.run('PRAGMA journal_mode = WAL');
     this.db.run('PRAGMA foreign_keys = ON');
     this.db.run('PRAGMA busy_timeout = 5000');
+
+    // WAL 模式會產生 -shm 和 -wal 附屬檔案，也要限制權限
+    for (const suffix of ['-shm', '-wal']) {
+      const walPath = this.dbPath + suffix;
+      if (existsSync(walPath)) {
+        try { chmodSync(walPath, 0o600); } catch { /* 忽略不支援的平台 */ }
+      }
+    }
 
     // 執行遷移
     await this.runMigrations();
