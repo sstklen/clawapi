@@ -64,6 +64,18 @@ export async function uninstallCommand(args: ParsedArgs): Promise<void> {
     removePid();
   }
 
+  // Step 0.5: 偵測其他 clawapi 進程（MCP stdio server 不寫 PID 檔）
+  // MCP server 由 Claude Code 以 stdio 模式啟動，daemon stop 抓不到
+  const otherPids = findOtherClawApiProcesses();
+  if (otherPids.length > 0) {
+    warn(`偵測到其他 ClawAPI 進程仍在運行（PID: ${otherPids.join(', ')}）`);
+    if (all) {
+      warn('⚠️  這些進程可能是 Claude Code 的 MCP server。');
+      warn('   刪除 data.db 後它們會出現 disk I/O error。');
+      warn('   建議：先關閉 Claude Code session，再執行 uninstall --all。');
+    }
+  }
+
   // Step 1: 清除 MCP 設定（除非 --keep-mcp）
   if (!keepMcp) {
     // 動態 import 避免載入不需要的模組
@@ -205,6 +217,32 @@ async function getMcpUninstaller(): Promise<{
       }
     },
   };
+}
+
+/**
+ * 偵測其他正在運行的 clawapi 進程（排除自己）
+ * 用於發現 MCP stdio server 等不寫 PID 檔的進程
+ */
+function findOtherClawApiProcesses(): number[] {
+  try {
+    // pgrep -f 搜尋所有含 'clawapi' 的進程
+    const result = Bun.spawnSync(['pgrep', '-f', 'clawapi'], {
+      stdout: 'pipe',
+      stderr: 'pipe',
+    });
+
+    if (result.exitCode !== 0) return [];
+
+    const stdout = result.stdout.toString().trim();
+    if (!stdout) return [];
+
+    return stdout.split('\n')
+      .map(line => parseInt(line.trim(), 10))
+      .filter(p => !isNaN(p) && p !== process.pid && p > 0);
+  } catch {
+    // pgrep 不存在或其他錯誤 — 不阻擋 uninstall
+    return [];
+  }
 }
 
 export default uninstallCommand;
