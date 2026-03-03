@@ -31,6 +31,7 @@ const OFFICIAL_DOMAINS = new Set([
   'localhost',
   '127.0.0.1',
   'api.duckduckgo.com',
+  'duckduckgo.com',
   'api.openai.com',
   'api.anthropic.com',
   'api.deepseek.com',
