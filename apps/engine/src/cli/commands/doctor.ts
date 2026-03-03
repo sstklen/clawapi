@@ -72,8 +72,7 @@ export async function doctorCommand(args: ParsedArgs): Promise<void> {
   }
 
   blank();
-  print(color.bold('ClawAPI Doctor'));
-  print(color.dim(t('cmd.doctor.title')));
+  print(color.bold(`🦞 ClawAPI v${getEngineVersion()} — ${t('cmd.doctor.title')}`));
   blank();
 
   for (const r of results) {
@@ -227,28 +226,29 @@ async function checkPortAvailable(): Promise<CheckResult> {
 /** 7. config.yaml 存在且可讀 */
 function checkConfigFile(configDir: string): CheckResult {
   const configPath = join(configDir, 'config.yaml');
+  const name = t('cmd.doctor.check_config');
 
   if (!existsSync(configDir)) {
     return {
-      name: 'Config file',
+      name,
       pass: false,
-      detail: `${configDir} 目錄不存在（請先跑 clawapi setup 或 clawapi mcp）`,
+      detail: t('cmd.doctor.dir_not_found', { path: configDir }),
     };
   }
 
   if (!existsSync(configPath)) {
     return {
-      name: 'Config file',
+      name,
       pass: false,
-      detail: `${configPath} 不存在（跑 clawapi mcp 會自動建立）`,
+      detail: t('cmd.doctor.config_not_created'),
     };
   }
 
   try {
     accessSync(configPath, constants.R_OK);
-    return { name: 'Config file', pass: true, detail: configPath };
+    return { name, pass: true, detail: configPath };
   } catch {
-    return { name: 'Config file', pass: false, detail: 'config.yaml 無讀取權限' };
+    return { name, pass: false, detail: t('cmd.doctor.no_rw_permission') };
   }
 }
 

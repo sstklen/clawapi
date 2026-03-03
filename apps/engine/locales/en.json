@@ -386,6 +386,8 @@
   "cmd.doctor.keys_need_engine": "Full check requires engine to be running",
   "cmd.doctor.check_port": "Port available",
   "cmd.doctor.port_in_use": "Port {port} is in use",
+  "cmd.doctor.check_config": "Config file",
+  "cmd.doctor.config_not_created": "config.yaml not found (run clawapi init to create)",
   "cmd.misc.running_migration": "Running database migration...",
   "cmd.misc.migration_done": "Migration complete",
   "cmd.misc.device_reset": "Device Reset",

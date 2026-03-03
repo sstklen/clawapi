@@ -386,6 +386,8 @@
   "cmd.doctor.keys_need_engine": "需啟動引擎後進行完整檢查",
   "cmd.doctor.check_port": "port 可用",
   "cmd.doctor.port_in_use": "port {port} 被占用",
+  "cmd.doctor.check_config": "設定檔存在",
+  "cmd.doctor.config_not_created": "config.yaml 不存在（跑 clawapi init 會自動建立）",
   "cmd.misc.running_migration": "執行資料庫遷移...",
   "cmd.misc.migration_done": "遷移完成",
   "cmd.misc.device_reset": "裝置重置",
