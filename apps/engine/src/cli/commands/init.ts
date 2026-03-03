@@ -36,29 +36,44 @@ const CATEGORY_NAMES: Record<string, string> = {
 /**
  * 嘗試用 DuckDuckGo 做一次快速搜尋 demo
  * 不需要 API Key、不需要啟動引擎
+ * 回傳精確的錯誤原因，不再一律說「網路不通」
  */
-async function duckDuckGoDemo(): Promise<boolean> {
+async function duckDuckGoDemo(): Promise<{ ok: boolean; error?: string }> {
   try {
     // 直接用 fetch 呼叫 DuckDuckGo API（不透過 adapter，保持輕量）
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 5000);
 
-    const response = await fetch('https://api.duckduckgo.com/?q=ClawAPI+AI+API&format=json&no_html=1&skip_disambig=1', {
-      method: 'GET',
-      signal: controller.signal,
-    });
+    let response: Response;
+    try {
+      response = await fetch('https://api.duckduckgo.com/?q=ClawAPI+AI+API&format=json&no_html=1&skip_disambig=1', {
+        method: 'GET',
+        signal: controller.signal,
+      });
+    } catch (fetchErr) {
+      clearTimeout(timeout);
+      if (fetchErr instanceof Error && fetchErr.name === 'AbortError') {
+        return { ok: false, error: '連線逾時（5 秒）' };
+      }
+      return { ok: false, error: '網路不通' };
+    }
 
     clearTimeout(timeout);
 
     if (!response.ok) {
-      return false;
+      return { ok: false, error: `API 回傳 HTTP ${response.status}` };
     }
 
-    const data = await response.json() as {
+    let data: {
       AbstractText?: string;
       RelatedTopics?: Array<{ Text?: string; FirstURL?: string }>;
       Heading?: string;
     };
+    try {
+      data = await response.json() as typeof data;
+    } catch {
+      return { ok: false, error: '回應格式異常（JSON 解析失敗）' };
+    }
 
     // DuckDuckGo Instant Answer API 回傳的是摘要資訊
     const topics = data.RelatedTopics || [];
@@ -77,14 +92,14 @@ async function duckDuckGoDemo(): Promise<boolean> {
       for (const line of preview) {
         print(line);
       }
-      return true;
+      return { ok: true };
     }
 
     // 即使沒有 RelatedTopics，連線成功也算通過
     print(`  ${color.green('✓')} API 連線成功 — 搜尋功能正常！`);
-    return true;
+    return { ok: true };
   } catch {
-    return false;
+    return { ok: false, error: '未預期的錯誤' };
   }
 }
 
@@ -188,9 +203,10 @@ export async function initCommand(args: ParsedArgs): Promise<void> {
     print(color.bold('🦆 快速測試：DuckDuckGo 搜尋（免費，不需要 Key）'));
     blank();
 
-    const demoOk = await duckDuckGoDemo();
-    if (!demoOk) {
-      warn('搜尋 demo 跳過（網路不通或 API 暫時不可用）');
+    const demoResult = await duckDuckGoDemo();
+    if (!demoResult.ok) {
+      warn(`搜尋 demo 跳過（${demoResult.error ?? '未知原因'}）`);
+      info('這不影響 ClawAPI 功能，免費搜尋可在 MCP 中使用');
     }
   }
 
@@ -206,15 +222,18 @@ export async function initCommand(args: ParsedArgs): Promise<void> {
     print(`  ${color.dim('     Close terminal and open a new session for MCP to take effect')}`);
     print(`  ${color.dim('     ターミナルを閉じて新しいセッションを開くと MCP が有効になります')}`);
     blank();
-    print(`  ${color.bold('🦞 然後對 Claude 說 / Then tell Claude / Claude に伝えてください：')}`);
+    print(`  ${color.bold('🦞 然後對 Claude 說：')}`);
     blank();
     print(`     🇹🇼  ${color.cyan('「幫我設定 ClawAPI」')}`);
     print(`     🇺🇸  ${color.cyan('"Set up ClawAPI for me"')}`);
     print(`     🇯🇵  ${color.cyan('「ClawAPI をセットアップして」')}`);
     blank();
-    print(`  ${color.dim('     ↑ 自動掃描你的 API Key → 驗證 → 一鍵匯入 → 搞定')}`);
-    print(`  ${color.dim('       Auto-scan your API keys → validate → import → done')}`);
-    print(`  ${color.dim('       API Key を自動スキャン → 検証 → インポート → 完了')}`);
+    print(`  ${color.bold('     ↓ 你會體驗到四大爽點：')}`);
+    blank();
+    print(`     ${color.green('①')} ${color.bold('一鍵全自動')} — 掃描 → 驗證 → 匯入 → 產生萬用 Claw Key，零操作`);
+    print(`     ${color.green('②')} ${color.bold('主動推薦')}   — 匯入後自動推薦下一個最值得加的免費服務`);
+    print(`     ${color.green('③')} ${color.bold('碰壁引導')}   — 額度用完時，即時告訴你怎麼補`);
+    print(`     ${color.green('④')} ${color.bold('群體智慧')}   — 匿名路由數據共享，越多人用越聰明`);
   } else {
     print(`  ${color.bold('👉 下一步 / Next / 次のステップ：')}`);
     print(`    1. ${color.bold('clawapi start')}`);

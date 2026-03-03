@@ -101,10 +101,48 @@ export async function validateKey(
       };
     }
 
+    // 嘗試讀取 response body 以取得更精確的錯誤訊息
+    // 某些服務（如 Gemini）對無效 Key 回 400 而非 401
+    let bodyMessage = '';
+    let isAuthError = false;
+    try {
+      const body = await res.json() as {
+        error?: { message?: string; reason?: string; details?: Array<{ reason?: string }> };
+        message?: string;
+      };
+      // 提取錯誤訊息
+      bodyMessage = body.error?.message ?? body.message ?? '';
+      // 偵測是否為認證類錯誤（Gemini 回 400 + API_KEY_INVALID）
+      const reason = body.error?.reason ?? '';
+      const detailReasons = body.error?.details?.map(d => d.reason).join(',') ?? '';
+      const allReasons = `${reason},${detailReasons}`.toLowerCase();
+      if (
+        allReasons.includes('api_key_invalid') ||
+        allReasons.includes('unauthorized') ||
+        bodyMessage.toLowerCase().includes('api key not valid') ||
+        bodyMessage.toLowerCase().includes('invalid api key') ||
+        bodyMessage.toLowerCase().includes('invalid authentication')
+      ) {
+        isAuthError = true;
+      }
+    } catch {
+      // body 解析失敗不影響判斷
+    }
+
+    if (isAuthError) {
+      return {
+        valid: false,
+        service_id: serviceId,
+        error: `認證失敗（HTTP ${res.status}）：API Key 無效`,
+      };
+    }
+
     return {
       valid: false,
       service_id: serviceId,
-      error: `驗證失敗（HTTP ${res.status}）`,
+      error: bodyMessage
+        ? `驗證失敗（HTTP ${res.status}）：${bodyMessage}`
+        : `驗證失敗（HTTP ${res.status}）`,
     };
   } catch (err) {
     if (err instanceof Error && err.name === 'AbortError') {
