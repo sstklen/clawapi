@@ -202,8 +202,8 @@ export class L3Concierge {
     if (!clawKeyResult) {
       return {
         success: false,
-        error: '未設定Claw Key，無法使用 L3 AI 管家功能',
-        suggestion: '請執行：clawapi claw-key set <your-api-key> 來設定Claw Key',
+        error: '沒有可用的 LLM Key，無法使用 L3 AI 管家',
+        suggestion: '請匯入至少一把 LLM Key（如 OpenAI、Gemini、Groq）。執行 setup_wizard(action=auto) 一鍵設定。',
         latency_ms: Date.now() - startTime,
       };
     }
@@ -311,15 +311,32 @@ export class L3Concierge {
    * @returns Claw Key資訊，若不存在則回傳 null
    */
   async getClawKey(): Promise<ClawKeyInfo | null> {
-    const key = await this.keyPool.selectKey(L3Concierge.CLAW_KEY_SERVICE_ID);
-    if (!key) return null;
+    // 1. 先找專門設定的 __claw_key__（CLI claw-key set 設定的）
+    const dedicated = await this.keyPool.selectKey(L3Concierge.CLAW_KEY_SERVICE_ID);
+    if (dedicated) {
+      return {
+        key: dedicated,
+        daily_tokens_used: dedicated.daily_used,
+        daily_token_limit: 1_000_000,
+      };
+    }
 
-    return {
-      key,
-      daily_tokens_used: key.daily_used,
-      // 若無明確上限，預設每日 1,000,000 tokens（充足額度）
-      daily_token_limit: 1_000_000,
-    };
+    // 2. Fallback：使用任何已匯入的 LLM Key（setup_wizard 匯入的）
+    //    這讓 setup_wizard(auto) 匯入 Key 後，L3 立刻能用，不需額外設定
+    for (const [adapterId, config] of this.adapters) {
+      if (config.adapter.category === 'llm' && config.capabilities.chat) {
+        const key = await this.keyPool.selectKey(adapterId);
+        if (key) {
+          return {
+            key,
+            daily_tokens_used: key.daily_used,
+            daily_token_limit: 1_000_000,
+          };
+        }
+      }
+    }
+
+    return null;
   }
 
   /**

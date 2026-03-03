@@ -228,9 +228,9 @@ describe('Router.routeRequest()', () => {
     // L3 已實作，會嘗試取Claw Key（未設定），回傳失敗但 layer='L3'
     const result = await router.routeRequest(req);
     expect(result.layer).toBe('L3');
-    // 沒有Claw Key時 → success=false + 錯誤說明
+    // 沒有 LLM Key 時 → success=false + 錯誤說明
     expect(result.success).toBe(false);
-    expect(result.error).toContain('Claw Key');
+    expect(result.error).toContain('LLM Key');
   });
 
   // --- L4 已實作 ---

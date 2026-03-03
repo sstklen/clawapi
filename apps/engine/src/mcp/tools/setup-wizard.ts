@@ -346,14 +346,22 @@ async function handleAuto(
         deps.adapters
       );
 
-      const status = result.valid ? '✅' : '❌';
+      const statusIcon = result.valid ? '✅' : '❌';
       const models = result.models_available?.length
         ? ` (${result.models_available.length} 模型)`
         : '';
-      const error = result.error ? ` — ${result.error}` : '';
+      const errorMsg = result.error ? ` — ${result.error}` : '';
       lines.push(
-        `  ${status} ${foundKey.service_id} [${foundKey.key_preview}]${models}${error}`
+        `  ${statusIcon} ${foundKey.service_id} [${foundKey.key_preview}]${models}${errorMsg}`
       );
+
+      // 爽點③ 碰壁引導：驗證失敗時告訴用戶下一步
+      if (!result.valid) {
+        const hint = getValidationFailHint(result.error ?? '', foundKey.service_id);
+        if (hint) {
+          lines.push(`     → ${hint}`);
+        }
+      }
 
       if (result.valid) {
         validKeys.push({ key: foundKey, result });
@@ -396,52 +404,62 @@ async function handleAuto(
     const existingKeys = await deps.keyPool.listKeys();
     if (existingKeys.length > 0) {
       lines.push('');
-      lines.push('【Step 4】Claw Key...');
+      lines.push('【Step 4】產生 Claw Key（萬用鑰匙）...');
       try {
         const clawResult = await setupAutoClawKey(
           deps.subKeyManager,
           deps.keyPool
         );
         clawKeyToken = clawResult.token;
-        const status = clawResult.is_new ? '🆕 新產生' : '✅ 已存在';
-        lines.push(`  ${status} Claw Key: ${clawResult.token}`);
-        lines.push(
-          `  包含服務：${clawResult.services_included.join(', ')}`
-        );
-        lines.push('');
-        lines.push(`  ${clawResult.usage_example}`);
+        // 爽點① 一鍵全自動的高潮：用明顯的框框顯示 Claw Key
+        lines.push(...formatClawKeyBox(clawResult.token, clawResult.services_included));
       } catch (err) {
         lines.push(`  ⚠️ Claw Key 產生失敗：${(err as Error).message}`);
       }
     }
   }
 
-  // === 結尾訊息 ===
+  // === 結尾訊息：以四爽點為引導框架 ===
   lines.push('');
   lines.push('═══════════════════════');
+  lines.push('🎉 設定完成！');
+  lines.push('');
 
+  // 爽點① 一鍵全自動
   if (importedServices.length > 0 && clawKeyToken) {
-    // 最完美的情況：匯入了 Key + 有 Claw Key
-    lines.push(`🎉 搞定！已匯入 ${importedServices.length} 把 Key。`);
-    lines.push('以後只要用上面那把 Claw Key 就能通吃所有服務。');
-    lines.push('不用記每個 API Key，ClawAPI 幫你自動管理和路由。');
-    // 加入 L2/L3/L4 說明和多 Key 輪換提示
-    lines.push(...formatClawKeyGuide(importedServices.length));
+    lines.push(`✅ ① 一鍵全自動 — 已匯入 ${importedServices.length} 把 Key + Claw Key 已就緒`);
   } else if (importedServices.length > 0) {
-    // 匯入了 Key 但沒有 Claw Key
-    lines.push(`🎉 搞定！已匯入 ${importedServices.length} 把 Key。`);
-    lines.push('ClawAPI 開始幫你自動管理額度和路由。');
-    lines.push(...formatClawKeyGuide(importedServices.length));
+    lines.push(`✅ ① 一鍵全自動 — 已匯入 ${importedServices.length} 把 Key`);
   } else if (managedKeys.length > 0) {
-    // 沒有新 Key 但已有管理的 Key
-    lines.push('✅ 你的 Key 都已在管理中，沒有新的需要匯入。');
+    lines.push(`✅ ① 一鍵全自動 — ${managedKeys.length} 把 Key 已在管理中`);
   }
 
-  // 爽點二：主動推薦下一個服務（不等用戶問）
+  // 爽點② 主動推薦（用既有的 getProactiveRecommendation）
   const recommendation = await getProactiveRecommendation(deps);
   if (recommendation) {
+    lines.push(`💡 ② 主動推薦 — ${recommendation}`);
+  } else {
+    lines.push('💡 ② 主動推薦 — 匯入後 ClawAPI 自動推薦下一個最值得加的服務');
+  }
+
+  // 爽點③ 碰壁引導
+  lines.push('🛟 ③ 碰壁引導 — 額度用完時，ClawAPI 即時告訴你怎麼補');
+
+  // 爽點④ 群體智慧
+  lines.push('🌐 ④ 群體智慧 — 匿名路由數據共享，越多人用越聰明');
+
+  // L2/L3/L4 指引和多 Key 輪換提示
+  const totalKeys = importedServices.length + managedKeys.length;
+  if (totalKeys > 0) {
+    lines.push(...formatClawKeyGuide(totalKeys));
+  }
+
+  // 多人分發提示（爽點② 主動推薦的延伸）
+  if (clawKeyToken) {
     lines.push('');
-    lines.push(recommendation);
+    lines.push('💡 想分享給朋友或團隊？');
+    lines.push('   用 Sub-Key 分發：每把可設用量上限、有效期、隨時撤銷。');
+    lines.push('   告訴我「幫我發一把 Sub-Key」即可。');
   }
 
   // 接力棒：偵測階段轉換
@@ -504,22 +522,16 @@ function formatScanResult(result: EnvScanResult): string {
  */
 function formatClawKeyResult(result: ClawKeySetupResult): string {
   const lines: string[] = [];
-  const status = result.is_new ? '🆕 新產生' : '✅ 已存在';
+  const statusLabel = result.is_new ? '🆕 新產生' : '✅ 已存在';
 
-  lines.push(`${status} Claw Key`);
-  lines.push('═══════════════════════\n');
-  lines.push(`Token：${result.token}`);
-  lines.push(`包含服務：${result.services_included.join(', ')}`);
+  lines.push(`${statusLabel} Claw Key`);
+  lines.push('═══════════════════════');
+
+  // 用同樣的視覺框框顯示
+  lines.push(...formatClawKeyBox(result.token, result.services_included));
+
   lines.push('');
-  lines.push('使用方式：');
-  lines.push(`  ${result.usage_example}`);
-  lines.push('');
-  lines.push(
-    '這把 Claw Key 可以存取所有已匯入的 API 服務。'
-  );
-  lines.push(
-    '在 Claude Code 或其他 AI 工具中，把 base_url 指向 ClawAPI，用這把 Key 就能通吃所有服務。'
-  );
+  lines.push('在 Claude Code 或其他 AI 工具中，把 base_url 指向 ClawAPI，用這把 Key 就能通吃所有服務。');
   lines.push(...formatClawKeyGuide(result.services_included.length));
 
   return lines.join('\n');
@@ -562,6 +574,44 @@ function formatClawKeyGuide(serviceCount: number): string[] {
   lines.push('   L4 任務引擎 — 多步驟自動化，例如「翻譯 + 摘要 + 寄信」一鍵搞定');
   lines.push('   Key 越多 → 路由越靈活 → 功能越強大');
 
+  return lines;
+}
+
+// ===== 爽點三：碰壁引導（驗證失敗時的行動建議） =====
+
+/**
+ * 根據驗證失敗的錯誤訊息，給出具體的行動建議
+ * 讓用戶不會卡住不知道怎麼辦
+ */
+function getValidationFailHint(error: string, serviceId: string): string | null {
+  if (error.includes('405') || error.includes('Method Not Allowed')) {
+    return `驗證端點不支援，但 Key 可能有效。試試：setup_wizard(action=import, service="${serviceId}", key="你的Key")`;
+  }
+  if (error.includes('不支援的服務') || error.includes('不支援')) {
+    return '此版本尚不支援此服務，預計未來版本加入。';
+  }
+  if (error.includes('未提供可驗證端點') || error.includes('未提供')) {
+    return `無法自動驗證，可手動匯入：setup_wizard(action=import, service="${serviceId}", key="你的Key")`;
+  }
+  return null;
+}
+
+/**
+ * 格式化 Claw Key 的視覺區塊（明顯的框框，不會被文字淹沒）
+ */
+function formatClawKeyBox(token: string, servicesIncluded: string[]): string[] {
+  const lines: string[] = [];
+  lines.push('');
+  lines.push('╔══════════════════════════════════════════════════════╗');
+  lines.push('║  🔑 你的 Claw Key（萬用鑰匙，請複製保存）           ║');
+  lines.push('║                                                      ║');
+  lines.push(`║  ${token}`);
+  lines.push('║                                                      ║');
+  lines.push('║  Base URL：http://localhost:4141/v1                  ║');
+  lines.push(`║  包含服務：${servicesIncluded.join(', ')}`);
+  lines.push('║  一把通吃所有已匯入的 API 服務                      ║');
+  lines.push('╚══════════════════════════════════════════════════════╝');
+  lines.push('（Claw Key = 萬用鑰匙，背後 ClawAPI 自動路由到最佳服務）');
   return lines;
 }
 

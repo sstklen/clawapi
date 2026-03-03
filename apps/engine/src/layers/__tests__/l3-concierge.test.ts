@@ -281,12 +281,12 @@ describe('L3Concierge Claw Key缺失', () => {
       messages: [{ role: 'user', content: '幫我搜尋資訊' }],
     });
 
-    // 驗收標準：沒Claw Key → 失敗 + 說明 + 建議指令
+    // 驗收標準：沒有 LLM Key → 失敗 + 說明 + 建議指令
     expect(result.success).toBe(false);
     expect(result.error).toBeTruthy();
-    expect(result.error).toContain('Claw Key');
+    expect(result.error).toContain('LLM Key');
     expect(result.suggestion).toBeTruthy();
-    expect(result.suggestion).toContain('clawapi claw-key set');
+    expect(result.suggestion).toContain('setup_wizard');
   });
 
   it('未設定Claw Key → latency_ms 應大於 0', async () => {
