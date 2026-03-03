@@ -334,13 +334,16 @@ export async function main(argv: string[] = process.argv): Promise<void> {
   const cliLocale = parsed.flags['locale'] as string | undefined;
   initCliI18n(cliLocale);
 
-  // --help / -h：沒有命令時顯示總幫助，有命令時交給子命令自己處理
+  // --help / -h
   if (parsed.flags['help'] === true || parsed.flags['h'] === true) {
-    if (!parsed.command || parsed.command === 'help') {
+    // 有自己 --help 處理的命令：讓它們自己處理
+    const commandsWithOwnHelp = new Set(['sub-keys']);
+    if (parsed.command && commandsWithOwnHelp.has(parsed.command)) {
+      // 交給子命令自己處理（如 sub-keys issue --help）
+    } else {
       printHelp();
       return;
     }
-    // 有命令 → 讓命令自己處理 --help（如 sub-keys issue --help）
   }
 
   // 路由到命令
