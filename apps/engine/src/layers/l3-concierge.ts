@@ -791,7 +791,7 @@ ${stepsContext}
     // 找到Claw Key對應的 Adapter
     // Claw Key的服務 ID 是 '__claw_key__'，但實際 Adapter 可能是任何 LLM 服務
     // 嘗試用 Claw Key 的 service_id 找 Adapter，失敗則嘗試所有 LLM Adapter
-    const adapterForClawKey = this.findAdapterForClawKey();
+    const adapterForClawKey = this.findAdapterForClawKey(clawKey.service_id);
 
     if (!adapterForClawKey) {
       return {
@@ -839,12 +839,26 @@ ${stepsContext}
 
   /**
    * 尋找適合Claw Key的 Adapter
-   * 優先找 LLM 類別（category='llm'）的 Adapter
    *
+   * 匹配邏輯（依優先順序）：
+   * 1. 若 keyServiceId 不是 '__claw_key__'（fallback 模式），直接用該服務的 Adapter
+   * 2. 否則找第一個 LLM 類別（category='llm'）的 Adapter
+   * 3. 最後找任何支援 chat 的 Adapter
+   *
+   * @param keyServiceId Claw Key 的服務 ID（用來精確匹配 Adapter）
    * @returns 找到的 Adapter 和模型 ID，或 null
    */
-  private findAdapterForClawKey(): { adapter: AdapterConfig; modelId: string } | null {
-    // 優先找 LLM 類型的 Adapter
+  private findAdapterForClawKey(keyServiceId?: string): { adapter: AdapterConfig; modelId: string } | null {
+    // 1. 若是 fallback Key（service_id 不是 __claw_key__），直接精確匹配
+    if (keyServiceId && keyServiceId !== '__claw_key__') {
+      const config = this.adapters.get(keyServiceId);
+      if (config && config.capabilities.chat) {
+        const modelId = config.capabilities.models[0]?.id ?? 'default';
+        return { adapter: config, modelId };
+      }
+    }
+
+    // 2. 專用 Claw Key 或精確匹配失敗 → 找第一個 LLM Adapter
     for (const [, config] of this.adapters) {
       if (config.adapter.category === 'llm' && config.capabilities.chat) {
         const modelId = config.capabilities.models[0]?.id ?? 'default';
@@ -852,7 +866,7 @@ ${stepsContext}
       }
     }
 
-    // 沒有 LLM Adapter，找任何支援 chat 的 Adapter
+    // 3. 沒有 LLM Adapter，找任何支援 chat 的 Adapter
     for (const [, config] of this.adapters) {
       if (config.capabilities.chat) {
         const modelId = config.capabilities.models[0]?.id ?? 'default';

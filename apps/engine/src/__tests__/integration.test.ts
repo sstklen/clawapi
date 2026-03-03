@@ -526,6 +526,43 @@ describe('整合測試：模組接縫', () => {
       expect(clawKey!.key.service_id).toBe('groq');
     });
 
+    it('fallback Key 與 Adapter 精確配對（防止 Key/Adapter 錯配導致 401）', async () => {
+      // 場景：adapters Map 中 anthropic 排在 groq 前面
+      // 但只有 groq 有 Key
+      // 修復前：findAdapterForClawKey 選 anthropic（第一個 LLM adapter）
+      //         → groq Key + anthropic Adapter → 401
+      // 修復後：findAdapterForClawKey 看 key.service_id，選 groq adapter
+      await harness.keyPool.addKey('groq', 'gsk_mismatch_test_12345', 'king');
+
+      // 故意讓 anthropic 排在前面（Map 插入順序）
+      const adapters = new Map<string, AdapterConfig>([
+        ['anthropic', createAdapter('anthropic', false)],
+        ['groq', createAdapter('groq', false)],
+      ]);
+      const executor = createSuccessExecutor();
+      const l2 = new L2Gateway(harness.keyPool, executor, adapters);
+      const l4 = new L4TaskEngine(harness.keyPool, executor, adapters, l2, harness.db);
+
+      // 取得 Claw Key — 應該是 groq
+      const clawKey = await l4.getClawKey();
+      expect(clawKey).not.toBeNull();
+      expect(clawKey!.key.service_id).toBe('groq');
+
+      // 透過 L3Helper 呼叫 LLM — 應該送到 groq adapter，不是 anthropic
+      // 用 l4 的 planTask 觸發 callLLMWithClawKey
+      const result = await l4.planTask(
+        clawKey!.key,
+        [{ role: 'user', content: '測試任務' }]
+      );
+
+      // 檢查 executor 收到的 adapter 是 groq（不是 anthropic）
+      const calls = (executor.execute as ReturnType<typeof mock>).mock.calls;
+      expect(calls.length).toBeGreaterThan(0);
+      // executor.execute 第一個參數是 AdapterConfig
+      const usedAdapter = calls[0]![0] as AdapterConfig;
+      expect(usedAdapter.adapter.id).toBe('groq');
+    });
+
     it('有 __claw_key__ 時優先使用', async () => {
       // 加兩把 Key：一把 groq，一把 __claw_key__
       await harness.keyPool.addKey('groq', 'gsk_groq_test_12345', 'king');
