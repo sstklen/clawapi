@@ -27,8 +27,8 @@ COPY tsconfig.base.json ./
 # 建立必要目錄結構
 RUN mkdir -p /data /logs /keys/ecdh /data/backups /data/db-backups
 
-# 建立非 root 使用者（安全最佳實踐，adduser 適用於 Debian 映像）
-RUN adduser --system --no-create-home --shell /bin/false --group clawapi
+# 建立非 root 使用者（安全最佳實踐，useradd 適用於 Debian slim 映像）
+RUN groupadd -r clawapi && useradd -r -g clawapi -s /bin/false clawapi
 
 # 賦予目錄擁有權
 RUN chown -R clawapi:clawapi /app /data /logs /keys
