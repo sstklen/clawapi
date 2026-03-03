@@ -310,9 +310,12 @@ export class ClawEngineServer implements EngineServer {
     );
     app.route('/v1', openaiRouter);
 
-    // === 掛載 ClawAPI 簡化 API 路由 ===
+    // === 掛載 ClawAPI 簡化 API 路由（同時掛 /api 和 /v1） ===
+    // /api/search、/api/llm 等 ClawAPI 原生端點
+    // /v1/search、/v1/llm 等別名（讓 /v1 也能用 ClawAPI 功能）
     const clawAPIRouter = createClawAPIRouter(this.router);
     app.route('/api', clawAPIRouter);
+    app.route('/v1', clawAPIRouter);
 
     // === 掛載 SSE 事件流路由 ===
     const eventsRouter = createEventsRouter(getEventBus());
