@@ -11,6 +11,12 @@ import type { ParsedArgs } from '../index';
 export async function subKeysCommand(args: ParsedArgs): Promise<void> {
   const sub = args.positional[0];
 
+  // sub-keys --help：顯示子命令總覽
+  if (!sub && (args.flags['help'] === true || args.flags['h'] === true)) {
+    printSubKeysHelp();
+    return;
+  }
+
   switch (sub) {
     case 'issue':
       return subKeysIssue(args);
@@ -32,34 +38,110 @@ export async function subKeysCommand(args: ParsedArgs): Promise<void> {
   }
 }
 
+/**
+ * 顯示 sub-keys 子命令總覽
+ */
+function printSubKeysHelp(): void {
+  blank();
+  print(color.bold('clawapi sub-keys'));
+  print(color.dim('  Sub-Key 管理 — 發行、列表、撤銷、查用量'));
+  blank();
+  print('  issue              發行一把 Sub-Key（支援非互動模式）');
+  print('  list               列出所有 Sub-Key');
+  print('  revoke <id>        撤銷指定 Sub-Key');
+  print('  usage <id>         查看指定 Sub-Key 的用量');
+  blank();
+  print(color.dim('  詳細用法：clawapi sub-keys issue --help'));
+  blank();
+}
+
 // ===== sub-keys issue =====
 
-async function subKeysIssue(_args: ParsedArgs): Promise<void> {
+/**
+ * 顯示 sub-keys issue 的用法說明
+ */
+function printIssueHelp(): void {
   blank();
-  info(t('cmd.sub_keys.issue_title'));
+  print(color.bold('clawapi sub-keys issue'));
+  print(color.dim('  發行一把 Sub-Key（分發給其他人使用）'));
   blank();
+  print(color.bold('  非互動模式（腳本/批量用）：'));
+  print('  clawapi sub-keys issue --label "龍蝦001"');
+  print('  clawapi sub-keys issue --label "朋友A" --expire 7 --limit 50');
+  print('  clawapi sub-keys issue --label "API" --rate 120 --services "groq,openai" --json');
+  blank();
+  print(color.bold('  旗標：'));
+  print('  --label <名稱>       標籤名稱（必填）');
+  print('  --expire <天數>      有效期，預設 30 天（0 = 永久）');
+  print('  --limit <次數>       每日用量上限，預設 100（0 = 無限）');
+  print('  --rate <次/小時>     每小時速率限制，預設 60（0 = 無限）');
+  print('  --services <清單>    允許的服務，逗號分隔（如 "groq,openai"）');
+  print('  --json               以 JSON 格式輸出（適合程式解析）');
+  blank();
+  print(color.bold('  互動模式：'));
+  print('  clawapi sub-keys issue    （不帶 --label 就進入互動問答）');
+  blank();
+}
 
-  // 標籤
-  const label = await ask(t('cmd.sub_keys.label_prompt'));
-  if (!label) {
-    error(t('cmd.sub_keys.label_empty'));
-    process.exit(1);
+async function subKeysIssue(args: ParsedArgs): Promise<void> {
+  // --help：顯示 sub-keys issue 的用法
+  if (args.flags['help'] === true || args.flags['h'] === true) {
+    printIssueHelp();
+    return;
   }
 
-  // 有效期
-  const expiryStr = await ask(t('cmd.sub_keys.expiry_prompt'), '30');
-  const expiryDays = parseInt(expiryStr, 10) || 30;
+  // 判斷模式：有 --label 旗標 → 非互動模式
+  const flagLabel = args.flags['label'];
+  const isNonInteractive = typeof flagLabel === 'string';
 
-  // 每日用量上限
-  const dailyLimitStr = await ask(t('cmd.sub_keys.daily_limit_prompt'), '100');
-  const dailyLimit = parseInt(dailyLimitStr, 10) || 0;
+  let label: string;
+  let expiryDays: number;
+  let dailyLimit: number;
+  let rateLimit: number;
+  let allowedServices: string;
 
-  // 每小時速率
-  const rateLimitStr = await ask(t('cmd.sub_keys.rate_limit_prompt'), '60');
-  const rateLimit = parseInt(rateLimitStr, 10) || 0;
+  if (isNonInteractive) {
+    // === 非互動模式：從 CLI 旗標讀取 ===
+    label = flagLabel;
+    if (!label) {
+      error('--label 不能為空');
+      process.exit(1);
+    }
 
-  // 允許的服務
-  const allowedServices = await ask(t('cmd.sub_keys.allowed_services_prompt'));
+    const expireFlag = args.flags['expire'];
+    expiryDays = typeof expireFlag === 'string' ? (parseInt(expireFlag, 10) || 30) : 30;
+
+    const limitFlag = args.flags['limit'];
+    dailyLimit = typeof limitFlag === 'string' ? (parseInt(limitFlag, 10) || 0) : 100;
+
+    const rateFlag = args.flags['rate'];
+    rateLimit = typeof rateFlag === 'string' ? (parseInt(rateFlag, 10) || 0) : 60;
+
+    const servicesFlag = args.flags['services'];
+    allowedServices = typeof servicesFlag === 'string' ? servicesFlag : '';
+  } else {
+    // === 互動模式：原有的 readline 問答 ===
+    blank();
+    info(t('cmd.sub_keys.issue_title'));
+    blank();
+
+    label = await ask(t('cmd.sub_keys.label_prompt'));
+    if (!label) {
+      error(t('cmd.sub_keys.label_empty'));
+      process.exit(1);
+    }
+
+    const expiryStr = await ask(t('cmd.sub_keys.expiry_prompt'), '30');
+    expiryDays = parseInt(expiryStr, 10) || 30;
+
+    const dailyLimitStr = await ask(t('cmd.sub_keys.daily_limit_prompt'), '100');
+    dailyLimit = parseInt(dailyLimitStr, 10) || 0;
+
+    const rateLimitStr = await ask(t('cmd.sub_keys.rate_limit_prompt'), '60');
+    rateLimit = parseInt(rateLimitStr, 10) || 0;
+
+    allowedServices = await ask(t('cmd.sub_keys.allowed_services_prompt'));
+  }
 
   // 產生 token
   const token = `sk_live_${randomHex(32)}`;

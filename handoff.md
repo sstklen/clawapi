@@ -1,58 +1,81 @@
 # ClawAPI 交接文件
-> 日期：2026-03-02 | 摘要：四爽點全部完成 + 三軍品質審查 + 修復 4 個 CRITICAL/HIGH 問題
 
-## ✅ 已完成（本 session）
+> 日期：2026-03-03 | 摘要：UX 大修完成 + sub-keys 非互動模式
+> Git：待 commit | 測試：1653/0 | Build：四平台 ✅ | 全局安裝 ✅
 
-### 爽點四：群體智慧數據共享（兩條斷路修復）
-- [x] **斷路一修復**：`openai-compat.ts` 所有 5 個端點（chat/embeddings/images/audio×2）成功/失敗後寫入 `usage_log`
-- [x] 新增 `recordUsageLog()` 函式，用 WriteBuffer 非同步寫入（不阻塞回應）
-- [x] `server.ts` 傳入 `writeBuffer` 給 `createOpenAICompatRouter`
-- [x] **斷路二修復**：`index.ts` 啟動時載入 DB 已有的 `routing_intel` → 餵給 L2 路由器
-- [x] VPS 推送路由更新時：寫 DB + 即時回灌 `router.updateCollectiveIntel()`
-- [x] `routing-handler.ts` 新增 `loadCollectiveIntelFromDB()` — 從 DB 轉換為 L2 格式
+---
 
-### 三軍品質審查（Code + Security + Architecture）
-- [x] **CRITICAL 修復**：5 個 catch block 漏記 usage_log → 全部補上 recordUsageLog
-- [x] **HIGH 安全修復**：routing_intel 值未 clamp → 加白名單 + Math.max/min 防護
-- [x] **HIGH 修復**：路由更新錯誤被 verbose 吃掉 → 改為始終 console.warn
-- [x] 新增 2 個安全防護測試（status clamp + 數值 clamp）
-- [x] 測試中 `'healthy'` status 全部改為合法的 `'preferred'`
+## 已完成（前 session）
 
-### 爽點一～三（前 session 已完成，commit: `61e2d94`）
-- [x] 一鍵全自動：handleAuto 掃描 → 驗證 → 全部自動匯入 → Gold Key → 搞定
-- [x] 主動推薦：handleAuto/handleImport/keys_add 成功後推薦下一個免費服務
-- [x] 碰限額引導：L1 429 + L2 全失敗時建議加 Key
+### UX 大修 — 8 項修復 + MCP 四爽點引導（`b706ed2`）
 
-### 測試 + Build
-- [x] 全量測試：1641 pass / 4 fail（4 個預存的 deploy 測試，非本次改動）
-- [x] 四平台 build 全部成功
+| 嚴重度 | 問題 | 修法 |
+|--------|------|------|
+| P0 | ask 說「未設定 Claw Key」 | L3 fallback 到已匯入的 LLM Key |
+| P0 | Claw Key 被文字淹沒 | 視覺框框顯示 |
+| P0 | 命名混亂 | 澄清 + fallback 消除 |
+| P1 | status 說「已停止」 | 加 MCP (stdio) 模式 |
+| P1 | 驗證失敗沒下一步 | 碰壁引導（爽點③） |
+| P1 | 多人分發沒提到 | Sub-Key 提示 |
+| P2 | L 層級沒說明 | 人話對照 |
+| P2 | Claw Key 無法重看 | status 顯示遮罩版 |
 
-## 📋 改動檔案清單
+---
 
-| 檔案 | 改動 |
-|------|------|
-| `src/api/openai-compat.ts` | `recordUsageLog()` + 5 端點 + 5 catch block 記錄 |
-| `src/server.ts` | 傳入 writeBuffer |
-| `src/index.ts` | 啟動載入 routing_intel + VPS 事件回灌 + 錯誤始終記錄 |
-| `src/intelligence/routing-handler.ts` | `loadCollectiveIntelFromDB()` + 值 clamp 安全防護 |
-| `src/intelligence/__tests__/routing-handler.test.ts` | 6 個新測試（4 回灌 + 2 安全） |
+## 已完成（本 session）
 
-## 🔴 下一步
+### P1-2 + P1-5：sub-keys CLI 非互動模式
 
-### 1. Commit 爽點四 + 審查修復
+`clawapi sub-keys issue` 現在支援非互動 CLI 旗標：
+
 ```bash
-cd ~/Desktop/ClawAPI && git add -A && git commit -m "feat: delight point 4 — wire usage_log recording + routing_intel feedback + security hardening"
+# 最簡（只需 --label）
+clawapi sub-keys issue --label "龍蝦001"
+
+# 完整參數
+clawapi sub-keys issue --label "朋友A" --expire 7 --limit 50 --rate 120 --services "groq,openai"
+
+# JSON 輸出（適合腳本/程式解析）
+clawapi sub-keys issue --label "API" --json
 ```
 
-### 2. 端到端整合測試
-確認完整數據鏈：proxy 請求 → usage_log 有記錄 → TelemetryCollector 可打包 → VPS 回傳 routing_intel → L2 路由器收到
+**旗標：**
+| 旗標 | 預設值 | 說明 |
+|------|--------|------|
+| `--label` | 必填 | 標籤名稱 |
+| `--expire` | 30 | 有效期（天），0 = 永久 |
+| `--limit` | 100 | 每日用量上限，0 = 無限 |
+| `--rate` | 60 | 每小時速率限制，0 = 無限 |
+| `--services` | 全部 | 允許的服務（逗號分隔） |
 
-### 3. 未來改善（非急）
-- `Record<string, unknown>` → 正式 `CollectiveIntel` 型別（消除 `as any`）
-- `loadCollectiveIntelFromDB` 加入 region 維度過濾
-- 統一 `recordEvent()` 和 `recordUsageLog()` 的匿名化策略
-- 考慮移除未使用的 `TelemetryCollector.recordEvent()` 方法
+**同時修復：**
+- `clawapi sub-keys issue --help` 顯示子命令用法
+- `clawapi sub-keys --help` 顯示子命令總覽
+- `clawapi --help` 有命令時不再攔截，交給子命令處理
 
-## 已知問題
-- deploy.test.ts 有 4 個預存失敗（Dockerfile.vps + Caddyfile），與本次改動無關
-- `recordEvent()` 和 `recordUsageLog()` 是兩條獨立 usage_log 寫入路徑（目前 recordEvent 未被呼叫，無重複風險）
+**改動檔案（3 檔）：**
+- `cli/index.ts` — `isValueFlag()` 加入 5 個旗標 + `--help` 邏輯修正
+- `cli/commands/sub-keys.ts` — 非互動模式 + help 畫面
+- `cli/__tests__/cli.test.ts` — 8 個新測試
+
+**驗證：** 1653 tests / 0 fail | 四平台 build ✅ | 全局安裝 ✅ | CLI 實測 ✅
+
+---
+
+## 未完成
+
+- 無（UX 回報的 11 個問題已全部處理完畢）
+  - P2-2（doctor port WARN）已在 v0.1.12 修好
+
+---
+
+## 測試員下次測試重點
+
+1. `clawapi sub-keys issue --label "test" --json` → 不問問題直接出 JSON
+2. `clawapi sub-keys issue` → 維持互動模式（向後相容）
+3. `clawapi sub-keys issue --help` → 顯示旗標用法
+4. `clawapi sub-keys --help` → 顯示子命令總覽
+
+---
+
+*交接人：Claude Code（老大）| 2026-03-03*

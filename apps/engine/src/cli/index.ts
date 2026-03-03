@@ -114,6 +114,8 @@ export function parseArgs(argv: string[]): ParsedArgs {
 function isValueFlag(flag: string): boolean {
   const valueFlags = new Set([
     'port', 'host', 'locale', 'service', 'export', 'n',
+    // sub-keys issue 非互動模式用
+    'label', 'limit', 'expire', 'rate', 'services',
   ]);
   return valueFlags.has(flag);
 }
@@ -332,11 +334,13 @@ export async function main(argv: string[] = process.argv): Promise<void> {
   const cliLocale = parsed.flags['locale'] as string | undefined;
   initCliI18n(cliLocale);
 
-  // --help / -h
+  // --help / -h：沒有命令時顯示總幫助，有命令時交給子命令自己處理
   if (parsed.flags['help'] === true || parsed.flags['h'] === true) {
-    // 若有命令但同時傳了 --help，還是顯示總幫助
-    printHelp();
-    return;
+    if (!parsed.command || parsed.command === 'help') {
+      printHelp();
+      return;
+    }
+    // 有命令 → 讓命令自己處理 --help（如 sub-keys issue --help）
   }
 
   // 路由到命令

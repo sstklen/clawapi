@@ -982,6 +982,160 @@ describe('sub-keys subcommand routing', () => {
   });
 });
 
+// ===== sub-keys issue 非互動模式測試 =====
+
+describe('sub-keys issue non-interactive mode', () => {
+  afterEach(() => {
+    setOutputMode({ plain: false, json: false });
+  });
+
+  test('parseArgs 正確解析 sub-keys issue --label "龍蝦001"', () => {
+    const result = parseArgs(['bun', 'cli.ts', 'sub-keys', 'issue', '--label', '龍蝦001']);
+    expect(result.command).toBe('sub-keys');
+    expect(result.positional).toEqual(['issue']);
+    expect(result.flags['label']).toBe('龍蝦001');
+  });
+
+  test('parseArgs 正確解析所有非互動旗標', () => {
+    const result = parseArgs([
+      'bun', 'cli.ts', 'sub-keys', 'issue',
+      '--label', '測試key',
+      '--expire', '7',
+      '--limit', '50',
+      '--rate', '120',
+      '--services', 'groq,openai',
+      '--json',
+    ]);
+    expect(result.command).toBe('sub-keys');
+    expect(result.positional).toEqual(['issue']);
+    expect(result.flags['label']).toBe('測試key');
+    expect(result.flags['expire']).toBe('7');
+    expect(result.flags['limit']).toBe('50');
+    expect(result.flags['rate']).toBe('120');
+    expect(result.flags['services']).toBe('groq,openai');
+    expect(result.flags['json']).toBe(true);
+  });
+
+  test('parseArgs 解析 --label= 等號格式', () => {
+    const result = parseArgs(['bun', 'cli.ts', 'sub-keys', 'issue', '--label=API用戶']);
+    expect(result.flags['label']).toBe('API用戶');
+  });
+
+  test('非互動模式 --json 輸出含 token 和 label', async () => {
+    setOutputMode({ json: true });
+    const { subKeysCommand } = await import('../commands/sub-keys');
+
+    const logs: string[] = [];
+    const origLog = console.log;
+    console.log = (...a: unknown[]) => logs.push(a.join(' '));
+
+    await subKeysCommand({
+      command: 'sub-keys',
+      positional: ['issue'],
+      flags: { label: '非互動測試', expire: '7', limit: '50', json: true },
+    });
+
+    console.log = origLog;
+
+    expect(logs.length).toBe(1);
+    const parsed = JSON.parse(logs[0]!);
+    expect(parsed.status).toBe('issued');
+    expect(parsed.label).toBe('非互動測試');
+    expect(parsed.token).toMatch(/^sk_live_/);
+    expect(parsed.expires_in_days).toBe(7);
+    expect(parsed.daily_limit).toBe(50);
+  });
+
+  test('非互動模式預設值：expire=30, limit=100, rate=60', async () => {
+    setOutputMode({ json: true });
+    const { subKeysCommand } = await import('../commands/sub-keys');
+
+    const logs: string[] = [];
+    const origLog = console.log;
+    console.log = (...a: unknown[]) => logs.push(a.join(' '));
+
+    await subKeysCommand({
+      command: 'sub-keys',
+      positional: ['issue'],
+      flags: { label: '預設值測試', json: true },
+    });
+
+    console.log = origLog;
+
+    const parsed = JSON.parse(logs[0]!);
+    expect(parsed.expires_in_days).toBe(30);
+    expect(parsed.daily_limit).toBe(100);
+    expect(parsed.rate_limit_per_hour).toBe(60);
+    expect(parsed.allowed_services).toBeNull();
+  });
+
+  test('非互動模式 services 正確分割', async () => {
+    setOutputMode({ json: true });
+    const { subKeysCommand } = await import('../commands/sub-keys');
+
+    const logs: string[] = [];
+    const origLog = console.log;
+    console.log = (...a: unknown[]) => logs.push(a.join(' '));
+
+    await subKeysCommand({
+      command: 'sub-keys',
+      positional: ['issue'],
+      flags: { label: '服務測試', services: 'groq, openai, gemini', json: true },
+    });
+
+    console.log = origLog;
+
+    const parsed = JSON.parse(logs[0]!);
+    expect(parsed.allowed_services).toEqual(['groq', 'openai', 'gemini']);
+  });
+
+  test('sub-keys issue --help 顯示用法說明', async () => {
+    const { subKeysCommand } = await import('../commands/sub-keys');
+
+    const logs: string[] = [];
+    const origLog = console.log;
+    console.log = (...a: unknown[]) => logs.push(a.join(' '));
+
+    await subKeysCommand({
+      command: 'sub-keys',
+      positional: ['issue'],
+      flags: { help: true },
+    });
+
+    console.log = origLog;
+
+    // 應該有輸出且包含用法關鍵字
+    expect(logs.length).toBeGreaterThan(0);
+    const allOutput = logs.join('\n');
+    expect(allOutput).toContain('--label');
+    expect(allOutput).toContain('--expire');
+    expect(allOutput).toContain('--limit');
+    expect(allOutput).toContain('非互動模式');
+  });
+
+  test('sub-keys --help 顯示子命令總覽', async () => {
+    const { subKeysCommand } = await import('../commands/sub-keys');
+
+    const logs: string[] = [];
+    const origLog = console.log;
+    console.log = (...a: unknown[]) => logs.push(a.join(' '));
+
+    await subKeysCommand({
+      command: 'sub-keys',
+      positional: [],
+      flags: { help: true },
+    });
+
+    console.log = origLog;
+
+    const allOutput = logs.join('\n');
+    expect(allOutput).toContain('issue');
+    expect(allOutput).toContain('list');
+    expect(allOutput).toContain('revoke');
+    expect(allOutput).toContain('usage');
+  });
+});
+
 // ===== aid 命令測試 =====
 
 describe('aid subcommand routing', () => {
