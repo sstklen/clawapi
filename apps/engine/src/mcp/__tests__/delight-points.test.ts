@@ -250,11 +250,12 @@ describe('爽點一：一鍵全自動（handleAuto）', () => {
 
   it('沒找到新 Key 時應推薦免費服務', async () => {
     const originalEnv = { ...process.env };
-    // 清空所有 API Key 環境變數
+    // 清空所有 API Key 環境變數 + 關閉 .env 檔案掃描（測試環境不可控）
     delete process.env.GROQ_API_KEY;
     delete process.env.OPENAI_API_KEY;
     delete process.env.GEMINI_API_KEY;
     delete process.env.ANTHROPIC_API_KEY;
+    process.env.CLAWAPI_SKIP_DOTENV = '1';
 
     try {
       const keyPool = createMockKeyPool();

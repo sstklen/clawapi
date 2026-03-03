@@ -28,6 +28,7 @@ describe('env-scanner', () => {
     process.env.OPENAI_API_KEY = 'sk-openai-1234567890abcd';
     process.env.GROQ_API_KEY = 'gsk_groq_1234567890abcd';
     process.env.DEEPL_API_KEY = '   ';
+    process.env.CLAWAPI_SKIP_DOTENV = '1'; // 測試只驗證 process.env，不掃 .env 檔案
 
     const result = scanEnvVars();
     expect(result.some(r => r.env_var === 'OPENAI_API_KEY')).toBe(true);

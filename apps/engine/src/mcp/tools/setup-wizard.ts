@@ -24,7 +24,7 @@ import { checkTransition, getTeaser, formatTransitionBanner } from '../../growth
 /** setup_wizard tool 的輸入參數 */
 export interface SetupWizardToolInput {
   /** 動作類型（必填） */
-  action: 'scan' | 'import' | 'validate' | 'gold' | 'auto';
+  action: 'scan' | 'import' | 'validate' | 'gold' | 'claw-key' | 'auto';
   /** 服務 ID（import/validate 用） */
   service?: string;
   /** API Key 值（import 用） */
@@ -52,9 +52,9 @@ export const setupWizardToolSchema = {
     properties: {
       action: {
         type: 'string',
-        enum: ['scan', 'import', 'validate', 'gold', 'auto'],
+        enum: ['scan', 'import', 'validate', 'claw-key', 'gold', 'auto'],
         description:
-          '動作：scan=掃描環境、import=匯入 Key、validate=驗證 Key、gold=產生 Claw Key、auto=全自動',
+          '動作：scan=掃描環境、import=匯入 Key、validate=驗證 Key、claw-key=產生 Claw Key、auto=全自動（gold 為舊名相容）',
       },
       service: {
         type: 'string',
@@ -88,7 +88,8 @@ export async function executeSetupWizardTool(
     case 'validate':
       return handleValidate(input, deps);
 
-    case 'gold':
+    case 'claw-key':
+    case 'gold':  // 向後相容舊名稱
       return handleClawKey(deps);
 
     case 'auto':
@@ -99,7 +100,7 @@ export async function executeSetupWizardTool(
         content: [
           {
             type: 'text',
-            text: `不支援的動作：${input.action}。可用：scan, import, validate, gold, auto`,
+            text: `不支援的動作：${input.action}。可用：scan, import, validate, claw-key, auto`,
           },
         ],
       };
@@ -265,7 +266,7 @@ async function handleClawKey(
       content: [
         {
           type: 'text',
-          text: '⚠️ Sub-Key 管理器未初始化，無法產生 Claw Key。請確認引擎已完整啟動。',
+          text: '⚠️ Sub-Key 管理器尚未就緒，無法產生 Claw Key。引擎初始化中，請稍後重試。',
         },
       ],
     };
@@ -424,10 +425,13 @@ async function handleAuto(
     lines.push(`🎉 搞定！已匯入 ${importedServices.length} 把 Key。`);
     lines.push('以後只要用上面那把 Claw Key 就能通吃所有服務。');
     lines.push('不用記每個 API Key，ClawAPI 幫你自動管理和路由。');
+    // 加入 L2/L3/L4 說明和多 Key 輪換提示
+    lines.push(...formatClawKeyGuide(importedServices.length));
   } else if (importedServices.length > 0) {
-    // 匯入了 Key 但沒有 Gold Key
+    // 匯入了 Key 但沒有 Claw Key
     lines.push(`🎉 搞定！已匯入 ${importedServices.length} 把 Key。`);
     lines.push('ClawAPI 開始幫你自動管理額度和路由。');
+    lines.push(...formatClawKeyGuide(importedServices.length));
   } else if (managedKeys.length > 0) {
     // 沒有新 Key 但已有管理的 Key
     lines.push('✅ 你的 Key 都已在管理中，沒有新的需要匯入。');
@@ -516,8 +520,49 @@ function formatClawKeyResult(result: ClawKeySetupResult): string {
   lines.push(
     '在 Claude Code 或其他 AI 工具中，把 base_url 指向 ClawAPI，用這把 Key 就能通吃所有服務。'
   );
+  lines.push(...formatClawKeyGuide(result.services_included.length));
 
   return lines.join('\n');
+}
+
+/**
+ * Claw Key 產生後的 L2/L3/L4 指引和多 Key 輪換提示
+ * 讓用戶知道：
+ *   1. 這把 Key 現在能做什麼（L2 智慧路由）
+ *   2. 同一服務可以加多把 Key 輪換（突破額度限制）
+ *   3. L3/L4 的進階可能
+ */
+function formatClawKeyGuide(serviceCount: number): string[] {
+  const lines: string[] = [];
+
+  lines.push('');
+  lines.push('───── 你的 Claw Key 能做什麼 ─────');
+  lines.push('');
+
+  // L2: 智慧路由（只要 2+ 服務就自動啟用）
+  if (serviceCount >= 2) {
+    lines.push('🧠 L2 智慧路由（已啟用）');
+    lines.push('   ClawAPI 自動選最佳服務回應，你不用管哪把 Key 對哪個 API。');
+  } else {
+    lines.push('🧠 L2 智慧路由（加第 2 個服務即解鎖）');
+    lines.push('   多加一個免費服務（如 Groq），ClawAPI 就能自動選最佳路由。');
+  }
+
+  // 多 Key 輪換提示
+  lines.push('');
+  lines.push('🔄 額度翻倍秘訣');
+  lines.push('   同一服務可以加 5 把 Key！額度不夠時 ClawAPI 自動輪換。');
+  lines.push('   例：5 把 Gemini Key = 5 倍免費額度，用完一把自動跳下一把。');
+  lines.push('   用 setup_wizard(action=import) 或 keys add 來加更多 Key。');
+
+  // L3/L4 展望
+  lines.push('');
+  lines.push('🚀 進階架構（加更多 Key 解鎖）');
+  lines.push('   L3 AI 管家 — 搜尋 + 翻譯 + LLM 串起來，一句話完成複雜任務');
+  lines.push('   L4 任務引擎 — 多步驟自動化，例如「翻譯 + 摘要 + 寄信」一鍵搞定');
+  lines.push('   Key 越多 → 路由越靈活 → 功能越強大');
+
+  return lines;
 }
 
 // ===== 爽點二：主動推薦 =====

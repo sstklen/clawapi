@@ -134,6 +134,11 @@ export class ClawEngineServer implements EngineServer {
     return this.adapters;
   }
 
+  /** 取得 SubKeyManager（Claw Key 產生需要） */
+  getSubKeyManager(): SubKeyManager | undefined {
+    return this.mgmtOptions?.subKeyManager;
+  }
+
   /** 取得 Database（接力棒系統需要） */
   getDatabase(): ClawDatabase {
     return this.db;

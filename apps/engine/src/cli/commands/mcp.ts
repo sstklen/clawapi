@@ -236,12 +236,13 @@ export async function mcpCommand(args: ParsedArgs): Promise<void> {
     const keyPool = server.getKeyPool();
     const adapters = server.getAdapters();
 
-    // 取得 DB 和成長引擎（接力棒系統需要）
+    // 取得 DB、SubKeyManager 和成長引擎
     const db = server.getDatabase();
+    const subKeyManager = server.getSubKeyManager();
     const { GrowthEngine } = await import('../../growth/engine');
     const growthEngine = new GrowthEngine(keyPool, adapters, db);
 
-    // 建立 MCP Server
+    // 建立 MCP Server（含 subKeyManager → Claw Key 產生才能用）
     const { createMcpServer } = await import('../../mcp/server');
     const mcpServer = createMcpServer({
       router,
@@ -249,6 +250,7 @@ export async function mcpCommand(args: ParsedArgs): Promise<void> {
       adapters,
       db,
       growthEngine,
+      subKeyManager,
       statusDeps: {
         keyPool,
         startedAt: new Date(),

@@ -9,7 +9,7 @@
 // 四成長階段（狀態機）：onboarding → awakening → scaling → mastery
 //
 // 這個檔案是所有 growth 模組的「合約」，
-// env-scanner / key-validator / gold-key-setup / engine 都要依賴
+// env-scanner / key-validator / claw-key-setup / engine 都要依賴
 
 import type { KeyPool } from '../core/key-pool';
 import type { AdapterConfig } from '../adapters/loader';
