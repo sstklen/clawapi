@@ -15,24 +15,21 @@ auth:
 base_url: https://duckduckgo.com
 
 endpoints:
+  # DuckDuckGo Instant Answer API — 必須用 GET + query params
+  # POST + JSON body 會被忽略（回空 body）
   search:
-    method: POST
-    path: /
+    method: GET
+    path: "/?q={{ query }}&format=json&no_html=1&skip_disambig=1"
     response_type: json
-    body:
-      q: "{{ query }}"
-      format: json
-      no_html: 1
-      skip_disambig: 1
+    headers:
+      User-Agent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36"
 
   instant_answer:
-    method: POST
-    path: /
+    method: GET
+    path: "/?q={{ query }}&format=json&no_html=1"
     response_type: json
-    body:
-      q: "{{ query }}"
-      format: json
-      no_html: 1
+    headers:
+      User-Agent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36"
 
 capabilities:
   chat: false
