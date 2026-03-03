@@ -17,6 +17,7 @@ import { CryptoModule } from '../core/encryption';
 import { KeyPool } from '../core/key-pool';
 import { executeStatusTool, type EngineStatusDeps } from '../mcp/tools/status';
 import { L2Gateway } from '../layers/l2-gateway';
+import { L4TaskEngine } from '../layers/l4-task';
 import type { AdapterConfig } from '../adapters/loader';
 import type { AdapterExecutor } from '../adapters/executor';
 import type { DecryptedKey } from '../core/key-pool';
@@ -462,6 +463,150 @@ describe('整合測試：模組接縫', () => {
       expect(text).toContain('總計：2 個 Key');
       expect(text).toContain('正常：2');
       expect(text).toContain('服務數：2');
+    });
+  });
+
+  // ── 接縫 10：L4 fallback（無 Claw Key → 用一般 LLM Key） ──
+  describe('接縫 10：L4 Claw Key fallback', () => {
+    it('沒有任何 Key → L4 回傳「未設定 Claw Key」', async () => {
+      // 空的 KeyPool + 空的 adapters
+      const adapters = new Map<string, AdapterConfig>();
+      const executor = createSuccessExecutor();
+      const emptyKeyPool = harness.keyPool; // 全新的，沒加過 Key
+      const l2 = new L2Gateway(emptyKeyPool, executor, adapters);
+      const l4 = new L4TaskEngine(emptyKeyPool, executor, adapters, l2, harness.db);
+
+      const result = await l4.execute({
+        messages: [{ role: 'user', content: '測試任務' }],
+        params: {},
+      });
+
+      expect(result.success).toBe(false);
+      expect(result.error).toContain('未設定');
+      expect(result.error).toContain('Claw Key');
+    });
+
+    it('有一般 LLM Key 但沒有 __claw_key__ → getClawKey fallback 到 LLM Key', async () => {
+      // 加一把 groq Key（不是 __claw_key__）
+      await harness.keyPool.addKey('groq', 'gsk_fallback_test_12345', 'king');
+
+      const adapters = new Map<string, AdapterConfig>([
+        ['groq', createAdapter('groq', false)],
+      ]);
+      const executor = createSuccessExecutor();
+      const l2 = new L2Gateway(harness.keyPool, executor, adapters);
+      const l4 = new L4TaskEngine(harness.keyPool, executor, adapters, l2, harness.db);
+
+      // getClawKey 應該能 fallback 到 groq key
+      const clawKey = await l4.getClawKey();
+      expect(clawKey).not.toBeNull();
+      expect(clawKey!.key.service_id).toBe('groq');
+    });
+
+    it('有 __claw_key__ 時優先使用', async () => {
+      // 加兩把 Key：一把 groq，一把 __claw_key__
+      await harness.keyPool.addKey('groq', 'gsk_groq_test_12345', 'king');
+      await harness.keyPool.addKey('__claw_key__', 'sk_claw_key_special', 'king');
+
+      const adapters = new Map<string, AdapterConfig>([
+        ['groq', createAdapter('groq', false)],
+      ]);
+      const executor = createSuccessExecutor();
+      const l2 = new L2Gateway(harness.keyPool, executor, adapters);
+      const l4 = new L4TaskEngine(harness.keyPool, executor, adapters, l2, harness.db);
+
+      // getClawKey 應該優先用 __claw_key__
+      const clawKey = await l4.getClawKey();
+      expect(clawKey).not.toBeNull();
+      expect(clawKey!.key.service_id).toBe('__claw_key__');
+    });
+  });
+
+  // ── 接縫 11：完整生命週期（加 Key → 列出 → 刪除 → 重新加入） ──
+  describe('接縫 11：完整 Key 生命週期', () => {
+    it('加入 → 列出 → 刪除全部 → 確認空 → 重新加入', async () => {
+      // 1. 加入 3 把 Key
+      const id1 = await harness.keyPool.addKey('groq', 'gsk_lifecycle_aaa', 'king');
+      const id2 = await harness.keyPool.addKey('openai', 'sk_lifecycle_bbb', 'king');
+      const id3 = await harness.keyPool.addKey('google', 'AIza_lifecycle_ccc', 'king');
+
+      // 2. 確認有 3 把
+      let keys = await harness.keyPool.listKeys();
+      expect(keys.length).toBe(3);
+
+      // 3. 逐一刪除
+      await harness.keyPool.removeKey(id1 as number);
+      await harness.keyPool.removeKey(id2 as number);
+      await harness.keyPool.removeKey(id3 as number);
+
+      // 4. 確認全空
+      keys = await harness.keyPool.listKeys();
+      expect(keys.length).toBe(0);
+
+      // selectKey 也應該回傳 null
+      const selectedKey = await harness.keyPool.selectKey('groq');
+      expect(selectedKey).toBeNull();
+
+      // 5. 重新加入
+      const newId = await harness.keyPool.addKey('groq', 'gsk_lifecycle_new', 'king');
+      expect(newId).toBeGreaterThan(0);
+
+      keys = await harness.keyPool.listKeys();
+      expect(keys.length).toBe(1);
+      expect(keys[0]!.daily_used).toBe(0);
+      expect(keys[0]!.status).toBe('active');
+    });
+
+    it('刪除後 status 反映正確數量', async () => {
+      await harness.keyPool.addKey('groq', 'gsk_status_111', 'king');
+      const id2 = await harness.keyPool.addKey('openai', 'sk_status_222', 'king');
+
+      // 刪一把
+      await harness.keyPool.removeKey(id2 as number);
+
+      const deps: EngineStatusDeps = {
+        keyPool: harness.keyPool,
+        startedAt: new Date(),
+        adapterCount: 2,
+      };
+
+      const result = await executeStatusTool({}, deps);
+      const text = result.content[0]!.text;
+
+      expect(text).toContain('總計：1 個 Key');
+      expect(text).toContain('正常：1');
+    });
+  });
+
+  // ── 接縫 12：init 不帶殘留（全新環境乾淨度） ──
+  describe('接縫 12：全新環境乾淨度', () => {
+    it('全新 TestHarness 建立後 keys = 0', async () => {
+      // harness 是 beforeEach 全新建立的
+      const keys = await harness.keyPool.listKeys();
+      expect(keys.length).toBe(0);
+    });
+
+    it('全新環境的 selectKey 全部回傳 null', async () => {
+      const services = ['groq', 'openai', 'google', '__claw_key__', 'duckduckgo'];
+      for (const svc of services) {
+        const key = await harness.keyPool.selectKey(svc);
+        expect(key).toBeNull();
+      }
+    });
+
+    it('全新環境的 status 顯示 0 個 Key 無警告', async () => {
+      const deps: EngineStatusDeps = {
+        keyPool: harness.keyPool,
+        startedAt: new Date(),
+        adapterCount: 0,
+      };
+
+      const result = await executeStatusTool({}, deps);
+      const text = result.content[0]!.text;
+
+      expect(text).toContain('總計：0 個 Key');
+      expect(text).not.toContain('⚠️');
+      expect(text).not.toContain('解密失敗');
     });
   });
 });
