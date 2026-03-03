@@ -1,118 +1,78 @@
 # ClawAPI 交接文件
 
-> 日期：2026-03-04 | 摘要：測試員回歸報告 3 新 Bug 修完 + 17 個整合測試 + UX 補完
-> Git：待 commit | 測試：1039/0 | Build：四平台 ✅ | 全局安裝 ✅
+> 日期：2026-03-04 Session 3 | 摘要：8 輪回歸測試全過 + 5 個 Bug 修復 + VPS 上線 + README 更新
+> 版本：0.1.13 | 測試：1681/0 | Build：四平台 ✅ | VPS：`https://clawapi.washinmura.jp` ✅
 
 ---
 
-## 已完成（更早的 session）
+## 已完成
 
-### UX 大修 — 8 項修復 + MCP 四爽點引導（`b706ed2`）
+### Bug 修復（5 個，全驗證通過）
 
-| 嚴重度 | 問題 | 修法 |
-|--------|------|------|
-| P0 | ask 說「未設定 Claw Key」 | L3 fallback 到已匯入的 LLM Key |
-| P0 | Claw Key 被文字淹沒 | 視覺框框顯示 |
-| P0 | 命名混亂 | 澄清 + fallback 消除 |
-| P1 | status 說「已停止」 | 加 MCP (stdio) 模式 |
-| P1 | 驗證失敗沒下一步 | 碰壁引導（爽點③） |
-| P1 | 多人分發沒提到 | Sub-Key 提示 |
-| P2 | L 層級沒說明 | 人話對照 |
-| P2 | Claw Key 無法重看 | status 顯示遮罩版 |
+| Bug | 根因 | 修法 | Commit |
+|-----|------|------|--------|
+| Dead Key 無法復活 | `fullScan` 把 dead Key 算「已管理」跳過 | 只看 `status=active` 才算已管理 | `79f47dc` |
+| L1 免費服務噴「沒 Key」 | L1 沒有 placeholder Key（L2 有） | 加 id=-1 佔位 Key | `79f47dc` |
+| N3 重複匯入 daily_used 殘留 | `addKey` 重複時沒重置計數器 | UPDATE 重置 daily_used + consecutive_failures | `2b16347` |
+| T4 task 401 | Key 和 Adapter 錯配（groq Key 送去 anthropic API） | `findAdapterForClawKey` 用 `service_id` 精確匹配 | `259cfe3` |
+| N1 MCP 殭屍偵測 | uninstall 刪 DB 但 MCP 進程還活著 | pgrep 偵測 + 警告重啟 Claude Code | `0c56c23` |
 
-### sub-keys CLI 非互動模式 + 爽點完整版
+### 回歸測試：第 6 輪（38%）→ 第 7 輪（83%）→ 第 8 輪（100%）
 
-（詳見上一版 handoff）
+| 測試 | 第 6 輪 | 第 7 輪 | 第 8 輪 |
+|------|--------|--------|--------|
+| T1 setup_wizard | ✅ | ✅ | ✅ |
+| T2 status | ❌ 3 Key 失效 | ✅ 全正常 | ✅ |
+| T3a search | ⚠️ | ✅ | ✅ |
+| T3b search DDG | ❌ 沒 Key | ✅ 修好 | ✅ |
+| T4 task | ❌ 沒 Claw Key | ⚠️ 401 | ✅ 修好 |
+| T5 growth_guide | ⚠️ | ✅ | ✅ |
 
-### 第一輪 6 個 Bug 全修（`97f6de6`）
+### 整合測試：12 → 13 個接縫（28 個測試）
 
-A1/A2/A3（master.key 脫鉤）、B1（DuckDuckGo 免費路由）、C1（L4 fallback）
+新增：接縫 10 L4 fallback（含 Key/Adapter 錯配防護）、接縫 11 生命週期、接縫 12 乾淨度
 
----
+### VPS 部署
 
-## 已完成（本 session）
+- `https://clawapi.washinmura.jp/health` → 200 OK ✅
+- 7 個元件全初始化：金鑰管理器、智慧引擎、異常偵測、L0、WebSocket、互助、Sub-Key
+- Dockerfile 修了 2 個問題：缺 engine workspace + adduser 不存在
 
-### 測試員回歸報告的 3 個新 Bug — 全部修復
+### README 更新
 
-**Bug N1 🔴 P0：MCP 殭屍問題（同 session uninstall 後 disk I/O error）**
-
-| 修法 | 檔案 |
-|------|------|
-| uninstall 前先停 daemon（SIGTERM → 3s 等待 → SIGKILL） | `src/cli/commands/uninstall.ts` |
-| 偵測 MCP 模式，顯示醒目警告「重啟 Claude Code session」 | 同上 |
-
-**Bug N3 🟡 P1：不明 Groq Key + daily_used:12**
-
-| 根因 | 修法 | 檔案 |
-|------|------|------|
-| `keys list` 和 `keys check` 用的是 hardcoded 假資料 | 接上真正的 KeyPool（DB 讀取） | `src/cli/commands/keys.ts` |
-| 假資料包含 `gsk_...Xm4Q` + `daily_used: 12` | 移除所有 mock data | 同上 |
-
-**Phase 2 UX 落差：init CLI 沒有路線圖**
-
-| 修法 | 檔案 |
-|------|------|
-| 加入 L1→L4 成長路線圖（含「← 你在這裡」標記） | `src/cli/commands/init.ts` |
-| 四爽點每個附場景描述 | 同上 |
-| 結尾兩個輕問句 | 同上 |
-
-### 新增：自循環整合測試（17 個測試）
-
-**檔案：** `src/__tests__/integration.test.ts`
-
-用 TestHarness class（真實 DB + CryptoModule + KeyPool），每個測試用臨時目錄隔離。
-
-| 接縫 | 測什麼 | 測試數 |
-|------|--------|--------|
-| 1. master.key + data.db 配對 | 正常解密 + 換 key 後失敗 | 2 |
-| 2. DuckDuckGo 免費路由 | 空 KeyPool 也能路由 + 付費優先 | 2 |
-| 3. status 解密驗證 | 正常無警告 + 不匹配有警告 | 2 |
-| 4. 重複 Key 防護 | 同 Key 不重複 + 不同 Key 正常加 | 2 |
-| 5. daily_used 初始值 | 新 Key 計數器 = 0 | 3 |
-| 6. selectKey 輪換 | 多 Key 輪換 + 不存在回 null | 2 |
-| 7. 空 DB 的 status | 0 Key 時不壞 | 1 |
-| 8. 免費佔位 Key 安全性 | id=-1 不影響真 Key | 1 |
-| 9. 多服務混合 | 3 服務互不干擾 + status 正確統計 | 2 |
-
-### 驗證結果
-- `bun test --recursive`：1039 pass / 0 fail ✅（+17 整合測試）
-- 四平台 build ✅
-- 全局安裝 ✅
-- CLI 版本確認 v0.1.12 ✅
+- 新增 **Why ClawAPI** 四爽點表格
+- 測試數 1478 → 1681、工具數 12 → 14、Gold Key → Claw Key
 
 ---
 
-## 未完成
+## 已知問題
 
-- **Git commit**：本 session 改動尚未 commit
-- Bug N2（`/v1/search` HTTP 端點不存在）→ P2 下版修，影響外部 REST 整合但不影響 MCP
-
----
-
-## 改動檔案總覽（本 session）
-
-| 檔案 | 改動 |
-|------|------|
-| `src/cli/commands/uninstall.ts` | 停 daemon + MCP 殭屍警告 |
-| `src/cli/commands/keys.ts` | 移除假資料，接上真實 KeyPool |
-| `src/cli/commands/init.ts` | L1-L4 路線圖 + 爽點場景 + 輕問句 |
-| `src/__tests__/integration.test.ts` | 🆕 17 個接縫測試 |
+- **DNS**：`clawapi.washinmura.jp` 走 Cloudflare 代理，Caddy 自動申請 Let's Encrypt 憑證（目前正常）
+- **爽點④ 群體智慧**：VPS 後端就緒，但本地引擎還沒設定連 VPS（需要在 config 設 vps.url）
+- **npm 未發布**：0.1.13 還在本地，npm registry 上是舊版
 
 ---
 
-## 測試員下次測試重點
+## 下一步（按優先順序）
 
-1. **新 session 測試**（重啟 Claude Code 後）：
-   - `status` → 應正確顯示 Key 數量和服務數
-   - `search(query="test")` → DuckDuckGo 免費搜尋
-   - `setup_wizard(action=auto)` → 一鍵匯入
-   - `task(task="搜尋最新消息")` → L4 fallback
-2. **CLI 測試**（不需要 MCP）：
-   - `clawapi keys list` → 應顯示真實 Key（不再是假資料）
-   - `clawapi keys check` → 顯示真實狀態
-   - `clawapi uninstall --all` → 應看到 MCP 重啟警告
-   - `clawapi init` → 應看到 L1-L4 路線圖 + 四爽點場景
+1. **npm publish 0.1.13**
+   ```bash
+   cd /Users/tkman/Desktop/ClawAPI/apps/engine
+   npm pack --dry-run  # 確認 files 列表
+   npm publish --access public --otp=<你的 OTP>
+   ```
+
+2. **引擎連 VPS**（啟用爽點④）
+   ```bash
+   # 本地引擎設定 VPS URL
+   clawapi config set vps.url https://clawapi.washinmura.jp
+   ```
+
+3. **GitHub Release v0.1.13**
+   ```bash
+   gh release create v0.1.13 --title "v0.1.13" --notes "8 輪回歸全過 + 5 bug fix + VPS 上線"
+   ```
 
 ---
 
-*交接人：Claude Code（老大）| 2026-03-04 凌晨*
+*交接人：Claude Code（老大）| 2026-03-04*
