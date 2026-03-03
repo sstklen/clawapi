@@ -419,48 +419,82 @@ async function handleAuto(
     }
   }
 
-  // === 結尾訊息：以四爽點為引導框架 ===
+  // === 結尾訊息：成長路線圖 + 四爽點全景 + 兩個輕問句 ===
   lines.push('');
   lines.push('═══════════════════════');
   lines.push('🎉 設定完成！');
+
+  // 判斷當前 L 層級
+  const allServiceIds = new Set([
+    ...importedServices,
+    ...managedKeys.map(k => k.service_id),
+  ]);
+  const totalServices = allServiceIds.size;
+  let currentLevel = totalServices >= 2 ? 2 : 1;
+  if (deps.growthEngine) {
+    try {
+      const phase = await deps.growthEngine.getPhase();
+      if (phase === 'scaling') currentLevel = 3;
+      if (phase === 'thriving') currentLevel = 4;
+    } catch { /* 不影響主流程 */ }
+  }
+
+  // ━━━ 成長路線圖 ━━━
+  lines.push('');
+  lines.push('━━━ 成長路線圖 ━━━');
+  lines.push('');
+  const levels: Array<{ level: number; name: string; desc: string }> = [
+    { level: 1, name: 'L1 直轉', desc: '基本轉發，每次用一把 Key' },
+    { level: 2, name: 'L2 智慧路由', desc: `${totalServices} 個服務在線，自動選最佳` },
+    { level: 3, name: 'L3 AI 管家', desc: '搜尋＋翻譯＋LLM 串聯，一句話搞定' },
+    { level: 4, name: 'L4 任務引擎', desc: '多步驟自動化，翻譯→摘要→寄信一鍵搞定' },
+  ];
+  for (const l of levels) {
+    const icon = l.level <= currentLevel ? '✅' : '🔲';
+    const here = l.level === currentLevel ? '  ← 你在這裡' : '';
+    lines.push(`${icon} ${l.name.padEnd(14)} → ${l.desc}${here}`);
+  }
+
+  // ━━━ 四爽點 ━━━
+  lines.push('');
+  lines.push('━━━ 四爽點 ━━━');
   lines.push('');
 
   // 爽點① 一鍵全自動
   if (importedServices.length > 0 && clawKeyToken) {
-    lines.push(`✅ ① 一鍵全自動 — 已匯入 ${importedServices.length} 把 Key + Claw Key 已就緒`);
+    lines.push(`✅ ① 一鍵全自動  — 已匯入 ${importedServices.length} 把 Key + Claw Key 就緒`);
   } else if (importedServices.length > 0) {
-    lines.push(`✅ ① 一鍵全自動 — 已匯入 ${importedServices.length} 把 Key`);
+    lines.push(`✅ ① 一鍵全自動  — 已匯入 ${importedServices.length} 把 Key`);
   } else if (managedKeys.length > 0) {
-    lines.push(`✅ ① 一鍵全自動 — ${managedKeys.length} 把 Key 已在管理中`);
+    lines.push(`✅ ① 一鍵全自動  — ${managedKeys.length} 把 Key 已在管理中`);
   }
+  lines.push('      你剛體驗的：掃描→驗證→匯入，全程零操作');
 
-  // 爽點② 主動推薦（用既有的 getProactiveRecommendation）
-  const recommendation = await getProactiveRecommendation(deps);
-  if (recommendation) {
-    lines.push(`💡 ② 主動推薦 — ${recommendation}`);
+  // 爽點② 主動推薦
+  const nextServiceTitle = await getShortRecommendation(deps);
+  if (nextServiceTitle) {
+    lines.push(`💡 ② 主動推薦    — 下一步建議加 ${nextServiceTitle}`);
   } else {
-    lines.push('💡 ② 主動推薦 — 匯入後 ClawAPI 自動推薦下一個最值得加的服務');
+    lines.push('💡 ② 主動推薦    — 所有免費服務都加完了！');
   }
+  lines.push('      說「推薦」，ClawAPI 永遠知道你下一步最值得做什麼');
 
   // 爽點③ 碰壁引導
-  lines.push('🛟 ③ 碰壁引導 — 額度用完時，ClawAPI 即時告訴你怎麼補');
+  lines.push('🛟 ③ 碰壁引導    — 額度用完？不怕');
+  lines.push('      Groq 滿了 → 自動跳 Gemini，同時教你怎麼翻倍額度');
 
   // 爽點④ 群體智慧
-  lines.push('🌐 ④ 群體智慧 — 匿名路由數據共享，越多人用越聰明');
+  lines.push('🌐 ④ 群體智慧    — 越多人用，路由越聰明');
+  lines.push('      你的使用數據（匿名）幫所有人選到更快更省的路由');
 
-  // L2/L3/L4 指引和多 Key 輪換提示
-  const totalKeys = importedServices.length + managedKeys.length;
-  if (totalKeys > 0) {
-    lines.push(...formatClawKeyGuide(totalKeys));
-  }
+  // 額度翻倍提示
+  lines.push('');
+  lines.push('🔄 額度翻倍秘訣：同一服務可加 5 把 Key，額度不夠自動輪換');
 
-  // 多人分發提示（爽點② 主動推薦的延伸）
-  if (clawKeyToken) {
-    lines.push('');
-    lines.push('💡 想分享給朋友或團隊？');
-    lines.push('   用 Sub-Key 分發：每把可設用量上限、有效期、隨時撤銷。');
-    lines.push('   告訴我「幫我發一把 Sub-Key」即可。');
-  }
+  // 兩個輕問句（不推銷，放旁邊讓用戶自己問）
+  lines.push('');
+  lines.push('💬 想知道 Claw Key 怎麼用嗎？說一聲就好');
+  lines.push('🔑 需要多打幾把給別人？也告訴我就好');
 
   // 接力棒：偵測階段轉換
   if (deps.db && deps.growthEngine && importedServices.length > 0) {
@@ -616,6 +650,25 @@ function formatClawKeyBox(token: string, servicesIncluded: string[]): string[] {
 }
 
 // ===== 爽點二：主動推薦 =====
+
+/**
+ * 取得簡短推薦標題（用於路線圖中的一行顯示）
+ * 只回傳服務名稱，例如「Cerebras（免費 + 極速）」
+ */
+async function getShortRecommendation(
+  deps: { keyPool: KeyPool }
+): Promise<string | null> {
+  try {
+    const keys = await deps.keyPool.listKeys();
+    const existingServices = new Set(keys.map(k => k.service_id));
+    const nextService = SERVICE_RECOMMENDATIONS.find(
+      item => !existingServices.has(item.service_id) && item.effort !== 'paid'
+    );
+    return nextService?.title ?? null;
+  } catch {
+    return null;
+  }
+}
 
 /**
  * 取得主動推薦訊息（爽點二）

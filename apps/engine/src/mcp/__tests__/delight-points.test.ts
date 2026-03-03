@@ -267,9 +267,9 @@ describe('爽點一：一鍵全自動（handleAuto）', () => {
       const result = await executeSetupWizardTool({ action: 'auto' }, deps);
       const text = result.content[0]!.text;
 
-      // 應該推薦免費服務（至少推薦一個免費服務的 URL）
-      const hasFreeServiceUrl = text.includes('console.groq.com') || text.includes('aistudio.google.com');
-      expect(hasFreeServiceUrl).toBe(true);
+      // 應該推薦免費服務（短版推薦標題 + 引導用戶說「推薦」看詳情）
+      const hasRecommendation = text.includes('主動推薦') && text.includes('推薦');
+      expect(hasRecommendation).toBe(true);
     } finally {
       process.env = originalEnv;
     }

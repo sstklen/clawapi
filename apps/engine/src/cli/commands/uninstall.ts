@@ -58,8 +58,10 @@ export async function uninstallCommand(args: ParsedArgs): Promise<void> {
       cleaned++;
     } else {
       // 預設：只移除 config，保留 data.db（用戶的 key 資料）
-      const safeToRemove = ['config.yaml', 'master.key', 'engine.pid'];
-      const dataFiles = ['data.db', 'data.db-shm', 'data.db-wal', 'auth.token'];
+      // master.key 跟 data.db 是一對：DB 裡的 Key 用 master.key 加密，
+      // 刪了 master.key 但留 data.db → 所有 Key 解密失敗 → 全部壞掉
+      const safeToRemove = ['config.yaml', 'engine.pid'];
+      const dataFiles = ['data.db', 'data.db-shm', 'data.db-wal', 'auth.token', 'master.key'];
 
       for (const file of safeToRemove) {
         const filePath = join(CONFIG_DIR, file);

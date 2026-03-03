@@ -143,12 +143,25 @@ export class KeyPool {
     label?: string,
     maxKeysPerService: number = 5
   ): Promise<number> {
-    // 檢查數量限制
-    const count = this.db.query<{ cnt: number }>(
-      'SELECT COUNT(*) AS cnt FROM keys WHERE service_id = ?',
+    // 檢查重複：解密現有 Key 比對明文，避免重複匯入
+    const existingRows = this.db.query<KeyRow>(
+      'SELECT * FROM keys WHERE service_id = ?',
       [serviceId]
     );
-    const currentCount = count[0]?.cnt ?? 0;
+    for (const row of existingRows) {
+      try {
+        const existing = this.crypto.decrypt(row.key_encrypted);
+        if (existing === keyValue) {
+          // 已存在相同 Key，不重複新增，直接回傳現有 id
+          return row.id;
+        }
+      } catch {
+        // 解密失敗的舊 Key，忽略（master.key 可能已更換）
+      }
+    }
+
+    // 檢查數量限制
+    const currentCount = existingRows.length;
     if (currentCount >= maxKeysPerService) {
       throw new Error(
         `服務 ${serviceId} 已達 Key 數量上限（${maxKeysPerService}），請先刪除舊 Key`

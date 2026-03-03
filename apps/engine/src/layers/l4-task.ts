@@ -417,15 +417,32 @@ export class L4TaskEngine {
    * @returns Claw Key資訊，若不存在則回傳 null
    */
   async getClawKey(): Promise<ClawKeyInfo | null> {
-    const key = await this.keyPool.selectKey(L4TaskEngine.CLAW_KEY_SERVICE_ID);
-    if (!key) return null;
+    // 1. 先找專門設定的 __claw_key__（CLI claw-key set 設定的）
+    const dedicated = await this.keyPool.selectKey(L4TaskEngine.CLAW_KEY_SERVICE_ID);
+    if (dedicated) {
+      return {
+        key: dedicated,
+        daily_tokens_used: dedicated.daily_used,
+        daily_token_limit: 1_000_000,
+      };
+    }
 
-    return {
-      key,
-      daily_tokens_used: key.daily_used,
-      // 若無明確上限，預設每日 1,000,000 tokens（充足額度）
-      daily_token_limit: 1_000_000,
-    };
+    // 2. Fallback：使用任何已匯入的 LLM Key（跟 L3 Concierge 一樣的邏輯）
+    //    這讓 setup_wizard(auto) 匯入 Key 後，L4 立刻能用
+    for (const [adapterId, config] of this.adapters) {
+      if (config.adapter.category === 'llm' && config.capabilities.chat) {
+        const key = await this.keyPool.selectKey(adapterId);
+        if (key) {
+          return {
+            key,
+            daily_tokens_used: key.daily_used,
+            daily_token_limit: 1_000_000,
+          };
+        }
+      }
+    }
+
+    return null;
   }
 
   /**

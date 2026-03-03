@@ -64,11 +64,12 @@ export async function executeStatusTool(
   const uptime = Math.floor((Date.now() - deps.startedAt.getTime()) / 1000);
   const uptimeStr = formatUptime(uptime);
 
-  // 取得 Key 統計
+  // 取得 Key 統計（含解密驗證）
   const keys = await deps.keyPool.listKeys();
-  const activeKeys = keys.filter(k => k.status === 'active').length;
+  const decryptFailed = keys.filter(k => k.key_masked === '(解密失敗)').length;
+  const activeKeys = keys.filter(k => k.status === 'active' && k.key_masked !== '(解密失敗)').length;
   const deadKeys = keys.filter(k => k.status === 'dead').length;
-  const services = new Set(keys.map(k => k.service_id));
+  const services = new Set(keys.filter(k => k.key_masked !== '(解密失敗)').map(k => k.service_id));
 
   const lines = [
     `ClawAPI 引擎狀態`,
@@ -81,10 +82,18 @@ export async function executeStatusTool(
     `  總計：${keys.length} 個 Key`,
     `  正常：${activeKeys}`,
     `  失效：${deadKeys}`,
+    ...(decryptFailed > 0 ? [`  解密失敗：${decryptFailed}  ⚠️`] : []),
     `  服務數：${services.size}`,
     ``,
     `Adapter 數：${deps.adapterCount}`,
   ];
+
+  // 解密失敗警告（master.key 不匹配，所有功能都壞了）
+  if (decryptFailed > 0) {
+    lines.push('');
+    lines.push(`⚠️ ${decryptFailed} 個 Key 解密失敗！加密鑰匙（master.key）與資料庫不匹配。`);
+    lines.push('   建議：clawapi uninstall --all → clawapi init 重新設定。');
+  }
 
   if (deps.config) {
     lines.push(``, `監聽位址：${deps.config.host}:${deps.config.port}`);

@@ -119,8 +119,16 @@ export class L2Gateway {
     const strategy: RoutingStrategy = req.strategy ?? 'smart';
     const tried: string[] = [];
 
-    // === 取得所有有 Key 的服務 ===
+    // === 取得所有有 Key 的服務 + 免費服務（不需要 Key）===
     const serviceIds = this.keyPool.getServiceIds ? this.keyPool.getServiceIds() : [];
+    const serviceIdSet = new Set(serviceIds);
+
+    // 加入免費服務（requires_key: false）— 不需要 Key 也能使用
+    for (const [adapterId, config] of this.adapters) {
+      if (!config.adapter.requires_key && !serviceIdSet.has(adapterId)) {
+        serviceIds.push(adapterId);
+      }
+    }
 
     if (serviceIds.length === 0) {
       return {
@@ -232,14 +240,43 @@ export class L2Gateway {
     const candidates: ScoredService[] = [];
 
     for (const serviceId of serviceIds) {
-      const key = await this.keyPool.selectKey(serviceId);
-      if (!key) continue;  // 沒有可用 Key，跳過
+      let key = await this.keyPool.selectKey(serviceId);
+
+      // 免費服務不需要 Key，建立佔位 Key
+      if (!key) {
+        const adapter = this.adapters.get(serviceId);
+        if (adapter && !adapter.adapter.requires_key) {
+          key = this.createFreeServiceKey(serviceId);
+        } else {
+          continue;  // 沒有可用 Key，跳過
+        }
+      }
 
       const score = this.computeScore(serviceId, strategy);
       candidates.push({ serviceId, score, key });
     }
 
     return candidates;
+  }
+
+  /**
+   * 為免費服務建立佔位 Key（auth.type = 'none' 時不需要真實 Key）
+   * id = -1 確保 KeyPool 的 reportSuccess/reportError 不會影響 DB
+   */
+  private createFreeServiceKey(serviceId: string): DecryptedKey {
+    return {
+      id: -1,
+      service_id: serviceId,
+      key_value: '',  // 免費服務不需要 Key
+      pool_type: 'king',
+      status: 'active',
+      pinned: false,
+      priority: 0,
+      daily_used: 0,
+      consecutive_failures: 0,
+      rate_limit_until: null,
+      last_success_at: null,
+    };
   }
 
   // ===== 評分計算 =====
