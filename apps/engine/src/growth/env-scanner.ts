@@ -201,7 +201,13 @@ export async function detectOllama(url: string = 'http://localhost:11434'): Prom
 export async function fullScan(keyPool: KeyPool): Promise<EnvScanResult> {
   const foundKeys = scanEnvVars();
   const managedKeys = await keyPool.listKeys();
-  const managedSet = new Set(managedKeys.map(k => `${k.service_id}:${k.key_masked}`));
+  // 只有 active 的 Key 才算「已管理」
+  // dead 的 Key 需要重新驗證和匯入（重新激活）
+  const managedSet = new Set(
+    managedKeys
+      .filter(k => k.status === 'active')
+      .map(k => `${k.service_id}:${k.key_masked}`)
+  );
 
   const marked = foundKeys.map(key => ({
     ...key,

@@ -97,6 +97,24 @@ export class L1Proxy {
     // === 取得所有可用 Key ===
     const availableKeys = await this.getAllAvailableKeys(serviceId);
 
+    // 免費服務（requires_key: false）不需要 Key，用佔位 Key 直接執行
+    if (availableKeys.length === 0 && !adapter.adapter.requires_key) {
+      const placeholderKey: DecryptedKey = {
+        id: -1,
+        service_id: serviceId,
+        key_value: '',
+        pool_type: 'king',
+        status: 'active',
+        pinned: false,
+        priority: 0,
+        daily_used: 0,
+        consecutive_failures: 0,
+        rate_limit_until: null,
+        last_success_at: null,
+      };
+      availableKeys.push(placeholderKey);
+    }
+
     if (availableKeys.length === 0) {
       return {
         success: false,
