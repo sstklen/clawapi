@@ -9,6 +9,7 @@ import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { existsSync, rmSync, readdirSync } from 'node:fs';
 import { success, info, warn, blank, color, print, error } from '../utils/output';
+import { readPid, isPidAlive, removePid } from './start';
 import type { ParsedArgs } from '../index';
 
 const CONFIG_DIR = join(homedir(), '.clawapi');
@@ -31,6 +32,37 @@ export async function uninstallCommand(args: ParsedArgs): Promise<void> {
 
   let cleaned = 0;
   let skipped = 0;
+  let mcpWasRemoved = false;
+
+  // Step 0: 停止正在運行的 daemon 引擎（防止 DB handle 殭屍）
+  const pid = readPid();
+  if (pid !== null && isPidAlive(pid)) {
+    info(`偵測到 ClawAPI 引擎正在運行（PID: ${pid}），正在停止...`);
+    try {
+      process.kill(pid, 'SIGTERM');
+      // 等待進程結束（最多 3 秒）
+      const deadline = Date.now() + 3000;
+      let stopped = false;
+      while (Date.now() < deadline) {
+        if (!isPidAlive(pid)) {
+          stopped = true;
+          break;
+        }
+        await new Promise(resolve => setTimeout(resolve, 200));
+      }
+      if (!stopped) {
+        try { process.kill(pid, 'SIGKILL'); } catch { /* 忽略 */ }
+      }
+      removePid();
+      success('已停止引擎');
+      cleaned++;
+    } catch (err) {
+      warn(`無法停止引擎（PID: ${pid}）：${err}`);
+    }
+  } else if (pid !== null) {
+    // PID 檔案存在但進程已死 — 清理殘留
+    removePid();
+  }
 
   // Step 1: 清除 MCP 設定（除非 --keep-mcp）
   if (!keepMcp) {
@@ -38,6 +70,7 @@ export async function uninstallCommand(args: ParsedArgs): Promise<void> {
     const { mcpUninstallQuiet } = await getMcpUninstaller();
     const mcpResult = mcpUninstallQuiet();
     if (mcpResult.removed) {
+      mcpWasRemoved = true;
       success('已移除 Claude Code MCP 設定（~/.claude.json）');
       cleaned++;
     } else if (mcpResult.notFound) {
@@ -110,6 +143,19 @@ export async function uninstallCommand(args: ParsedArgs): Promise<void> {
     blank();
     print(`  如需完全移除（含 API Key 資料）：`);
     print(`    ${color.bold('clawapi uninstall --all')}`);
+  }
+
+  // MCP 殭屍警告 — Claude Code 的 MCP server 是 stdio 模式，CLI 無法停止它
+  // 必須重啟 Claude Code session 才能讓 MCP 完全清除
+  if (mcpWasRemoved || all) {
+    blank();
+    print(color.bold(color.yellow('  ⚠️  如果 Claude Code 正在運行：')));
+    print('     MCP server 仍在記憶體中，請重啟 Claude Code session。');
+    print('     關掉終端 → 開新 session → MCP 會完全清除。');
+    if (!all) {
+      blank();
+      print(`     重新安裝：${color.bold('clawapi init')}`);
+    }
   }
 
   blank();

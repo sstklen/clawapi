@@ -1,10 +1,14 @@
 // keys 命令群組 — Key 管理
 // 子命令：add, list, remove, pin, rotate, import, check
 
+import { homedir } from 'node:os';
+import { join } from 'node:path';
+import { existsSync } from 'node:fs';
 import { color, print, blank, success, error, info, warn, table, jsonOutput, isJsonMode, output } from '../utils/output';
 import { ask, select, password, confirm } from '../utils/prompt';
 import { t } from '../utils/i18n';
 import type { ParsedArgs } from '../index';
+import type { KeyListItem } from '../../core/key-pool';
 
 // ===== 已知服務列表（互動式新增用） =====
 
@@ -112,22 +116,24 @@ async function keysAdd(args: ParsedArgs): Promise<void> {
 async function keysList(args: ParsedArgs): Promise<void> {
   const serviceFilter = args.positional[1];
 
-  // 模擬資料（實際實作會從 KeyPool 取）
-  const mockKeys = [
-    {
-      id: 1,
-      service_id: 'groq',
-      key_masked: 'gsk_...Xm4Q',
-      pool_type: 'king',
-      label: '主要',
-      status: 'active',
-      daily_used: 12,
-      pinned: false,
-    },
-  ];
+  // 從真實 DB 讀取（取代舊的 mock 資料）
+  const keyPool = await getKeyPool();
+  let keys: KeyListItem[] = [];
+
+  if (keyPool) {
+    try {
+      const allKeys = await keyPool.listKeys();
+      // 過濾服務（如果有指定）
+      keys = serviceFilter
+        ? allKeys.filter(k => k.service_id === serviceFilter)
+        : allKeys;
+    } catch {
+      // DB 讀取失敗，保持空列表
+    }
+  }
 
   if (isJsonMode()) {
-    jsonOutput({ keys: mockKeys });
+    jsonOutput({ keys });
     return;
   }
 
@@ -137,8 +143,11 @@ async function keysList(args: ParsedArgs): Promise<void> {
     : t('cmd.keys.list_title'));
   blank();
 
-  if (mockKeys.length === 0) {
+  if (keys.length === 0) {
     print(t('cmd.keys.no_keys'));
+    if (!keyPool) {
+      print(color.dim('  （尚未初始化，請先執行 clawapi init）'));
+    }
     blank();
     return;
   }
@@ -153,7 +162,7 @@ async function keysList(args: ParsedArgs): Promise<void> {
       { header: t('cmd.keys.header_status'), key: 'status', minWidth: 8 },
       { header: t('cmd.keys.header_daily_usage'), key: 'daily_used', minWidth: 8, align: 'right' },
     ],
-    mockKeys
+    keys
   );
 
   blank();
@@ -283,24 +292,83 @@ async function keysCheck(_args: ParsedArgs): Promise<void> {
   info(t('cmd.keys.check_title'));
   blank();
 
-  // 模擬檢查結果
-  const results = [
-    { service_id: 'groq', key_masked: 'gsk_...Xm4Q', status: 'active', latency_ms: 120 },
-  ];
+  // 從真實 DB 讀取 Key 列表
+  const keyPool = await getKeyPool();
+  if (!keyPool) {
+    if (isJsonMode()) {
+      jsonOutput({ error: 'no_keys', keys: [] });
+      return;
+    }
+    print(t('cmd.keys.no_keys'));
+    blank();
+    return;
+  }
+
+  const keys = await keyPool.listKeys();
+  if (keys.length === 0) {
+    if (isJsonMode()) {
+      jsonOutput({ keys: [] });
+      return;
+    }
+    print(t('cmd.keys.no_keys'));
+    blank();
+    return;
+  }
+
+  // 顯示每把 Key 的狀態（不做真正 API 呼叫，只顯示 DB 記錄的狀態）
+  const results = keys.map(k => ({
+    service_id: k.service_id,
+    key_masked: k.key_masked,
+    status: k.status,
+    daily_used: k.daily_used,
+    consecutive_failures: k.consecutive_failures,
+  }));
 
   output(
     () => {
       for (const r of results) {
         const statusIcon = r.status === 'active'
           ? color.green('OK')
-          : color.red('FAIL');
-        print(`  ${statusIcon}  ${r.service_id}  ${r.key_masked}  ${r.latency_ms}ms`);
+          : r.status === 'dead'
+          ? color.red('DEAD')
+          : color.yellow('LIMITED');
+        const failures = r.consecutive_failures > 0
+          ? color.dim(` (連續失敗: ${r.consecutive_failures})`)
+          : '';
+        print(`  ${statusIcon}  ${r.service_id}  ${r.key_masked}  ${color.dim(`今日: ${r.daily_used}`)}${failures}`);
       }
       blank();
       success(t('cmd.keys.check_done', { count: results.length }));
     },
     { keys: results }
   );
+}
+
+// ===== 資料庫存取 =====
+
+/**
+ * 取得真正的 KeyPool 實例（從 ~/.clawapi/data.db）
+ * 如果 DB 不存在或初始化失敗，回傳 null
+ */
+async function getKeyPool(): Promise<import('../../core/key-pool').KeyPool | null> {
+  const dataDir = join(homedir(), '.clawapi');
+  const dbPath = join(dataDir, 'data.db');
+
+  // DB 不存在 → 沒有任何 Key
+  if (!existsSync(dbPath)) return null;
+
+  try {
+    const { createDatabase } = await import('../../storage/database');
+    const { createCrypto } = await import('../../core/encryption');
+    const { KeyPool } = await import('../../core/key-pool');
+
+    const db = createDatabase(dbPath);
+    await db.init();
+    const crypto = createCrypto(dataDir);
+    return new KeyPool(db, crypto);
+  } catch {
+    return null;
+  }
 }
 
 // ===== 工具 =====

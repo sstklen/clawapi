@@ -237,12 +237,39 @@ export async function initCommand(args: ParsedArgs): Promise<void> {
     print(`     🇺🇸  ${color.cyan('"Set up ClawAPI for me"')}`);
     print(`     🇯🇵  ${color.cyan('「ClawAPI をセットアップして」')}`);
     blank();
-    print(`  ${color.bold('     ↓ 你會體驗到四大爽點：')}`);
+    // ━━━ 成長路線圖 ━━━
+    print(`  ${color.bold('━━━ 成長路線圖 ━━━')}`);
+    blank();
+    const currentLevel = foundKeys.length > 0 ? 2 : 1;
+    const levels = [
+      { level: 1, name: 'L1 直轉',     desc: '基本轉發，每次用一把 Key' },
+      { level: 2, name: 'L2 智慧路由', desc: '自動選最佳服務回應' },
+      { level: 3, name: 'L3 AI 管家',  desc: '搜尋＋翻譯＋LLM 串聯，一句話搞定' },
+      { level: 4, name: 'L4 任務引擎', desc: '多步驟自動化，一鍵搞定' },
+    ];
+    for (const l of levels) {
+      const icon = l.level <= currentLevel ? '✅' : '🔲';
+      const here = l.level === currentLevel ? '  ← 你在這裡' : '';
+      print(`     ${icon} ${l.name.padEnd(14)} → ${l.desc}${here}`);
+    }
+    blank();
+
+    // ━━━ 四爽點 + 場景 ━━━
+    print(`  ${color.bold('━━━ 四爽點 ━━━')}`);
     blank();
     print(`     ${color.green('①')} ${color.bold('一鍵全自動')} — 掃描 → 驗證 → 匯入 → 產生萬用 Claw Key，零操作`);
+    print(`        ${color.dim('場景：你說「幫我設定 ClawAPI」，全程零操作就設好了')}`);
     print(`     ${color.green('②')} ${color.bold('主動推薦')}   — 匯入後自動推薦下一個最值得加的免費服務`);
+    print(`        ${color.dim('場景：加完 Groq 它就說「建議加 Gemini，免費 100 萬 token」')}`);
     print(`     ${color.green('③')} ${color.bold('碰壁引導')}   — 額度用完時，即時告訴你怎麼補`);
+    print(`        ${color.dim('場景：Groq 滿了 → 自動跳 Gemini，同時教你怎麼翻倍額度')}`);
     print(`     ${color.green('④')} ${color.bold('群體智慧')}   — 匿名路由數據共享，越多人用越聰明`);
+    print(`        ${color.dim('場景：你的匿名數據幫所有人選到更快更省的路由')}`);
+    blank();
+
+    // 兩個輕問句（不推銷，放旁邊讓用戶自己問）
+    print(`  ${color.dim('💬 想知道 Claw Key 怎麼用嗎？重啟後對 Claude 說一聲就好')}`);
+    print(`  ${color.dim('🔑 需要多打幾把給別人？也告訴 Claude 就好')}`);
   } else {
     print(`  ${color.bold('👉 下一步 / Next / 次のステップ：')}`);
     print(`    1. ${color.bold('clawapi start')}`);
