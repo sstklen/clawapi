@@ -3,7 +3,7 @@
 # 自動 HTTPS（HTTP challenge，不需 Cloudflare DNS 模組）
 # ============================================================
 
-clawapi.washinmura.jp {
+api.clawapi.com {
     # ─── WebSocket 升級請求 ───
     # 必須放在一般 reverse_proxy 前面，確保 WS 連線正確處理
     @websocket {

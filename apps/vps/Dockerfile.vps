@@ -14,8 +14,8 @@ COPY package.json bun.lock ./
 COPY packages/protocol/package.json packages/protocol/
 COPY apps/vps/package.json apps/vps/
 
-# 安裝依賴（Bun 版本已由 FROM 指令 pin 住，確保可重現）
-RUN bun install
+# 安裝依賴（--frozen-lockfile 確保版本鎖定，--production 不裝 devDeps）
+RUN bun install --frozen-lockfile --production
 
 # 複製全部原始碼
 COPY packages/protocol/ packages/protocol/
@@ -25,8 +25,8 @@ COPY tsconfig.base.json ./
 # 建立必要目錄結構
 RUN mkdir -p /data /logs /keys/ecdh /data/backups /data/db-backups
 
-# 建立非 root 使用者（安全最佳實踐，useradd 適用於 Debian 精簡映像）
-RUN useradd --system --no-create-home --shell /bin/false clawapi
+# 建立非 root 使用者（安全最佳實踐，adduser 適用於 Debian 映像）
+RUN adduser --system --no-create-home --shell /bin/false --group clawapi
 
 # 賦予目錄擁有權
 RUN chown -R clawapi:clawapi /app /data /logs /keys
