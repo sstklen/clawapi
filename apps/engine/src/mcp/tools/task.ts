@@ -11,8 +11,8 @@ export interface TaskToolInput {
   task: string;
   /** 最多步驟數 */
   max_steps?: number;
-  /** Gold Key token 預算上限 */
-  max_gold_tokens?: number;
+  /** Claw Key token 預算上限 */
+  max_claw_tokens?: number;
 }
 
 /** task tool 的 JSON Schema */
@@ -24,7 +24,7 @@ export const taskToolSchema = {
     properties: {
       task: { type: 'string', description: '任務描述' },
       max_steps: { type: 'number', description: '最多步驟數（預設 10）' },
-      max_gold_tokens: { type: 'number', description: 'Gold Key token 預算上限' },
+      max_claw_tokens: { type: 'number', description: 'Claw Key token 預算上限' },
     },
     required: ['task'],
   },
@@ -46,7 +46,7 @@ export async function executeTaskTool(
     ],
   };
   if (input.max_steps !== undefined) params['max_steps'] = input.max_steps;
-  if (input.max_gold_tokens !== undefined) params['max_gold_tokens'] = input.max_gold_tokens;
+  if (input.max_claw_tokens !== undefined) params['max_claw_tokens'] = input.max_claw_tokens;
 
   const result = await router.routeRequest({
     model: 'task',  // 'task' 會觸發 L4 層

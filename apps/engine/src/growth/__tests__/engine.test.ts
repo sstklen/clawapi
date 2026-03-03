@@ -189,7 +189,7 @@ describe('GrowthEngine — getUsageInsights', () => {
     expect(capacity!.detail).toContain('第 2 把');
   });
 
-  it('2+ 服務時應建議 Gold Key', async () => {
+  it('2+ 服務時應建議 Claw Key', async () => {
     const engine = createEngineWithDb(
       [{ service_id: 'openai' }, { service_id: 'groq' }],
       [{
@@ -204,9 +204,9 @@ describe('GrowthEngine — getUsageInsights', () => {
     );
 
     const insights = await engine.getUsageInsights();
-    const goldKey = insights.find(i => i.type === 'gold_key');
-    expect(goldKey).toBeDefined();
-    expect(goldKey!.title).toContain('Gold Key');
+    const clawKey = insights.find(i => i.type === 'claw_key');
+    expect(clawKey).toBeDefined();
+    expect(clawKey!.title).toContain('Claw Key');
   });
 
   it('高限速率時應標記', async () => {

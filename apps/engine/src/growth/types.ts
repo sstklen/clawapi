@@ -1,5 +1,12 @@
 // 成長引導系統 — 共享型別定義
-// 四爽點：秒速上手 → 路由覺醒 → 額度池 → 群體智慧
+//
+// 四爽點（體驗設計）：
+//   1. 一鍵全自動 — handleAuto 掃描→驗證→全部匯入→Claw Key，用戶什麼都不用做
+//   2. 主動推薦   — 加完 Key 後不等你問，直接推薦下一個免費服務
+//   3. 碰限額引導 — 429 限速時，L1/L2 主動建議加 Key 翻倍額度
+//   4. 群體智慧   — usage_log 記錄→匿名上報 VPS→routing_intel 回灌 L2 路由器
+//
+// 四成長階段（狀態機）：onboarding → awakening → scaling → mastery
 //
 // 這個檔案是所有 growth 模組的「合約」，
 // env-scanner / key-validator / gold-key-setup / engine 都要依賴
@@ -125,11 +132,11 @@ export interface KeyValidationResult {
   models_available?: string[];
 }
 
-// ===== Gold Key =====
+// ===== Claw Key =====
 
-/** Gold Key 設定結果 */
-export interface GoldKeySetupResult {
-  /** Gold Key Token（sk_live_xxx 格式） */
+/** Claw Key 設定結果 */
+export interface ClawKeySetupResult {
+  /** Claw Key Token（sk_live_xxx 格式） */
   token: string;
   /** 包含的服務清單 */
   services_included: string[];

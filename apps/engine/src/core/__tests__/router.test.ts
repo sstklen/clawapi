@@ -225,16 +225,16 @@ describe('Router.routeRequest()', () => {
       params: {},
     };
 
-    // L3 已實作，會嘗試取金鑰匙（未設定），回傳失敗但 layer='L3'
+    // L3 已實作，會嘗試取Claw Key（未設定），回傳失敗但 layer='L3'
     const result = await router.routeRequest(req);
     expect(result.layer).toBe('L3');
-    // 沒有金鑰匙時 → success=false + 錯誤說明
+    // 沒有Claw Key時 → success=false + 錯誤說明
     expect(result.success).toBe(false);
-    expect(result.error).toContain('金鑰匙');
+    expect(result.error).toContain('Claw Key');
   });
 
   // --- L4 已實作 ---
-  it('model="task" 應走 L4，無金鑰匙時回傳錯誤', async () => {
+  it('model="task" 應走 L4，無Claw Key時回傳錯誤', async () => {
     const keyPool = createMockKeyPool();
     const executor = createMockExecutor();
     const router = new Router(keyPool, executor, adapters, createMockL0Manager());
@@ -245,7 +245,7 @@ describe('Router.routeRequest()', () => {
     };
 
     const result = await router.routeRequest(req);
-    // L4 已實作，無金鑰匙時回傳 success=false + 錯誤訊息
+    // L4 已實作，無Claw Key時回傳 success=false + 錯誤訊息
     expect(result.layer).toBe('L4');
     expect(result.success).toBe(false);
   });

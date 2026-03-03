@@ -261,100 +261,100 @@
     "ja": "確認完了：{count} 件の Key"
   },
 
-  "cmd.gold_key.set_title": {
-    "zh-TW": "設定金鑰匙",
-    "en": "Set Gold Key",
-    "ja": "ゴールドキーを設定"
+  "cmd.claw_key.set_title": {
+    "zh-TW": "設定Claw Key",
+    "en": "Set Claw Key",
+    "ja": "Claw Keyを設定"
   },
-  "cmd.gold_key.set_desc": {
-    "zh-TW": "  金鑰匙用於 L3 Concierge 和 L4 Task 層，需要高品質模型。",
-    "en": "  Gold Key is used for L3 Concierge and L4 Task tiers, requiring high-quality models.",
-    "ja": "  ゴールドキーは L3 Concierge と L4 Task 層で使用され、高品質モデルが必要です。"
+  "cmd.claw_key.set_desc": {
+    "zh-TW": "  Claw Key用於 L3 Concierge 和 L4 Task 層，需要高品質模型。",
+    "en": "  Claw Key is used for L3 Concierge and L4 Task tiers, requiring high-quality models.",
+    "ja": "  Claw Keyは L3 Concierge と L4 Task 層で使用され、高品質モデルが必要です。"
   },
-  "cmd.gold_key.select_service": {
-    "zh-TW": "選擇金鑰匙服務",
-    "en": "Select Gold Key service",
-    "ja": "ゴールドキーのサービスを選択"
+  "cmd.claw_key.select_service": {
+    "zh-TW": "選擇Claw Key服務",
+    "en": "Select Claw Key service",
+    "ja": "Claw Keyのサービスを選択"
   },
-  "cmd.gold_key.rec_gpt4o": {
+  "cmd.claw_key.rec_gpt4o": {
     "zh-TW": "GPT-4o 推薦",
     "en": "GPT-4o recommended",
     "ja": "GPT-4o 推奨"
   },
-  "cmd.gold_key.rec_opus": {
+  "cmd.claw_key.rec_opus": {
     "zh-TW": "Claude Opus 推薦",
     "en": "Claude Opus recommended",
     "ja": "Claude Opus 推奨"
   },
-  "cmd.gold_key.paste_key": {
-    "zh-TW": "貼上金鑰匙 API Key",
-    "en": "Paste Gold Key API Key",
-    "ja": "ゴールドキーの API Key を貼り付け"
+  "cmd.claw_key.paste_key": {
+    "zh-TW": "貼上Claw Key API Key",
+    "en": "Paste Claw Key API Key",
+    "ja": "Claw Keyの API Key を貼り付け"
   },
-  "cmd.gold_key.default_model_prompt": {
+  "cmd.claw_key.default_model_prompt": {
     "zh-TW": "預設模型（可留空，系統自動選擇）",
     "en": "Default model (leave blank for auto-select)",
     "ja": "デフォルトモデル（空欄でシステム自動選択）"
   },
-  "cmd.gold_key.reserve_pct_prompt": {
+  "cmd.claw_key.reserve_pct_prompt": {
     "zh-TW": "保留百分比（%）",
     "en": "Reserve percentage (%)",
     "ja": "予約割合（%）"
   },
-  "cmd.gold_key.set_done": {
-    "zh-TW": "金鑰匙已設定！",
-    "en": "Gold Key configured!",
-    "ja": "ゴールドキーを設定しました！"
+  "cmd.claw_key.set_done": {
+    "zh-TW": "Claw Key已設定！",
+    "en": "Claw Key configured!",
+    "ja": "Claw Keyを設定しました！"
   },
-  "cmd.gold_key.service_label": {
+  "cmd.claw_key.service_label": {
     "zh-TW": "  服務：{service}",
     "en": "  Service: {service}",
     "ja": "  サービス：{service}"
   },
-  "cmd.gold_key.key_label": {
+  "cmd.claw_key.key_label": {
     "zh-TW": "  Key：{key}",
     "en": "  Key: {key}",
     "ja": "  Key：{key}"
   },
-  "cmd.gold_key.model_label": {
+  "cmd.claw_key.model_label": {
     "zh-TW": "  預設模型：{model}",
     "en": "  Default model: {model}",
     "ja": "  デフォルトモデル：{model}"
   },
-  "cmd.gold_key.reserve_label": {
+  "cmd.claw_key.reserve_label": {
     "zh-TW": "  保留百分比：{pct}%",
     "en": "  Reserve: {pct}%",
     "ja": "  予約割合：{pct}%"
   },
-  "cmd.gold_key.show_title": {
-    "zh-TW": "金鑰匙設定",
-    "en": "Gold Key Configuration",
-    "ja": "ゴールドキー設定"
+  "cmd.claw_key.show_title": {
+    "zh-TW": "Claw Key設定",
+    "en": "Claw Key Configuration",
+    "ja": "Claw Key設定"
   },
-  "cmd.gold_key.model_auto": {
+  "cmd.claw_key.model_auto": {
     "zh-TW": "(自動)",
     "en": "(auto)",
     "ja": "（自動）"
   },
-  "cmd.gold_key.not_configured": {
-    "zh-TW": "尚未設定金鑰匙",
-    "en": "Gold Key not configured",
-    "ja": "ゴールドキーが未設定です"
+  "cmd.claw_key.not_configured": {
+    "zh-TW": "尚未設定Claw Key",
+    "en": "Claw Key not configured",
+    "ja": "Claw Keyが未設定です"
   },
-  "cmd.gold_key.use_set_cmd": {
+  "cmd.claw_key.use_set_cmd": {
     "zh-TW": "使用 {cmd} 進行設定",
     "en": "Use {cmd} to configure",
     "ja": "{cmd} で設定してください"
   },
-  "cmd.gold_key.confirm_remove": {
-    "zh-TW": "確定要移除金鑰匙？L3/L4 功能將無法使用。",
-    "en": "Remove Gold Key? L3/L4 features will be unavailable.",
-    "ja": "ゴールドキーを削除しますか？L3/L4 機能が使用できなくなります。"
+  "cmd.claw_key.confirm_remove": {
+    "zh-TW": "確定要移除Claw Key？L3/L4 功能將無法使用。",
+    "en": "Remove Claw Key? L3/L4 features will be unavailable.",
+    "ja": "Claw Keyを削除しますか？L3/L4 機能が使用できなくなります。"
   },
-  "cmd.gold_key.removed": {
-    "zh-TW": "金鑰匙已移除",
-    "en": "Gold Key removed",
-    "ja": "ゴールドキーを削除しました"
+  "cmd.claw_key.removed": {
+    "zh-TW": "Claw Key已移除",
+    "en": "Claw Key removed",
+    "ja": "Claw Keyを削除しました"
   },
 
   "cmd.sub_keys.issue_title": {

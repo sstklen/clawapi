@@ -1,28 +1,29 @@
 import type { SubKeyManager, SubKey } from '../sharing/sub-key';
 import type { KeyPool } from '../core/key-pool';
-import type { GoldKeySetupResult } from './types';
+import type { ClawKeySetupResult } from './types';
 
 /**
- * 取得既有 Gold Key（若存在）
+ * 取得既有 Claw Key（若存在）
+ * 相容舊版 Gold Key label
  */
-export async function getExistingGoldKey(subKeyManager: SubKeyManager): Promise<SubKey | null> {
+export async function getExistingClawKey(subKeyManager: SubKeyManager): Promise<SubKey | null> {
   const subKeys = await subKeyManager.list();
-  return subKeys.find(k => k.label.includes('Gold Key')) ?? null;
+  return subKeys.find(k => k.label.includes('Claw Key') || k.label.includes('Gold Key')) ?? null;
 }
 
 /**
- * 自動建立或取得 Gold Key
+ * 自動建立或取得 Claw Key
  */
-export async function setupAutoGoldKey(
+export async function setupAutoClawKey(
   subKeyManager: SubKeyManager,
   keyPool: KeyPool
-): Promise<GoldKeySetupResult> {
-  let subKey = await getExistingGoldKey(subKeyManager);
+): Promise<ClawKeySetupResult> {
+  let subKey = await getExistingClawKey(subKeyManager);
   let isNew = false;
 
   if (!subKey) {
     subKey = await subKeyManager.issue({
-      label: 'Gold Key（自動產生）',
+      label: 'Claw Key（自動產生）',
       daily_limit: null,
       allowed_services: null,
       allowed_models: null,
@@ -41,4 +42,3 @@ export async function setupAutoGoldKey(
     is_new: isNew,
   };
 }
-

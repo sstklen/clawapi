@@ -2,7 +2,7 @@
 // 步驟：
 //   1. 歡迎 + 語言選擇
 //   2. 加入第一把 Key（Groq 推薦）
-//   3. 金鑰匙設定（可跳過）
+//   3. Claw Key 設定（可跳過）
 //   4. VPS 連線設定
 //   5. 確認 + 完成
 
@@ -141,31 +141,31 @@ export async function setupCommand(args: ParsedArgs): Promise<void> {
   }
   blank();
 
-  // ===== 步驟 3：金鑰匙設定 =====
-  step(3, TOTAL_STEPS, t('cmd.setup.step_gold_key'));
+  // ===== 步驟 3：Claw Key 設定 =====
+  step(3, TOTAL_STEPS, t('cmd.setup.step_claw_key'));
   blank();
-  print(`  ${t('cmd.setup.gold_key_desc')}`);
-  print(`  ${t('cmd.setup.gold_key_requirement')}`);
+  print(`  ${t('cmd.setup.claw_key_desc')}`);
+  print(`  ${t('cmd.setup.claw_key_requirement')}`);
   blank();
 
-  const setupGoldKey = await confirm(t('cmd.setup.setup_gold_key_now'), false);
-  let goldKeyService: string | null = null;
+  const setupClawKey = await confirm(t('cmd.setup.setup_claw_key_now'), false);
+  let clawKeyService: string | null = null;
 
-  if (setupGoldKey) {
-    const gkService = await select(t('cmd.setup.gold_key_service'), [
+  if (setupClawKey) {
+    const gkService = await select(t('cmd.setup.claw_key_service'), [
       { label: 'OpenAI', value: 'openai', description: 'GPT-4o' },
       { label: 'Anthropic', value: 'anthropic', description: 'Claude' },
     ]);
 
     const gkKey = await password(t('cmd.setup.paste_api_key'));
     if (gkKey) {
-      goldKeyService = gkService;
-      success(t('cmd.setup.gold_key_set', { service: gkService }));
+      clawKeyService = gkService;
+      success(t('cmd.setup.claw_key_set', { service: gkService }));
     } else {
-      warn(t('cmd.setup.skip_gold_key'));
+      warn(t('cmd.setup.skip_claw_key'));
     }
   } else {
-    info(t('cmd.setup.skip_gold_key_later'));
+    info(t('cmd.setup.skip_claw_key_later'));
   }
   blank();
 
@@ -186,7 +186,7 @@ export async function setupCommand(args: ParsedArgs): Promise<void> {
   print(`  ${t('cmd.setup.summary')}`)
   print(`    ${t('cmd.setup.summary_language')}${localeLabel(locale)}`);
   print(`    ${t('cmd.setup.summary_first_key')}${firstKeyService ? `${firstKeyService} (${firstKeyMasked})` : t('cmd.setup.not_set')}`);
-  print(`    ${t('cmd.setup.summary_gold_key')}${goldKeyService ?? t('cmd.setup.not_set')}`);
+  print(`    ${t('cmd.setup.summary_claw_key')}${clawKeyService ?? t('cmd.setup.not_set')}`);
   print(`    ${t('cmd.setup.summary_vps')}${enableVps ? t('cmd.setup.enabled') : t('cmd.setup.disabled')}`);
   blank();
 

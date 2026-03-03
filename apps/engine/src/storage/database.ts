@@ -6,6 +6,7 @@ import { homedir } from 'node:os';
 import { existsSync, mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { migration001 } from './migrations/001-init';
+import { migration002 } from './migrations/002-rename-gold-to-claw';
 
 // ===== 型別定義 =====
 
@@ -130,13 +131,13 @@ class ClawDatabase implements DatabaseModule {
 
   /**
    * 每日重置計數器（由 Scheduler 在本地時區 00:00 呼叫）
-   * 重置：keys.daily_used、sub_keys.daily_used、gold_keys.daily_used、aid_config.daily_given
+   * 重置：keys.daily_used、sub_keys.daily_used、claw_keys.daily_used、aid_config.daily_given
    */
   dailyReset(_timezone: string): void {
     this.transaction(() => {
       this.run('UPDATE keys       SET daily_used  = 0');
       this.run('UPDATE sub_keys   SET daily_used  = 0, rate_used_this_hour = 0, rate_hour_start = NULL');
-      this.run('UPDATE gold_keys  SET daily_used  = 0');
+      this.run('UPDATE claw_keys  SET daily_used  = 0');
       this.run('UPDATE aid_config SET daily_given = 0');
     });
   }
@@ -176,7 +177,7 @@ class ClawDatabase implements DatabaseModule {
     }
 
     // 待執行的遷移清單（依版本號排序）
-    const migrations = [migration001];
+    const migrations = [migration001, migration002];
     const pending = migrations.filter(m => m.version > currentVersion);
 
     if (pending.length === 0) return;

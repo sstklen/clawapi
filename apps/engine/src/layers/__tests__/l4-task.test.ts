@@ -68,10 +68,10 @@ function createMockAdapter(
 }
 
 /** 建立 Mock KeyPool */
-function createMockKeyPool(goldKey: DecryptedKey | null): KeyPool {
+function createMockKeyPool(clawKey: DecryptedKey | null): KeyPool {
   return {
     selectKey: mock(async (serviceId: string) => {
-      if (serviceId === '__gold_key__') return goldKey;
+      if (serviceId === '__claw_key__') return clawKey;
       return null;
     }),
     getServiceIds: mock(() => []),
@@ -211,7 +211,7 @@ function createStandardPlanJson(): string {
     plan: {
       goal: '搜尋 AI 新聞並分析趨勢',
       estimated_calls: 3,
-      estimated_gold_key_tokens: 500,
+      estimated_claw_key_tokens: 500,
       steps: [
         {
           id: 'step_1',
@@ -243,8 +243,8 @@ function createStandardPlanJson(): string {
 
 describe('L4TaskEngine 3 步驟任務（2 並行 + 1 序列）', () => {
   it('應成功執行 3 步驟並回傳最終報告', async () => {
-    const goldKey = createMockKey(1, '__gold_key__');
-    const keyPool = createMockKeyPool(goldKey);
+    const clawKey = createMockKey(1, '__claw_key__');
+    const keyPool = createMockKeyPool(clawKey);
     const adapters = new Map([
       ['brave-search', createMockAdapter('brave-search', 'search')],
       ['groq', createMockAdapter('groq', 'llm')],
@@ -274,7 +274,7 @@ describe('L4TaskEngine 3 步驟任務（2 並行 + 1 序列）', () => {
     // L2Gateway：搜尋工具成功
     const l2Gateway = createSuccessL2Gateway({ results: ['AI news item'] });
 
-    // llm_analysis 步驟也需要 gold key 呼叫，所以 executor 會再被調用
+    // llm_analysis 步驟也需要 claw key 呼叫，所以 executor 會再被調用
     const db = createMockDatabase();
     const engine = new L4TaskEngine(keyPool, executor, adapters, l2Gateway, db);
 
@@ -290,8 +290,8 @@ describe('L4TaskEngine 3 步驟任務（2 並行 + 1 序列）', () => {
   });
 
   it('step_1 和 step_2 應並行執行（無依賴）', async () => {
-    const goldKey = createMockKey(1, '__gold_key__');
-    const keyPool = createMockKeyPool(goldKey);
+    const clawKey = createMockKey(1, '__claw_key__');
+    const keyPool = createMockKeyPool(clawKey);
     const adapters = new Map([
       ['brave-search', createMockAdapter('brave-search', 'search')],
     ]);
@@ -344,8 +344,8 @@ describe('L4TaskEngine 3 步驟任務（2 並行 + 1 序列）', () => {
   });
 
   it('step_3 依賴 step_1 和 step_2，應在兩者完成後執行', async () => {
-    const goldKey = createMockKey(1, '__gold_key__');
-    const keyPool = createMockKeyPool(goldKey);
+    const clawKey = createMockKey(1, '__claw_key__');
+    const keyPool = createMockKeyPool(clawKey);
     const adapters = new Map([
       ['brave-search', createMockAdapter('brave-search', 'search')],
     ]);
@@ -385,10 +385,10 @@ describe('L4TaskEngine 3 步驟任務（2 並行 + 1 序列）', () => {
   });
 });
 
-// ===== 測試 2：金鑰匙缺失 =====
+// ===== 測試 2：Claw Key缺失 =====
 
-describe('L4TaskEngine 金鑰匙缺失', () => {
-  it('未設定金鑰匙 → success=false + 錯誤訊息 + 建議', async () => {
+describe('L4TaskEngine Claw Key缺失', () => {
+  it('未設定Claw Key → success=false + 錯誤訊息 + 建議', async () => {
     const keyPool = createMockKeyPool(null);
     const executor = createMockExecutor();
     const adapters = new Map<string, AdapterConfig>();
@@ -401,12 +401,12 @@ describe('L4TaskEngine 金鑰匙缺失', () => {
     });
 
     expect(result.success).toBe(false);
-    expect(result.error).toContain('金鑰匙');
+    expect(result.error).toContain('Claw Key');
     expect(result.suggestion).toBeTruthy();
-    expect(result.suggestion).toContain('clawapi gold-key set');
+    expect(result.suggestion).toContain('clawapi claw-key set');
   });
 
-  it('未設定金鑰匙 → latency_ms 應大於等於 0', async () => {
+  it('未設定Claw Key → latency_ms 應大於等於 0', async () => {
     const keyPool = createMockKeyPool(null);
     const executor = createMockExecutor();
     const adapters = new Map<string, AdapterConfig>();
@@ -423,9 +423,9 @@ describe('L4TaskEngine 金鑰匙缺失', () => {
   });
 });
 
-// ===== 測試 3：金鑰匙額度不足 → 降級到 L2 =====
+// ===== 測試 3：Claw Key額度不足 → 降級到 L2 =====
 
-describe('L4TaskEngine 金鑰匙額度不足 — 降級到 L2', () => {
+describe('L4TaskEngine Claw Key額度不足 — 降級到 L2', () => {
   it('shouldDegradeToL2：剩餘 4% → 應回傳 true', () => {
     const keyPool = createMockKeyPool(null);
     const executor = createMockExecutor();
@@ -436,7 +436,7 @@ describe('L4TaskEngine 金鑰匙額度不足 — 降級到 L2', () => {
     const engine = new L4TaskEngine(keyPool, executor, adapters, l2Gateway, db);
 
     const result = engine.shouldDegradeToL2({
-      key: createMockKey(1, '__gold_key__', 96000),
+      key: createMockKey(1, '__claw_key__', 96000),
       daily_tokens_used: 96000,
       daily_token_limit: 100000,
     });
@@ -454,7 +454,7 @@ describe('L4TaskEngine 金鑰匙額度不足 — 降級到 L2', () => {
     const engine = new L4TaskEngine(keyPool, executor, adapters, l2Gateway, db);
 
     const result = engine.shouldDegradeToL2({
-      key: createMockKey(1, '__gold_key__', 94000),
+      key: createMockKey(1, '__claw_key__', 94000),
       daily_tokens_used: 94000,
       daily_token_limit: 100000,
     });
@@ -472,7 +472,7 @@ describe('L4TaskEngine 金鑰匙額度不足 — 降級到 L2', () => {
     const engine = new L4TaskEngine(keyPool, executor, adapters, l2Gateway, db);
 
     const result = engine.shouldDegradeToL2({
-      key: createMockKey(1, '__gold_key__', 999999),
+      key: createMockKey(1, '__claw_key__', 999999),
       daily_tokens_used: 999999,
       daily_token_limit: 0,
     });
@@ -480,9 +480,9 @@ describe('L4TaskEngine 金鑰匙額度不足 — 降級到 L2', () => {
     expect(result).toBe(false);
   });
 
-  it('金鑰匙剩餘 3% → 降級到 L2 並回傳 L2 結果', async () => {
-    const goldKey = createMockKey(1, '__gold_key__', 97000);
-    const keyPool = createMockKeyPool(goldKey);
+  it('Claw Key剩餘 3% → 降級到 L2 並回傳 L2 結果', async () => {
+    const clawKey = createMockKey(1, '__claw_key__', 97000);
+    const keyPool = createMockKeyPool(clawKey);
     const executor = createMockExecutor();
     const adapters = new Map([['groq', createMockAdapter('groq')]]);
     const l2Gateway = createMockL2Gateway([
@@ -492,9 +492,9 @@ describe('L4TaskEngine 金鑰匙額度不足 — 降級到 L2', () => {
 
     const engine = new L4TaskEngine(keyPool, executor, adapters, l2Gateway, db);
 
-    // 覆寫 getGoldKey 回傳接近滿載的額度資訊
-    engine.getGoldKey = mock(async () => ({
-      key: goldKey,
+    // 覆寫 getClawKey 回傳接近滿載的額度資訊
+    engine.getClawKey = mock(async () => ({
+      key: clawKey,
       daily_tokens_used: 97000,
       daily_token_limit: 100000,
     }));
@@ -511,7 +511,7 @@ describe('L4TaskEngine 金鑰匙額度不足 — 降級到 L2', () => {
 // ===== 測試 4：成本預估正確性 =====
 
 describe('L4TaskEngine 成本預估', () => {
-  it('estimateCost 回傳正確的 estimated_calls 和 estimated_gold_key_tokens', () => {
+  it('estimateCost 回傳正確的 estimated_calls 和 estimated_claw_key_tokens', () => {
     const keyPool = createMockKeyPool(null);
     const executor = createMockExecutor();
     const adapters = new Map<string, AdapterConfig>();
@@ -523,19 +523,19 @@ describe('L4TaskEngine 成本預估', () => {
     const plan: TaskPlan = {
       goal: '測試計畫',
       estimated_calls: 5,
-      estimated_gold_key_tokens: 800,
+      estimated_claw_key_tokens: 800,
       steps: [],
     };
 
     const estimate = engine.estimateCost(plan, 0);
 
     expect(estimate.estimated_calls).toBe(5);
-    expect(estimate.estimated_gold_key_tokens).toBe(800);
+    expect(estimate.estimated_claw_key_tokens).toBe(800);
     expect(estimate.exceeds_limit).toBe(false);
-    expect(estimate.max_gold_key_tokens).toBe(0);
+    expect(estimate.max_claw_key_tokens).toBe(0);
   });
 
-  it('estimateCost：有 max_gold_key_tokens 且不超過 → exceeds_limit=false', () => {
+  it('estimateCost：有 max_claw_key_tokens 且不超過 → exceeds_limit=false', () => {
     const keyPool = createMockKeyPool(null);
     const executor = createMockExecutor();
     const adapters = new Map<string, AdapterConfig>();
@@ -547,14 +547,14 @@ describe('L4TaskEngine 成本預估', () => {
     const plan: TaskPlan = {
       goal: '小任務',
       estimated_calls: 3,
-      estimated_gold_key_tokens: 300,
+      estimated_claw_key_tokens: 300,
       steps: [],
     };
 
     const estimate = engine.estimateCost(plan, 1000);
 
     expect(estimate.exceeds_limit).toBe(false);
-    expect(estimate.estimated_gold_key_tokens).toBe(300);
+    expect(estimate.estimated_claw_key_tokens).toBe(300);
   });
 
   it('estimateCost：max=1000，estimated=800 → 不超過', () => {
@@ -569,22 +569,22 @@ describe('L4TaskEngine 成本預估', () => {
     const plan: TaskPlan = {
       goal: '任務',
       estimated_calls: 10,
-      estimated_gold_key_tokens: 800,
+      estimated_claw_key_tokens: 800,
       steps: [],
     };
 
     const estimate = engine.estimateCost(plan, 1000);
     expect(estimate.exceeds_limit).toBe(false);
-    expect(estimate.max_gold_key_tokens).toBe(1000);
+    expect(estimate.max_claw_key_tokens).toBe(1000);
   });
 });
 
-// ===== 測試 5：超過 max_gold_key_tokens → 拒絕執行 =====
+// ===== 測試 5：超過 max_claw_key_tokens → 拒絕執行 =====
 
-describe('L4TaskEngine max_gold_key_tokens 限制', () => {
+describe('L4TaskEngine max_claw_key_tokens 限制', () => {
   it('預估消耗超過限制 → 拒絕執行並回傳 warning', async () => {
-    const goldKey = createMockKey(1, '__gold_key__');
-    const keyPool = createMockKeyPool(goldKey);
+    const clawKey = createMockKey(1, '__claw_key__');
+    const keyPool = createMockKeyPool(clawKey);
     const adapters = new Map([['groq', createMockAdapter('groq', 'llm')]]);
 
     // LLM 規劃回傳預估消耗 1500 tokens 的計畫
@@ -592,7 +592,7 @@ describe('L4TaskEngine max_gold_key_tokens 限制', () => {
       plan: {
         goal: '超大任務',
         estimated_calls: 20,
-        estimated_gold_key_tokens: 1500,
+        estimated_claw_key_tokens: 1500,
         steps: [
           { id: 'step_1', tool: 'groq', params: {}, depends_on: [], retry_on_fail: false },
         ],
@@ -604,23 +604,23 @@ describe('L4TaskEngine max_gold_key_tokens 限制', () => {
 
     const engine = new L4TaskEngine(keyPool, executor, adapters, l2Gateway, db);
 
-    // max_gold_key_tokens = 500，預估 1500 → 超過
+    // max_claw_key_tokens = 500，預估 1500 → 超過
     const result = await engine.execute({
       messages: [{ role: 'user', content: '執行超大任務' }],
-      params: { max_gold_key_tokens: 500 },
+      params: { max_claw_key_tokens: 500 },
     });
 
     expect(result.success).toBe(false);
     expect(result.error).toContain('超過');
     expect(result.cost_estimate).toBeDefined();
     expect(result.cost_estimate!.exceeds_limit).toBe(true);
-    expect(result.cost_estimate!.estimated_gold_key_tokens).toBe(1500);
+    expect(result.cost_estimate!.estimated_claw_key_tokens).toBe(1500);
     expect(result.suggestion).toBeTruthy();
   });
 
   it('預估消耗 = 限制 → 不超過（邊界條件）', async () => {
-    const goldKey = createMockKey(1, '__gold_key__');
-    const keyPool = createMockKeyPool(goldKey);
+    const clawKey = createMockKey(1, '__claw_key__');
+    const keyPool = createMockKeyPool(clawKey);
     const adapters = new Map([['groq', createMockAdapter('groq', 'llm')]]);
 
     // 預估消耗恰好等於 max
@@ -628,7 +628,7 @@ describe('L4TaskEngine max_gold_key_tokens 限制', () => {
       plan: {
         goal: '剛好的任務',
         estimated_calls: 5,
-        estimated_gold_key_tokens: 500,
+        estimated_claw_key_tokens: 500,
         steps: [
           { id: 'step_1', tool: 'groq', params: {}, depends_on: [], retry_on_fail: false },
         ],
@@ -656,25 +656,25 @@ describe('L4TaskEngine max_gold_key_tokens 限制', () => {
 
     const engine = new L4TaskEngine(keyPool, executor, adapters, l2Gateway, db);
 
-    // max_gold_key_tokens = 500，預估 = 500 → 剛好不超過
+    // max_claw_key_tokens = 500，預估 = 500 → 剛好不超過
     const result = await engine.execute({
       messages: [{ role: 'user', content: '執行任務' }],
-      params: { max_gold_key_tokens: 500 },
+      params: { max_claw_key_tokens: 500 },
     });
 
     expect(result.success).toBe(true);
   });
 
-  it('max_gold_key_tokens=0（無限制）→ 永不拒絕', async () => {
-    const goldKey = createMockKey(1, '__gold_key__');
-    const keyPool = createMockKeyPool(goldKey);
+  it('max_claw_key_tokens=0（無限制）→ 永不拒絕', async () => {
+    const clawKey = createMockKey(1, '__claw_key__');
+    const keyPool = createMockKeyPool(clawKey);
     const adapters = new Map([['groq', createMockAdapter('groq', 'llm')]]);
 
     const hugePlanJson = JSON.stringify({
       plan: {
         goal: '無限任務',
         estimated_calls: 100,
-        estimated_gold_key_tokens: 99999,
+        estimated_claw_key_tokens: 99999,
         steps: [
           { id: 'step_1', tool: 'groq', params: {}, depends_on: [], retry_on_fail: false },
         ],
@@ -701,10 +701,10 @@ describe('L4TaskEngine max_gold_key_tokens 限制', () => {
     const db = createMockDatabase();
     const engine = new L4TaskEngine(keyPool, executor, adapters, l2Gateway, db);
 
-    // max_gold_key_tokens=0 表示無限制，即使預估很高也要執行
+    // max_claw_key_tokens=0 表示無限制，即使預估很高也要執行
     const result = await engine.execute({
       messages: [{ role: 'user', content: '執行' }],
-      params: { max_gold_key_tokens: 0 },
+      params: { max_claw_key_tokens: 0 },
     });
 
     expect(result.success).toBe(true);
@@ -830,8 +830,8 @@ describe('L4TaskEngine 重試機制', () => {
 
 describe('L4TaskEngine 部分失敗', () => {
   it('step_1 成功、step_2 失敗 → 回傳部分結果，answer 標注未取得部分', async () => {
-    const goldKey = createMockKey(1, '__gold_key__');
-    const keyPool = createMockKeyPool(goldKey);
+    const clawKey = createMockKey(1, '__claw_key__');
+    const keyPool = createMockKeyPool(clawKey);
     const adapters = new Map([
       ['tool-a', createMockAdapter('tool-a', 'search')],
       ['tool-b', createMockAdapter('tool-b', 'search')],
@@ -841,7 +841,7 @@ describe('L4TaskEngine 部分失敗', () => {
       plan: {
         goal: '執行兩個工具',
         estimated_calls: 2,
-        estimated_gold_key_tokens: 200,
+        estimated_claw_key_tokens: 200,
         steps: [
           {
             id: 'step_1',
@@ -923,8 +923,8 @@ describe('L4TaskEngine 部分失敗', () => {
   });
 
   it('所有步驟失敗時仍能回傳整合報告', async () => {
-    const goldKey = createMockKey(1, '__gold_key__');
-    const keyPool = createMockKeyPool(goldKey);
+    const clawKey = createMockKey(1, '__claw_key__');
+    const keyPool = createMockKeyPool(clawKey);
     const adapters = new Map([
       ['failing-tool', createMockAdapter('failing-tool', 'search')],
     ]);
@@ -933,7 +933,7 @@ describe('L4TaskEngine 部分失敗', () => {
       plan: {
         goal: '全部失敗測試',
         estimated_calls: 1,
-        estimated_gold_key_tokens: 100,
+        estimated_claw_key_tokens: 100,
         steps: [
           {
             id: 'step_1',
@@ -991,7 +991,7 @@ describe('L4TaskEngine 斷點存取', () => {
     const plan: TaskPlan = {
       goal: '測試斷點計畫',
       estimated_calls: 3,
-      estimated_gold_key_tokens: 300,
+      estimated_claw_key_tokens: 300,
       steps: [
         { id: 'step_1', tool: 'tool-a', params: {}, depends_on: [], retry_on_fail: true },
         { id: 'step_2', tool: 'tool-b', params: {}, depends_on: ['step_1'], retry_on_fail: false },
@@ -1048,7 +1048,7 @@ describe('L4TaskEngine 斷點存取', () => {
     const plan: TaskPlan = {
       goal: '要被刪除的計畫',
       estimated_calls: 1,
-      estimated_gold_key_tokens: 50,
+      estimated_claw_key_tokens: 50,
       steps: [],
     };
 
@@ -1078,7 +1078,7 @@ describe('L4TaskEngine 斷點存取', () => {
     const plan: TaskPlan = {
       goal: '多步驟計畫',
       estimated_calls: 5,
-      estimated_gold_key_tokens: 500,
+      estimated_claw_key_tokens: 500,
       steps: [],
     };
 
@@ -1159,7 +1159,7 @@ describe('L4TaskEngine 過期斷點清除', () => {
     const plan: TaskPlan = {
       goal: '過期計畫',
       estimated_calls: 1,
-      estimated_gold_key_tokens: 50,
+      estimated_claw_key_tokens: 50,
       steps: [],
     };
 
@@ -1208,7 +1208,7 @@ describe('L4TaskEngine 過期斷點清除', () => {
     const plan: TaskPlan = {
       goal: '未過期計畫',
       estimated_calls: 1,
-      estimated_gold_key_tokens: 50,
+      estimated_claw_key_tokens: 50,
       steps: [],
     };
 
@@ -1257,7 +1257,7 @@ describe('L4TaskEngine DAG 拓撲排序', () => {
     const plan: TaskPlan = {
       goal: '複雜依賴圖測試',
       estimated_calls: 4,
-      estimated_gold_key_tokens: 400,
+      estimated_claw_key_tokens: 400,
       steps: [
         { id: 'A', tool: 'tool', params: {}, depends_on: [], retry_on_fail: false },
         { id: 'B', tool: 'tool', params: {}, depends_on: [], retry_on_fail: false },
@@ -1314,7 +1314,7 @@ describe('L4TaskEngine DAG 拓撲排序', () => {
     const plan: TaskPlan = {
       goal: '全部並行測試',
       estimated_calls: 4,
-      estimated_gold_key_tokens: 200,
+      estimated_claw_key_tokens: 200,
       steps: [
         { id: 's1', tool: 'tool', params: {}, depends_on: [], retry_on_fail: false },
         { id: 's2', tool: 'tool', params: {}, depends_on: [], retry_on_fail: false },
@@ -1344,7 +1344,7 @@ describe('L4TaskEngine DAG 拓撲排序', () => {
       plan: {
         goal: '複雜計畫',
         estimated_calls: 5,
-        estimated_gold_key_tokens: 500,
+        estimated_claw_key_tokens: 500,
         steps: [
           { id: 'A', tool: 'search', params: { q: 'test' }, depends_on: [], retry_on_fail: true },
           { id: 'B', tool: 'translate', params: {}, depends_on: ['A'], retry_on_fail: true },
@@ -1369,9 +1369,9 @@ describe('L4TaskEngine DAG 拓撲排序', () => {
 // ===== 測試 11：消耗報告格式和加總 =====
 
 describe('L4TaskEngine 消耗報告', () => {
-  it('消耗報告應包含 gold_key_tokens、total_calls、每步詳細資訊', async () => {
-    const goldKey = createMockKey(1, '__gold_key__');
-    const keyPool = createMockKeyPool(goldKey);
+  it('消耗報告應包含 claw_key_tokens、total_calls、每步詳細資訊', async () => {
+    const clawKey = createMockKey(1, '__claw_key__');
+    const keyPool = createMockKeyPool(clawKey);
     const adapters = new Map([
       ['search-tool', createMockAdapter('search-tool', 'search')],
     ]);
@@ -1380,7 +1380,7 @@ describe('L4TaskEngine 消耗報告', () => {
       plan: {
         goal: '單步驟報告測試',
         estimated_calls: 1,
-        estimated_gold_key_tokens: 200,
+        estimated_claw_key_tokens: 200,
         steps: [
           {
             id: 'step_1',
@@ -1430,8 +1430,8 @@ describe('L4TaskEngine 消耗報告', () => {
     expect(result.success).toBe(true);
     expect(result.usage).toBeDefined();
 
-    // 金鑰匙 token 消耗：規劃(100) + 整合(80) = 180
-    expect(result.usage!.gold_key_tokens).toBe(180);
+    // Claw Key token 消耗：規劃(100) + 整合(80) = 180
+    expect(result.usage!.claw_key_tokens).toBe(180);
 
     // 工具呼叫次數
     expect(result.usage!.total_calls).toBe(1);
@@ -1446,8 +1446,8 @@ describe('L4TaskEngine 消耗報告', () => {
   });
 
   it('消耗報告：多步驟加總 total_calls 正確', async () => {
-    const goldKey = createMockKey(1, '__gold_key__');
-    const keyPool = createMockKeyPool(goldKey);
+    const clawKey = createMockKey(1, '__claw_key__');
+    const keyPool = createMockKeyPool(clawKey);
     const adapters = new Map([
       ['tool', createMockAdapter('tool', 'search')],
     ]);
@@ -1456,7 +1456,7 @@ describe('L4TaskEngine 消耗報告', () => {
       plan: {
         goal: '多步驟加總測試',
         estimated_calls: 3,
-        estimated_gold_key_tokens: 300,
+        estimated_claw_key_tokens: 300,
         steps: [
           { id: 's1', tool: 'tool', params: {}, depends_on: [], retry_on_fail: false },
           { id: 's2', tool: 'tool', params: {}, depends_on: [], retry_on_fail: false },
@@ -1553,7 +1553,7 @@ describe('L4TaskEngine 消耗報告', () => {
       plan: {
         goal: '壞計畫',
         estimated_calls: 1,
-        estimated_gold_key_tokens: 100,
+        estimated_claw_key_tokens: 100,
         steps: [
           { id: 'x', tool: 'y', params: {}, depends_on: [] },
           // 缺少 retry_on_fail

@@ -56,7 +56,7 @@ describe('OpenAPI Spec', () => {
     // Management
     expect(paths['/api/keys']).toBeDefined();
     expect(paths['/api/sub-keys']).toBeDefined();
-    expect(paths['/api/gold-keys']).toBeDefined();
+    expect(paths['/api/claw-keys']).toBeDefined();
     expect(paths['/api/status']).toBeDefined();
     expect(paths['/api/adapters']).toBeDefined();
     expect(paths['/api/settings']).toBeDefined();

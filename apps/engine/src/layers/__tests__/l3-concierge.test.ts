@@ -1,5 +1,5 @@
 // L3 Concierge 測試
-// 驗證金鑰匙檢查、意圖解讀、步驟執行（並行/序列）、結果整合、消耗報告
+// 驗證Claw Key檢查、意圖解讀、步驟執行（並行/序列）、結果整合、消耗報告
 
 import { describe, it, expect, mock, beforeEach } from 'bun:test';
 import { L3Concierge } from '../l3-concierge';
@@ -70,12 +70,12 @@ function createMockAdapter(
 
 /**
  * 建立 Mock KeyPool
- * goldKey: 金鑰匙（為 null 時模擬未設定）
+ * clawKey: Claw Key（為 null 時模擬未設定）
  */
-function createMockKeyPool(goldKey: DecryptedKey | null): KeyPool {
+function createMockKeyPool(clawKey: DecryptedKey | null): KeyPool {
   return {
     selectKey: mock(async (serviceId: string) => {
-      if (serviceId === '__gold_key__') return goldKey;
+      if (serviceId === '__claw_key__') return clawKey;
       return null;
     }),
     getServiceIds: mock(() => []),
@@ -159,8 +159,8 @@ function createSuccessL2Gateway(data: unknown = { result: 'ok' }): L2Gateway {
 
 describe('L3Concierge 意圖解讀 — 服務選擇', () => {
   it('搜尋意圖 → 選擇 brave-search 服務', async () => {
-    const goldKey = createMockKey(1, '__gold_key__');
-    const keyPool = createMockKeyPool(goldKey);
+    const clawKey = createMockKey(1, '__claw_key__');
+    const keyPool = createMockKeyPool(clawKey);
 
     // Executor 回傳搜尋意圖 JSON
     const intentJson = JSON.stringify({
@@ -203,8 +203,8 @@ describe('L3Concierge 意圖解讀 — 服務選擇', () => {
   });
 
   it('翻譯意圖 → 選擇 deepl 服務', async () => {
-    const goldKey = createMockKey(1, '__gold_key__');
-    const keyPool = createMockKeyPool(goldKey);
+    const clawKey = createMockKey(1, '__claw_key__');
+    const keyPool = createMockKeyPool(clawKey);
 
     const intentJson = JSON.stringify({
       understanding: '用戶想要翻譯一段文字為英文',
@@ -235,8 +235,8 @@ describe('L3Concierge 意圖解讀 — 服務選擇', () => {
   });
 
   it('LLM 對話意圖 → 選擇 groq 服務', async () => {
-    const goldKey = createMockKey(1, '__gold_key__');
-    const keyPool = createMockKeyPool(goldKey);
+    const clawKey = createMockKey(1, '__claw_key__');
+    const keyPool = createMockKeyPool(clawKey);
 
     const intentJson = JSON.stringify({
       understanding: '用戶想要和 LLM 進行一般對話',
@@ -266,11 +266,11 @@ describe('L3Concierge 意圖解讀 — 服務選擇', () => {
   });
 });
 
-// ===== 測試 2：金鑰匙缺失 =====
+// ===== 測試 2：Claw Key缺失 =====
 
-describe('L3Concierge 金鑰匙缺失', () => {
-  it('未設定金鑰匙 → success=false + 回傳錯誤訊息 + 建議', async () => {
-    // goldKey = null，模擬未設定
+describe('L3Concierge Claw Key缺失', () => {
+  it('未設定Claw Key → success=false + 回傳錯誤訊息 + 建議', async () => {
+    // clawKey = null，模擬未設定
     const keyPool = createMockKeyPool(null);
     const executor = createMockExecutor();
     const adapters = new Map([['groq', createMockAdapter('groq')]]);
@@ -281,15 +281,15 @@ describe('L3Concierge 金鑰匙缺失', () => {
       messages: [{ role: 'user', content: '幫我搜尋資訊' }],
     });
 
-    // 驗收標準：沒金鑰匙 → 失敗 + 說明 + 建議指令
+    // 驗收標準：沒Claw Key → 失敗 + 說明 + 建議指令
     expect(result.success).toBe(false);
     expect(result.error).toBeTruthy();
-    expect(result.error).toContain('金鑰匙');
+    expect(result.error).toContain('Claw Key');
     expect(result.suggestion).toBeTruthy();
-    expect(result.suggestion).toContain('clawapi gold-key set');
+    expect(result.suggestion).toContain('clawapi claw-key set');
   });
 
-  it('未設定金鑰匙 → latency_ms 應大於 0', async () => {
+  it('未設定Claw Key → latency_ms 應大於 0', async () => {
     const keyPool = createMockKeyPool(null);
     const executor = createMockExecutor();
     const adapters = new Map<string, AdapterConfig>();
@@ -305,9 +305,9 @@ describe('L3Concierge 金鑰匙缺失', () => {
   });
 });
 
-// ===== 測試 3：金鑰匙額度不足 → 降級到 L2 =====
+// ===== 測試 3：Claw Key額度不足 → 降級到 L2 =====
 
-describe('L3Concierge 金鑰匙額度不足 — 降級到 L2', () => {
+describe('L3Concierge Claw Key額度不足 — 降級到 L2', () => {
   it('shouldDegradeToL2 方法：剩餘 4% → 應回傳 true', () => {
     const executor = createMockExecutor();
     const adapters = new Map<string, AdapterConfig>();
@@ -318,7 +318,7 @@ describe('L3Concierge 金鑰匙額度不足 — 降級到 L2', () => {
 
     // 今日上限 100,000 tokens，已用 96,000（剩餘 4%）
     const result = concierge.shouldDegradeToL2({
-      key: createMockKey(1, '__gold_key__', 96000),
+      key: createMockKey(1, '__claw_key__', 96000),
       daily_tokens_used: 96000,
       daily_token_limit: 100000,
     });
@@ -336,7 +336,7 @@ describe('L3Concierge 金鑰匙額度不足 — 降級到 L2', () => {
 
     // 今日上限 100,000 tokens，已用 94,000（剩餘 6%）
     const result = concierge.shouldDegradeToL2({
-      key: createMockKey(1, '__gold_key__', 94000),
+      key: createMockKey(1, '__claw_key__', 94000),
       daily_tokens_used: 94000,
       daily_token_limit: 100000,
     });
@@ -353,7 +353,7 @@ describe('L3Concierge 金鑰匙額度不足 — 降級到 L2', () => {
     const concierge = new L3Concierge(keyPool, executor, adapters, l2Gateway);
 
     const result = concierge.shouldDegradeToL2({
-      key: createMockKey(1, '__gold_key__', 999999),
+      key: createMockKey(1, '__claw_key__', 999999),
       daily_tokens_used: 999999,
       daily_token_limit: 0,  // 0 = 無限制
     });
@@ -361,11 +361,11 @@ describe('L3Concierge 金鑰匙額度不足 — 降級到 L2', () => {
     expect(result).toBe(false);
   });
 
-  it('金鑰匙剩餘 3%（超過閾值） → L2 成功 → 回傳 L2 結果', async () => {
+  it('Claw Key剩餘 3%（超過閾值） → L2 成功 → 回傳 L2 結果', async () => {
     // daily_used 接近上限（剩 3%）
-    const goldKey = createMockKey(1, '__gold_key__', 97000);
+    const clawKey = createMockKey(1, '__claw_key__', 97000);
     const keyPool: KeyPool = {
-      selectKey: mock(async () => goldKey),
+      selectKey: mock(async () => clawKey),
       getServiceIds: mock(() => []),
       reportSuccess: mock(async () => {}),
       reportRateLimit: mock(async () => {}),
@@ -379,13 +379,13 @@ describe('L3Concierge 金鑰匙額度不足 — 降級到 L2', () => {
       { success: true, data: { choices: [{ message: { content: 'L2 回應' } }] } },
     ]);
 
-    // 建立 concierge 並手動讓 getGoldKey 回傳有額度限制的資訊
+    // 建立 concierge 並手動讓 getClawKey 回傳有額度限制的資訊
     const concierge = new L3Concierge(keyPool, executor, adapters, l2Gateway);
 
-    // 覆寫 getGoldKey 讓它回傳接近滿載的額度資訊
-    const originalGetGoldKey = concierge.getGoldKey.bind(concierge);
-    concierge.getGoldKey = mock(async () => ({
-      key: goldKey,
+    // 覆寫 getClawKey 讓它回傳接近滿載的額度資訊
+    const originalGetClawKey = concierge.getClawKey.bind(concierge);
+    concierge.getClawKey = mock(async () => ({
+      key: clawKey,
       daily_tokens_used: 97000,
       daily_token_limit: 100000,  // 剩 3%，低於 5% 閾值
     }));
@@ -396,8 +396,8 @@ describe('L3Concierge 金鑰匙額度不足 — 降級到 L2', () => {
 
     // 降級後應透過 L2 處理
     expect(result.success).toBe(true);
-    // 原始 getGoldKey 還可以用
-    expect(originalGetGoldKey).toBeDefined();
+    // 原始 getClawKey 還可以用
+    expect(originalGetClawKey).toBeDefined();
   });
 });
 
@@ -702,8 +702,8 @@ describe('L3Concierge 序列步驟執行', () => {
 
 describe('L3Concierge 澄清回傳', () => {
   it('LLM 回傳 clarification JSON → 回傳澄清問題給用戶', async () => {
-    const goldKey = createMockKey(1, '__gold_key__');
-    const keyPool = createMockKeyPool(goldKey);
+    const clawKey = createMockKey(1, '__claw_key__');
+    const keyPool = createMockKeyPool(clawKey);
 
     // Executor 回傳澄清 JSON
     const clarificationJson = JSON.stringify({
@@ -778,9 +778,9 @@ describe('L3Concierge 澄清回傳', () => {
 // ===== 測試 8：消耗報告正確性 =====
 
 describe('L3Concierge 消耗報告', () => {
-  it('完整執行後應回傳 usage 報告（含 gold_key_tokens 和 steps）', async () => {
-    const goldKey = createMockKey(1, '__gold_key__');
-    const keyPool = createMockKeyPool(goldKey);
+  it('完整執行後應回傳 usage 報告（含 claw_key_tokens 和 steps）', async () => {
+    const clawKey = createMockKey(1, '__claw_key__');
+    const keyPool = createMockKeyPool(clawKey);
 
     // Executor：第一次呼叫（意圖解讀）回傳 50 tokens，第二次（整合）回傳 80 tokens
     let execCallCount = 0;
@@ -837,8 +837,8 @@ describe('L3Concierge 消耗報告', () => {
     expect(result.success).toBe(true);
     expect(result.usage).toBeDefined();
 
-    // 金鑰匙消耗：意圖解讀 50 + 結果整合 80 = 130
-    expect(result.usage!.gold_key_tokens).toBe(130);
+    // Claw Key消耗：意圖解讀 50 + 結果整合 80 = 130
+    expect(result.usage!.claw_key_tokens).toBe(130);
 
     // 各步驟消耗
     expect(result.usage!.steps).toHaveLength(1);
@@ -847,8 +847,8 @@ describe('L3Concierge 消耗報告', () => {
   });
 
   it('步驟失敗時 usage 仍應回傳（但 steps tokens 可能為 0）', async () => {
-    const goldKey = createMockKey(1, '__gold_key__');
-    const keyPool = createMockKeyPool(goldKey);
+    const clawKey = createMockKey(1, '__claw_key__');
+    const keyPool = createMockKeyPool(clawKey);
 
     // Executor：意圖解讀成功（含步驟），整合失敗
     let execIdx = 0;
@@ -898,7 +898,7 @@ describe('L3Concierge 消耗報告', () => {
     // 整合失敗，但 usage 中的意圖解讀 token 應存在
     expect(result.success).toBe(false);
     expect(result.usage).toBeDefined();
-    expect(result.usage!.gold_key_tokens).toBe(60);
+    expect(result.usage!.claw_key_tokens).toBe(60);
   });
 
   it('parseIntent：正確解析意圖 JSON 含 steps 陣列', () => {
@@ -930,52 +930,52 @@ describe('L3Concierge 消耗報告', () => {
   });
 });
 
-// ===== 額外測試：getGoldKey 方法 =====
+// ===== 額外測試：getClawKey 方法 =====
 
-describe('L3Concierge getGoldKey', () => {
-  it('KeyPool 有金鑰匙 → 回傳 GoldKeyInfo', async () => {
-    const goldKey = createMockKey(42, '__gold_key__', 500);
-    const keyPool = createMockKeyPool(goldKey);
+describe('L3Concierge getClawKey', () => {
+  it('KeyPool 有Claw Key → 回傳 ClawKeyInfo', async () => {
+    const clawKey = createMockKey(42, '__claw_key__', 500);
+    const keyPool = createMockKeyPool(clawKey);
     const executor = createMockExecutor();
     const adapters = new Map<string, AdapterConfig>();
     const l2Gateway = createSuccessL2Gateway();
 
     const concierge = new L3Concierge(keyPool, executor, adapters, l2Gateway);
-    const info = await concierge.getGoldKey();
+    const info = await concierge.getClawKey();
 
     expect(info).not.toBeNull();
     expect(info!.key.id).toBe(42);
-    expect(info!.key.service_id).toBe('__gold_key__');
+    expect(info!.key.service_id).toBe('__claw_key__');
     expect(info!.daily_tokens_used).toBe(500);
   });
 
-  it('KeyPool 無金鑰匙 → 回傳 null', async () => {
+  it('KeyPool 無Claw Key → 回傳 null', async () => {
     const keyPool = createMockKeyPool(null);
     const executor = createMockExecutor();
     const adapters = new Map<string, AdapterConfig>();
     const l2Gateway = createSuccessL2Gateway();
 
     const concierge = new L3Concierge(keyPool, executor, adapters, l2Gateway);
-    const info = await concierge.getGoldKey();
+    const info = await concierge.getClawKey();
 
     expect(info).toBeNull();
   });
 });
 
-// ===== 額外測試：callLLMWithGoldKey =====
+// ===== 額外測試：callLLMWithClawKey =====
 
-describe('L3Concierge callLLMWithGoldKey', () => {
+describe('L3Concierge callLLMWithClawKey', () => {
   it('找不到 LLM Adapter → success=false + 錯誤訊息', async () => {
-    const goldKey = createMockKey(1, '__gold_key__');
-    const keyPool = createMockKeyPool(goldKey);
+    const clawKey = createMockKey(1, '__claw_key__');
+    const keyPool = createMockKeyPool(clawKey);
     const executor = createMockExecutor();
     // 沒有任何 Adapter（或都不支援 chat）
     const adapters = new Map<string, AdapterConfig>();
     const l2Gateway = createSuccessL2Gateway();
 
     const concierge = new L3Concierge(keyPool, executor, adapters, l2Gateway);
-    const result = await concierge.callLLMWithGoldKey(
-      goldKey,
+    const result = await concierge.callLLMWithClawKey(
+      clawKey,
       'system prompt',
       [{ role: 'user', content: 'hello' }]
     );
@@ -984,16 +984,16 @@ describe('L3Concierge callLLMWithGoldKey', () => {
     expect(result.error).toContain('Adapter');
   });
 
-  it('Executor 失敗 → callLLMWithGoldKey 回傳 success=false', async () => {
-    const goldKey = createMockKey(1, '__gold_key__');
-    const keyPool = createMockKeyPool(goldKey);
+  it('Executor 失敗 → callLLMWithClawKey 回傳 success=false', async () => {
+    const clawKey = createMockKey(1, '__claw_key__');
+    const keyPool = createMockKeyPool(clawKey);
     const executor = createFailingExecutor(500);
     const adapters = new Map([['groq', createMockAdapter('groq', 'llm')]]);
     const l2Gateway = createSuccessL2Gateway();
 
     const concierge = new L3Concierge(keyPool, executor, adapters, l2Gateway);
-    const result = await concierge.callLLMWithGoldKey(
-      goldKey,
+    const result = await concierge.callLLMWithClawKey(
+      clawKey,
       'system',
       [{ role: 'user', content: 'test' }]
     );
@@ -1002,15 +1002,15 @@ describe('L3Concierge callLLMWithGoldKey', () => {
   });
 
   it('Executor 成功 → 提取 OpenAI 格式的 content 和 tokens', async () => {
-    const goldKey = createMockKey(1, '__gold_key__');
-    const keyPool = createMockKeyPool(goldKey);
+    const clawKey = createMockKey(1, '__claw_key__');
+    const keyPool = createMockKeyPool(clawKey);
     const executor = createMockExecutor('這是回答內容', 123);
     const adapters = new Map([['groq', createMockAdapter('groq', 'llm')]]);
     const l2Gateway = createSuccessL2Gateway();
 
     const concierge = new L3Concierge(keyPool, executor, adapters, l2Gateway);
-    const result = await concierge.callLLMWithGoldKey(
-      goldKey,
+    const result = await concierge.callLLMWithClawKey(
+      clawKey,
       'system',
       [{ role: 'user', content: 'test' }]
     );
@@ -1025,8 +1025,8 @@ describe('L3Concierge callLLMWithGoldKey', () => {
 
 describe('L3Concierge synthesizeResult', () => {
   it('應根據步驟結果生成整合回答', async () => {
-    const goldKey = createMockKey(1, '__gold_key__');
-    const keyPool = createMockKeyPool(goldKey);
+    const clawKey = createMockKey(1, '__claw_key__');
+    const keyPool = createMockKeyPool(clawKey);
     const executor = createMockExecutor('整合後的最終回答', 80);
     const adapters = new Map([['groq', createMockAdapter('groq', 'llm')]]);
     const l2Gateway = createSuccessL2Gateway();
@@ -1045,7 +1045,7 @@ describe('L3Concierge synthesizeResult', () => {
     ];
 
     const result = await concierge.synthesizeResult(
-      goldKey,
+      clawKey,
       [{ role: 'user', content: '搜尋 AI 新聞' }],
       { understanding: '搜尋任務', steps: [] },
       stepResults

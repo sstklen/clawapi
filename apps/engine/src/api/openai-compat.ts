@@ -75,8 +75,8 @@ export interface ChatCompletionRequest {
   x_strategy?: RoutingStrategy;
   /** ClawAPI 擴充：禁止 Failover */
   x_no_fallback?: boolean;
-  /** ClawAPI 擴充：最大 Gold Token 數 */
-  x_max_gold_tokens?: number;
+  /** ClawAPI 擴充：最大 Claw Key Token 數 */
+  x_max_claw_tokens?: number;
   /** ClawAPI 擴充：偏好服務 */
   x_preferred_service?: string;
 }
@@ -95,8 +95,8 @@ export interface XClawAPI {
   key_source: string;
   /** 端到端延遲（ms） */
   latency_ms: number;
-  /** Gold Key 使用的 Token 數（選填） */
-  gold_key_tokens?: number;
+  /** Claw Key 使用的 Token 數（選填） */
+  claw_key_tokens?: number;
   /** Failover 重試次數 */
   retry_count: number;
   /** 警告訊息 */

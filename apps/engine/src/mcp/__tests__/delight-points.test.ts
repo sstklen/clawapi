@@ -1,5 +1,5 @@
 // 四爽點體驗引導測試
-// 爽點一：一鍵全自動（handleAuto 自動匯入 + Gold Key）
+// 爽點一：一鍵全自動（handleAuto 自動匯入 + Claw Key）
 // 爽點二：主動推薦下一個免費服務
 // 爽點三：碰限額引導加 Key
 
@@ -101,8 +101,8 @@ function createMockAdapters(): Map<string, AdapterConfig> {
 function createMockSubKeyManager(): SubKeyManager {
   return {
     issue: async () => ({
-      token: 'sk_live_test_gold_key',
-      label: 'Gold Key（自動產生）',
+      token: 'sk_live_test_claw_key',
+      label: 'Claw Key（自動產生）',
       daily_limit: null,
       allowed_services: null,
       allowed_models: null,
@@ -213,8 +213,8 @@ describe('爽點一：一鍵全自動（handleAuto）', () => {
       // 應該有匯入的結果
       expect(text).toContain('已匯入');
 
-      // 應該有 Gold Key
-      expect(text).toContain('Gold Key');
+      // 應該有 Claw Key
+      expect(text).toContain('Claw Key');
       expect(text).toContain('sk_live_');
 
       // 應該有「搞定」等完成訊息
@@ -225,9 +225,9 @@ describe('爽點一：一鍵全自動（handleAuto）', () => {
     }
   });
 
-  it('匯入後應顯示「以後用 Gold Key 就好」', async () => {
+  it('匯入後應顯示「以後用 Claw Key 就好」', async () => {
     const originalEnv = { ...process.env };
-    process.env.GROQ_API_KEY = 'gsk_test_gold_key_msg';
+    process.env.GROQ_API_KEY = 'gsk_test_claw_key_msg';
 
     try {
       const keyPool = createMockKeyPool();
@@ -240,8 +240,8 @@ describe('爽點一：一鍵全自動（handleAuto）', () => {
       const result = await executeSetupWizardTool({ action: 'auto' }, deps);
       const text = result.content[0]!.text;
 
-      // 應告訴用戶用 Gold Key 就好
-      expect(text).toContain('Gold Key');
+      // 應告訴用戶用 Claw Key 就好
+      expect(text).toContain('Claw Key');
       expect(text).toContain('通吃');
     } finally {
       process.env = originalEnv;
@@ -367,7 +367,7 @@ describe('爽點三：碰限額引導', () => {
 // ===== 整合測試 =====
 
 describe('完整爽點流程整合', () => {
-  it('全新用戶 auto → 匯入 → Gold Key → 推薦（完整流程）', async () => {
+  it('全新用戶 auto → 匯入 → Claw Key → 推薦（完整流程）', async () => {
     const originalEnv = { ...process.env };
     process.env.OPENAI_API_KEY = 'sk-test_full_flow';
 
@@ -391,8 +391,8 @@ describe('完整爽點流程整合', () => {
       expect(text).toContain('驗證');
       // 3. 匯入結果
       expect(text).toContain('匯入');
-      // 4. Gold Key
-      expect(text).toContain('Gold Key');
+      // 4. Claw Key
+      expect(text).toContain('Claw Key');
       // 5. 完成訊息
       expect(text).toContain('搞定');
       // 6. 推薦下一步

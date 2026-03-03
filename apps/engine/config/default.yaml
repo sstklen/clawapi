@@ -27,11 +27,11 @@ routing:
     l4_step: 60000
     l4_total: 300000
 
-# ===== 黃金 Key =====
-gold_key:
-  # 為黃金 Key 保留的流量百分比
+# ===== Claw Key =====
+claw_key:
+  # 為 Claw Key 保留的流量百分比
   reserve_percent: 5
-  # 黃金 Key 使用的模型（null = 跟隨服務預設）
+  # Claw Key 使用的模型（null = 跟隨服務預設）
   default_model: null
   # 各 L 層提示詞（null = 不覆蓋）
   prompt:

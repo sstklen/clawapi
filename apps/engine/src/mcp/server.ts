@@ -77,7 +77,7 @@ export interface McpServerDeps {
   statusDeps: EngineStatusDeps;
   /** 成長引擎（可選，向後相容） */
   growthEngine?: GrowthEngine;
-  /** Sub-Key 管理器（可選，Gold Key 用） */
+  /** Sub-Key 管理器（可選，Claw Key 用） */
   subKeyManager?: SubKeyManager;
   /** 成本引擎（可選，成本分析用） */
   costEngine?: CostEngine;

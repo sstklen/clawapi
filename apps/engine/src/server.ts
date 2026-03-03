@@ -24,7 +24,9 @@ import type { L0Manager } from './l0/manager';
 import type { ClawConfig } from './core/config';
 import { getEngineVersion } from './version';
 import { t } from './cli/utils/i18n';
-import { createUIRouter } from './ui/router';
+// UI router 使用 lazy import（動態載入），因為它依賴 React JSX
+// MCP stdio 模式不需要 UI，避免因缺少 react 依賴而 crash（GitHub #6 P0）
+// import type 不會觸發模組載入，所以 type import 是安全的
 import type { UIDeps } from './ui/router';
 import { createDocsRouter } from './api/docs';
 
@@ -284,23 +286,7 @@ export class ClawEngineServer implements EngineServer {
       });
     });
 
-    // === 掛載 Web UI 路由（/ui/*，不需 API auth） ===
-    if (this.mgmtOptions) {
-      const uiDeps: UIDeps = {
-        keyPool: this.keyPool,
-        subKeyManager: this.mgmtOptions.subKeyManager,
-        aidClient: this.mgmtOptions.aidClient,
-        adapterLoader: this.mgmtOptions.adapterLoader,
-        telemetry: this.mgmtOptions.telemetry,
-        l0Manager: this.mgmtOptions.l0Manager,
-        db: this.db,
-        adapters: this.adapters,
-        getConfig: this.mgmtOptions.getConfig,
-        startedAt: new Date(),
-      };
-      const uiRouter = createUIRouter(uiDeps);
-      app.route('/ui', uiRouter);
-    }
+    // === Web UI 路由在 start() 中動態載入（需要 React JSX，MCP 模式不需要） ===
 
     // === 掛載 API 文件路由（/docs + /openapi.json，不需認證） ===
     const docsRouter = createDocsRouter();
@@ -342,7 +328,7 @@ export class ClawEngineServer implements EngineServer {
         return next();
       };
       app.use('/api/keys*', masterOnlyGuard);
-      app.use('/api/gold-keys*', masterOnlyGuard);
+      app.use('/api/claw-keys*', masterOnlyGuard);
       app.use('/api/sub-keys*', masterOnlyGuard);
       app.use('/api/settings*', masterOnlyGuard);
       app.use('/api/backup*', masterOnlyGuard);

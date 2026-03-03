@@ -36,7 +36,7 @@ describe('Database — 初始化', () => {
       'aid_log',
       'device',
       'device_keypair',
-      'gold_keys',
+      'claw_keys',
       'keys',
       'l0_device_usage',
       'l0_keys',
@@ -75,16 +75,18 @@ describe('Database — 初始化', () => {
     expect(indexNames).toContain('idx_telemetry_queue_created');
   });
 
-  it('schema_version 應記錄版本 1', async () => {
+  it('schema_version 應記錄所有 migration 版本', async () => {
     db = await createTestDb();
 
     const rows = db.query<{ version: number; description: string }>(
-      'SELECT version, description FROM schema_version'
+      'SELECT version, description FROM schema_version ORDER BY version'
     );
 
-    expect(rows.length).toBe(1);
+    expect(rows.length).toBe(2);
     expect(rows[0].version).toBe(1);
     expect(rows[0].description).toContain('初始');
+    expect(rows[1].version).toBe(2);
+    expect(rows[1].description).toContain('Claw Key');
   });
 
   it('aid_config 應有預設列（id=1）', async () => {
@@ -216,16 +218,16 @@ describe('Database — dailyReset', () => {
     expect(rows[0].rate_used_this_hour).toBe(0);
   });
 
-  it('應重置 gold_keys.daily_used', () => {
+  it('應重置 claw_keys.daily_used', () => {
     db.run(
-      "INSERT INTO gold_keys (service_id, key_encrypted, model_id, daily_used) VALUES (?, ?, ?, ?)",
+      "INSERT INTO claw_keys (service_id, key_encrypted, model_id, daily_used) VALUES (?, ?, ?, ?)",
       ['openai', new Uint8Array([4, 5, 6]), 'gpt-4o', 100]
     );
 
     db.dailyReset('Asia/Taipei');
 
     const rows = db.query<{ daily_used: number }>(
-      'SELECT daily_used FROM gold_keys'
+      'SELECT daily_used FROM claw_keys'
     );
     expect(rows[0].daily_used).toBe(0);
   });
@@ -256,7 +258,10 @@ describe('Migration — down（回退）', () => {
   it('執行 down SQL 應移除所有資料表', async () => {
     const db = await createTestDb();
 
-    // 執行 down migration（multi-statement SQL 用 exec）
+    // 反向執行 migration（先 002 再 001）
+    const { migration002 } = await import('../migrations/002-rename-gold-to-claw');
+    db.exec(migration002.down);
+
     const { migration001 } = await import('../migrations/001-init');
     db.exec(migration001.down);
 

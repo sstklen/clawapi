@@ -26,7 +26,7 @@ export interface NavProps {
 const NAV_ITEMS: NavItem[] = [
   { href: '/ui', label: '總覽', icon: '\ud83c\udfe0', key: 'dashboard' },
   { href: '/ui/keys', label: 'Keys', icon: '\ud83d\udd11', key: 'keys' },
-  { href: '/ui/gold-key', label: '\u91d1\u9470\u5319', icon: '\ud83c\udf1f', key: 'gold-key' },
+  { href: '/ui/claw-key', label: 'Claw Key', icon: '\ud83e\udd9e', key: 'claw-key' },
   { href: '/ui/sub-keys', label: 'Sub-Keys', icon: '\ud83d\udd10', key: 'sub-keys' },
   { href: '/ui/aid', label: '\u4e92\u52a9', icon: '\ud83e\udd1d', key: 'aid' },
   { href: '/ui/adapters', label: 'Adapter', icon: '\ud83e\udde9', key: 'adapters' },

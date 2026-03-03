@@ -763,7 +763,7 @@ describe('all commands exist and can be imported', () => {
     ['stop', '../commands/stop', 'stopCommand'],
     ['status', '../commands/status', 'statusCommand'],
     ['keys', '../commands/keys', 'keysCommand'],
-    ['gold-key', '../commands/gold-key', 'goldKeyCommand'],
+    ['claw-key', '../commands/claw-key', 'clawKeyCommand'],
     ['sub-keys', '../commands/sub-keys', 'subKeysCommand'],
     ['aid', '../commands/aid', 'aidCommand'],
     ['adapters', '../commands/adapters', 'adaptersCommand'],
@@ -932,22 +932,22 @@ describe('keys subcommand routing', () => {
   });
 });
 
-// ===== gold-key 命令測試 =====
+// ===== claw-key 命令測試 =====
 
-describe('gold-key subcommand routing', () => {
+describe('claw-key subcommand routing', () => {
   afterEach(() => {
     setOutputMode({ plain: false, json: false });
   });
 
-  test('gold-key show --json 有輸出', async () => {
+  test('claw-key show --json 有輸出', async () => {
     setOutputMode({ json: true });
-    const { goldKeyCommand } = await import('../commands/gold-key');
+    const { clawKeyCommand } = await import('../commands/claw-key');
 
     const logs: string[] = [];
     const origLog = console.log;
     console.log = (...a: unknown[]) => logs.push(a.join(' '));
 
-    await goldKeyCommand({ command: 'gold-key', positional: ['show'], flags: {} });
+    await clawKeyCommand({ command: 'claw-key', positional: ['show'], flags: {} });
 
     console.log = origLog;
 

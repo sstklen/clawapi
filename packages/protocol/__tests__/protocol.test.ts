@@ -192,8 +192,8 @@ describe('常數值驗證', () => {
     expect(CHAT_MESSAGE_MAX_LENGTH).toBe(500);
   });
 
-  test('CLAWAPI_VERSION = 0.1.9', () => {
-    expect(CLAWAPI_VERSION).toBe('0.1.11');
+  test('CLAWAPI_VERSION = 0.1.12', () => {
+    expect(CLAWAPI_VERSION).toBe('0.1.12');
   });
 });
 

@@ -28,7 +28,7 @@ export interface ClawConfig {
       l4_total: number;
     };
   };
-  gold_key: {
+  claw_key: {
     reserve_percent: number;
     default_model: string | null;
     prompt: { l3: string | null; l4: string | null };
@@ -116,7 +116,7 @@ export function getDefaultConfig(): ClawConfig {
         l4_total: 300000,
       },
     },
-    gold_key: {
+    claw_key: {
       reserve_percent: 5,
       default_model: null,
       prompt: { l3: null, l4: null },

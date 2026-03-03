@@ -84,7 +84,7 @@ async function configSet(args: ParsedArgs): Promise<void> {
 
   // 驗證 key 路徑
   const validPrefixes = [
-    'server.', 'routing.', 'gold_key.', 'telemetry.', 'l0.',
+    'server.', 'routing.', 'claw_key.', 'telemetry.', 'l0.',
     'aid.', 'vps.', 'ui.', 'logging.', 'backup.', 'notifications.', 'advanced.',
   ];
 

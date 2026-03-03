@@ -6,7 +6,7 @@
 //   GET /ui                     Dashboard
 //   GET /ui/keys                Key 管理
 //   GET /ui/keys/add            新增 Key
-//   GET /ui/gold-key            金鑰匙設定
+//   GET /ui/claw-key            Claw Key 設定
 //   GET /ui/sub-keys            Sub-Key 管理
 //   GET /ui/sub-keys/issue      發行 Sub-Key
 //   GET /ui/aid                 互助設定
@@ -47,7 +47,7 @@ import { getEngineVersion } from '../version';
 import { DashboardPage } from './pages/dashboard';
 import type { DashboardData } from './pages/dashboard';
 import { KeysPage, KeysAddPage } from './pages/keys';
-import { GoldKeyPage } from './pages/gold-key';
+import { ClawKeyPage } from './pages/claw-key';
 import { SubKeysPage, SubKeysIssuePage } from './pages/sub-keys';
 import { AidPage } from './pages/aid';
 import { AdaptersPage } from './pages/adapters';
@@ -186,9 +186,9 @@ export function createUIRouter(deps: UIDeps): Hono {
   });
 
   // =========================================================
-  // GET /ui/gold-key — 金鑰匙設定
+  // GET /ui/claw-key — Claw Key 設定
   // =========================================================
-  app.get('/gold-key', (c: Context) => {
+  app.get('/claw-key', (c: Context) => {
     const rows = db.query<{
       id: number;
       service_id: string;
@@ -197,9 +197,9 @@ export function createUIRouter(deps: UIDeps): Hono {
       daily_used: number;
       daily_limit: number | null;
       created_at: string;
-    }>('SELECT id, service_id, model_id, is_active, daily_used, daily_limit, created_at FROM gold_keys ORDER BY created_at DESC');
+    }>('SELECT id, service_id, model_id, is_active, daily_used, daily_limit, created_at FROM claw_keys ORDER BY created_at DESC');
 
-    const goldKeys = rows.map(r => ({
+    const clawKeys = rows.map(r => ({
       id: r.id,
       service_id: r.service_id,
       model_id: r.model_id,
@@ -209,7 +209,7 @@ export function createUIRouter(deps: UIDeps): Hono {
       created_at: r.created_at,
     }));
 
-    return renderPage(c, GoldKeyPage({ goldKeys }));
+    return renderPage(c, ClawKeyPage({ clawKeys }));
   });
 
   // =========================================================

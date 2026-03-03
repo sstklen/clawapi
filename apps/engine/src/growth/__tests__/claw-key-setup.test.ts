@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'bun:test';
-import { getExistingGoldKey, setupAutoGoldKey } from '../gold-key-setup';
+import { getExistingClawKey, setupAutoClawKey } from '../claw-key-setup';
 import type { SubKeyManager, SubKey } from '../../sharing/sub-key';
 import type { KeyPool } from '../../core/key-pool';
 
@@ -24,10 +24,10 @@ function makeSubKey(partial: Partial<SubKey> = {}): SubKey {
   };
 }
 
-describe('gold-key-setup', () => {
-  it('已有 Gold Key 時應直接回用既有 token', async () => {
+describe('claw-key-setup', () => {
+  it('已有 Claw Key 時應直接回用既有 token', async () => {
     const existing = makeSubKey({
-      label: 'Gold Key（手動建立）',
+      label: 'Claw Key（手動建立）',
       token: 'sk_live_exist',
     });
 
@@ -45,19 +45,19 @@ describe('gold-key-setup', () => {
       ],
     } as unknown as KeyPool;
 
-    const found = await getExistingGoldKey(subKeyManager);
+    const found = await getExistingClawKey(subKeyManager);
     expect(found?.token).toBe('sk_live_exist');
 
-    const result = await setupAutoGoldKey(subKeyManager, keyPool);
+    const result = await setupAutoClawKey(subKeyManager, keyPool);
     expect(result.token).toBe('sk_live_exist');
     expect(result.is_new).toBe(false);
     expect(result.services_included).toEqual(['openai', 'groq']);
   });
 
-  it('沒有 Gold Key 時應自動新建', async () => {
+  it('沒有 Claw Key 時應自動新建', async () => {
     const created = makeSubKey({
       id: 2,
-      label: 'Gold Key（自動產生）',
+      label: 'Claw Key（自動產生）',
       token: 'sk_live_new',
     });
 
@@ -74,7 +74,7 @@ describe('gold-key-setup', () => {
       ],
     } as unknown as KeyPool;
 
-    const result = await setupAutoGoldKey(subKeyManager, keyPool);
+    const result = await setupAutoClawKey(subKeyManager, keyPool);
     expect(result.token).toBe('sk_live_new');
     expect(result.is_new).toBe(true);
     expect(result.services_included).toEqual(['openai', 'deepl']);
@@ -83,7 +83,7 @@ describe('gold-key-setup', () => {
 
   it('keyPool 為空時 services_included 應為空陣列', async () => {
     const created = makeSubKey({
-      label: 'Gold Key（自動產生）',
+      label: 'Claw Key（自動產生）',
       token: 'sk_live_empty',
     });
 
@@ -96,7 +96,7 @@ describe('gold-key-setup', () => {
       listKeys: async () => [],
     } as unknown as KeyPool;
 
-    const result = await setupAutoGoldKey(subKeyManager, keyPool);
+    const result = await setupAutoClawKey(subKeyManager, keyPool);
     expect(result.services_included).toEqual([]);
   });
 });

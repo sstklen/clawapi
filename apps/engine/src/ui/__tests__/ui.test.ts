@@ -86,7 +86,7 @@ function createMockUIDeps(): UIDeps {
         // 根據 SQL 回傳不同的 Mock 資料（注意順序：更具體的在前面）
         if (sql.includes('success = 1')) return [{ cnt: 40 }];
         if (sql.includes('COUNT(*)')) return [{ cnt: 42 }];
-        if (sql.includes('gold_keys')) return [
+        if (sql.includes('claw_keys')) return [
           {
             id: 1, service_id: 'openai', model_id: 'gpt-4o',
             is_active: 1, daily_used: 5, daily_limit: 50,
@@ -190,8 +190,8 @@ describe('Web UI 頁面渲染', () => {
     expect(html).toContain('key_value');
   });
 
-  it('Gold Key（/ui/gold-key）回傳 200', async () => {
-    const res = await get('/ui/gold-key');
+  it('Claw Key（/ui/claw-key）回傳 200', async () => {
+    const res = await get('/ui/claw-key');
     expect(res.status).toBe(200);
     const html = await res.text();
     expect(html).toContain('gpt-4o');
@@ -282,10 +282,10 @@ describe('HTMX 屬性', () => {
     expect(html).toContain('hx-target="#form-result"');
   });
 
-  it('Gold Key 表單包含 hx-post', async () => {
-    const html = await getHTML('/ui/gold-key');
-    expect(html).toContain('hx-post="/api/gold-keys"');
-    expect(html).toContain('hx-target="#gold-key-list"');
+  it('Claw Key 表單包含 hx-post', async () => {
+    const html = await getHTML('/ui/claw-key');
+    expect(html).toContain('hx-post="/api/claw-keys"');
+    expect(html).toContain('hx-target="#claw-key-list"');
   });
 
   it('Sub-Keys Issue 表單包含 hx-post', async () => {
@@ -417,7 +417,7 @@ describe('導覽列', () => {
     expect(html).toContain('ClawAPI');
     // 確認包含導覽連結
     expect(html).toContain('/ui/keys');
-    expect(html).toContain('/ui/gold-key');
+    expect(html).toContain('/ui/claw-key');
     expect(html).toContain('/ui/sub-keys');
     expect(html).toContain('/ui/aid');
     expect(html).toContain('/ui/adapters');
@@ -447,7 +447,7 @@ describe('HTTP 回應', () => {
 
   it('所有頁面回傳 200', async () => {
     const paths = [
-      '/ui', '/ui/keys', '/ui/keys/add', '/ui/gold-key',
+      '/ui', '/ui/keys', '/ui/keys/add', '/ui/claw-key',
       '/ui/sub-keys', '/ui/sub-keys/issue', '/ui/aid',
       '/ui/adapters', '/ui/logs', '/ui/settings', '/ui/backup', '/ui/about',
     ];

@@ -1,5 +1,5 @@
 // MCP Tool: setup_wizard — 首次設定引導
-// 掃描環境找 API Key → 驗證 → 匯入 → 產生 Gold Key
+// 掃描環境找 API Key → 驗證 → 匯入 → 產生 Claw Key
 // 爽點 1 的入口：秒速上手
 
 import type { KeyPool } from '../../core/key-pool';
@@ -11,12 +11,12 @@ import type {
   EnvScanResult,
   FoundKey,
   KeyValidationResult,
-  GoldKeySetupResult,
+  ClawKeySetupResult,
 } from '../../growth/types';
 import { SERVICE_RECOMMENDATIONS } from '../../growth/types';
 import { scanEnvVars, detectOllama, fullScan } from '../../growth/env-scanner';
 import { validateKey } from '../../growth/key-validator';
-import { setupAutoGoldKey, getExistingGoldKey } from '../../growth/gold-key-setup';
+import { setupAutoClawKey, getExistingClawKey } from '../../growth/claw-key-setup';
 import { checkTransition, getTeaser, formatTransitionBanner } from '../../growth/phase-relay';
 
 // ===== 型別定義 =====
@@ -46,7 +46,7 @@ export interface SetupWizardDeps {
 export const setupWizardToolSchema = {
   name: 'setup_wizard',
   description:
-    '首次設定引導。當用戶剛安裝 ClawAPI、問「怎麼開始」、或 Key 池為空時，請主動呼叫此 tool。action=auto 會自動掃描環境找到 API Key、驗證有效性、匯入管理、產生萬用金鑰匙（Gold Key）。',
+    '首次設定引導。當用戶剛安裝 ClawAPI、問「怎麼開始」、或 Key 池為空時，請主動呼叫此 tool。action=auto 會自動掃描環境找到 API Key、驗證有效性、匯入管理、產生萬用 Claw Key。',
   inputSchema: {
     type: 'object' as const,
     properties: {
@@ -54,7 +54,7 @@ export const setupWizardToolSchema = {
         type: 'string',
         enum: ['scan', 'import', 'validate', 'gold', 'auto'],
         description:
-          '動作：scan=掃描環境、import=匯入 Key、validate=驗證 Key、gold=產生 Gold Key、auto=全自動',
+          '動作：scan=掃描環境、import=匯入 Key、validate=驗證 Key、gold=產生 Claw Key、auto=全自動',
       },
       service: {
         type: 'string',
@@ -89,7 +89,7 @@ export async function executeSetupWizardTool(
       return handleValidate(input, deps);
 
     case 'gold':
-      return handleGoldKey(deps);
+      return handleClawKey(deps);
 
     case 'auto':
       return handleAuto(deps);
@@ -142,11 +142,16 @@ async function handleImport(
   const validation = await validateKey(input.service, input.key, deps.adapters);
 
   if (!validation.valid) {
+    // 查找對應服務的申請連結
+    const rec = SERVICE_RECOMMENDATIONS.find(r => r.service_id === input.service);
+    const signupHint = rec?.signup_url
+      ? `\n\n→ 重新取得：${rec.signup_url}`
+      : '\n\n請確認 Key 是否正確，或到對應平台重新取得。';
     return {
       content: [
         {
           type: 'text',
-          text: `❌ Key 驗證失敗（${input.service}）：${validation.error ?? '未知錯誤'}\n\n請確認 Key 是否正確，或到對應平台重新取得。`,
+          text: `❌ Key 驗證失敗（${input.service}）：${validation.error ?? '未知錯誤'}${signupHint}`,
         },
       ],
     };
@@ -250,9 +255,9 @@ async function handleValidate(
 }
 
 /**
- * gold — 產生 Gold Key
+ * gold — 產生 Claw Key
  */
-async function handleGoldKey(
+async function handleClawKey(
   deps: SetupWizardDeps
 ): Promise<{ content: Array<{ type: 'text'; text: string }> }> {
   if (!deps.subKeyManager) {
@@ -260,23 +265,23 @@ async function handleGoldKey(
       content: [
         {
           type: 'text',
-          text: '⚠️ Sub-Key 管理器未初始化，無法產生 Gold Key。請確認引擎已完整啟動。',
+          text: '⚠️ Sub-Key 管理器未初始化，無法產生 Claw Key。請確認引擎已完整啟動。',
         },
       ],
     };
   }
 
   try {
-    const result = await setupAutoGoldKey(deps.subKeyManager, deps.keyPool);
+    const result = await setupAutoClawKey(deps.subKeyManager, deps.keyPool);
     return {
-      content: [{ type: 'text', text: formatGoldKeyResult(result) }],
+      content: [{ type: 'text', text: formatClawKeyResult(result) }],
     };
   } catch (err) {
     return {
       content: [
         {
           type: 'text',
-          text: `產生 Gold Key 失敗：${(err as Error).message}`,
+          text: `產生 Claw Key 失敗：${(err as Error).message}`,
         },
       ],
     };
@@ -284,10 +289,10 @@ async function handleGoldKey(
 }
 
 /**
- * auto — 一鍵全自動：掃描 → 驗證 → 全部匯入 → 產生 Gold Key
+ * auto — 一鍵全自動：掃描 → 驗證 → 全部匯入 → 產生 Claw Key
  *
  * 爽點一的核心：用戶什麼都不用做，掃完直接全部搞定，
- * 最後給一把 Gold Key 告訴用戶「以後用這把就好」。
+ * 最後給一把 Claw Key 告訴用戶「以後用這把就好」。
  */
 async function handleAuto(
   deps: SetupWizardDeps
@@ -384,28 +389,28 @@ async function handleAuto(
     }
   }
 
-  // Step 4: Gold Key（如果有 subKeyManager 且匯入了 Key 或已有 Key）
-  let goldKeyToken: string | null = null;
+  // Step 4: Claw Key（如果有 subKeyManager 且匯入了 Key 或已有 Key）
+  let clawKeyToken: string | null = null;
   if (deps.subKeyManager) {
     const existingKeys = await deps.keyPool.listKeys();
     if (existingKeys.length > 0) {
       lines.push('');
-      lines.push('【Step 4】Gold Key...');
+      lines.push('【Step 4】Claw Key...');
       try {
-        const goldResult = await setupAutoGoldKey(
+        const clawResult = await setupAutoClawKey(
           deps.subKeyManager,
           deps.keyPool
         );
-        goldKeyToken = goldResult.token;
-        const status = goldResult.is_new ? '🆕 新產生' : '✅ 已存在';
-        lines.push(`  ${status} Gold Key: ${goldResult.token}`);
+        clawKeyToken = clawResult.token;
+        const status = clawResult.is_new ? '🆕 新產生' : '✅ 已存在';
+        lines.push(`  ${status} Claw Key: ${clawResult.token}`);
         lines.push(
-          `  包含服務：${goldResult.services_included.join(', ')}`
+          `  包含服務：${clawResult.services_included.join(', ')}`
         );
         lines.push('');
-        lines.push(`  ${goldResult.usage_example}`);
+        lines.push(`  ${clawResult.usage_example}`);
       } catch (err) {
-        lines.push(`  ⚠️ Gold Key 產生失敗：${(err as Error).message}`);
+        lines.push(`  ⚠️ Claw Key 產生失敗：${(err as Error).message}`);
       }
     }
   }
@@ -414,10 +419,10 @@ async function handleAuto(
   lines.push('');
   lines.push('═══════════════════════');
 
-  if (importedServices.length > 0 && goldKeyToken) {
-    // 最完美的情況：匯入了 Key + 有 Gold Key
+  if (importedServices.length > 0 && clawKeyToken) {
+    // 最完美的情況：匯入了 Key + 有 Claw Key
     lines.push(`🎉 搞定！已匯入 ${importedServices.length} 把 Key。`);
-    lines.push('以後只要用上面那把 Gold Key 就能通吃所有服務。');
+    lines.push('以後只要用上面那把 Claw Key 就能通吃所有服務。');
     lines.push('不用記每個 API Key，ClawAPI 幫你自動管理和路由。');
   } else if (importedServices.length > 0) {
     // 匯入了 Key 但沒有 Gold Key
@@ -491,13 +496,13 @@ function formatScanResult(result: EnvScanResult): string {
 }
 
 /**
- * 格式化 Gold Key 結果
+ * 格式化 Claw Key 結果
  */
-function formatGoldKeyResult(result: GoldKeySetupResult): string {
+function formatClawKeyResult(result: ClawKeySetupResult): string {
   const lines: string[] = [];
   const status = result.is_new ? '🆕 新產生' : '✅ 已存在';
 
-  lines.push(`${status} Gold Key`);
+  lines.push(`${status} Claw Key`);
   lines.push('═══════════════════════\n');
   lines.push(`Token：${result.token}`);
   lines.push(`包含服務：${result.services_included.join(', ')}`);
@@ -506,7 +511,7 @@ function formatGoldKeyResult(result: GoldKeySetupResult): string {
   lines.push(`  ${result.usage_example}`);
   lines.push('');
   lines.push(
-    '這把 Gold Key 可以存取所有已匯入的 API 服務。'
+    '這把 Claw Key 可以存取所有已匯入的 API 服務。'
   );
   lines.push(
     '在 Claude Code 或其他 AI 工具中，把 base_url 指向 ClawAPI，用這把 Key 就能通吃所有服務。'

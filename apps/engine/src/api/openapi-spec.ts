@@ -86,7 +86,7 @@ Token 類型：
       { name: 'Simplified', description: 'ClawAPI 簡化 API' },
       { name: 'Keys', description: 'API Key 管理（限主金鑰）' },
       { name: 'Sub-Keys', description: 'Sub-Key 管理（限主金鑰）' },
-      { name: 'Gold Keys', description: 'Gold Key 管理（限主金鑰）' },
+      { name: 'Claw Keys', description: 'Claw Key 管理（限主金鑰）' },
       { name: 'System', description: '系統狀態與設定' },
       { name: 'Logs', description: '使用紀錄與分析' },
       { name: 'Aid', description: '互助網路（限主金鑰）' },
@@ -825,16 +825,16 @@ Token 類型：
         },
       },
 
-      // ========== Gold Key 管理 ==========
-      '/api/gold-keys': {
+      // ========== Claw Key 管理 ==========
+      '/api/claw-keys': {
         get: {
-          tags: ['Gold Keys'],
-          summary: '列出 Gold Key',
+          tags: ['Claw Keys'],
+          summary: '列出 Claw Key',
           responses: { 200: { description: '成功' }, 401: unauthorized, 403: forbidden },
         },
         post: {
-          tags: ['Gold Keys'],
-          summary: '設定 Gold Key',
+          tags: ['Claw Keys'],
+          summary: '設定 Claw Key',
           requestBody: {
             required: true,
             content: {
@@ -853,10 +853,10 @@ Token 類型：
           responses: { 201: { description: '已建立' }, 401: unauthorized, 403: forbidden },
         },
       },
-      '/api/gold-keys/{id}': {
+      '/api/claw-keys/{id}': {
         delete: {
-          tags: ['Gold Keys'],
-          summary: '移除 Gold Key',
+          tags: ['Claw Keys'],
+          summary: '移除 Claw Key',
           parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'integer' } }],
           responses: { 200: { description: '已移除' }, 401: unauthorized, 403: forbidden },
         },

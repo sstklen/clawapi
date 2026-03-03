@@ -149,10 +149,10 @@ function printHelp(): void {
   print(`  keys import        ${t('help.keys.import')}`);
   print(`  keys check         ${t('help.keys.check')}`);
   blank();
-  print(color.bold(t('help.section.gold_key')));
-  print(`  gold-key set       ${t('help.gold_key.set')}`);
-  print(`  gold-key show      ${t('help.gold_key.show')}`);
-  print(`  gold-key remove    ${t('help.gold_key.remove')}`);
+  print(color.bold(t('help.section.claw_key')));
+  print(`  claw-key set       ${t('help.claw_key.set')}`);
+  print(`  claw-key show      ${t('help.claw_key.show')}`);
+  print(`  claw-key remove    ${t('help.claw_key.remove')}`);
   blank();
   print(color.bold(t('help.section.sub_keys')));
   print(`  sub-keys issue     ${t('help.sub_keys.issue')}`);
@@ -222,9 +222,9 @@ async function route(parsed: ParsedArgs): Promise<void> {
       const { keysCommand } = await import('./commands/keys');
       return keysCommand(parsed);
     }
-    case 'gold-key': {
-      const { goldKeyCommand } = await import('./commands/gold-key');
-      return goldKeyCommand(parsed);
+    case 'claw-key': {
+      const { clawKeyCommand } = await import('./commands/claw-key');
+      return clawKeyCommand(parsed);
     }
     case 'sub-keys': {
       const { subKeysCommand } = await import('./commands/sub-keys');

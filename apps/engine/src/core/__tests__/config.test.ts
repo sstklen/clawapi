@@ -45,7 +45,7 @@ describe('getDefaultConfig()', () => {
     // 驗證 12 個區塊都存在
     expect(config.server).toBeDefined();
     expect(config.routing).toBeDefined();
-    expect(config.gold_key).toBeDefined();
+    expect(config.claw_key).toBeDefined();
     expect(config.telemetry).toBeDefined();
     expect(config.l0).toBeDefined();
     expect(config.aid).toBeDefined();

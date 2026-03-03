@@ -45,7 +45,7 @@ export interface BackupFile {
 /** 備份資料（加密前/解密後的結構） */
 export interface BackupData {
   keys: BackupKeyRow[];
-  gold_keys: BackupGoldKeyRow[];
+  claw_keys: BackupClawKeyRow[];
   sub_keys: BackupSubKeyRow[];
   config: BackupSettingRow[];
   adapters: string[];  // 已安裝的 adapter IDs
@@ -63,8 +63,8 @@ interface BackupKeyRow {
   created_at: string;
 }
 
-/** gold_keys 表備份列 */
-interface BackupGoldKeyRow {
+/** claw_keys 表備份列 */
+interface BackupClawKeyRow {
   service_id: string;
   key_encrypted: string;    // base64
   model_id: string;
@@ -111,10 +111,10 @@ export function collectBackupData(db: ClawDatabase): BackupData {
     key_encrypted: Buffer.from(row.key_encrypted as unknown as Uint8Array).toString('base64'),
   }));
 
-  // 收集 gold_keys
-  const gold_keys = db.query<BackupGoldKeyRow>(
+  // 收集 claw_keys
+  const claw_keys = db.query<BackupClawKeyRow>(
     `SELECT service_id, key_encrypted, model_id, is_active, daily_limit, created_at
-     FROM gold_keys`
+     FROM claw_keys`
   ).map(row => ({
     ...row,
     key_encrypted: Buffer.from(row.key_encrypted as unknown as Uint8Array).toString('base64'),
@@ -134,7 +134,7 @@ export function collectBackupData(db: ClawDatabase): BackupData {
 
   return {
     keys,
-    gold_keys,
+    claw_keys,
     sub_keys,
     config,
     adapters: [],  // adapter 列表由呼叫者補充
@@ -289,14 +289,14 @@ export function importBackupToDb(
   db: ClawDatabase,
   data: BackupData,
   mode: ImportMode = 'merge'
-): { imported: { keys: number; gold_keys: number; sub_keys: number; config: number } } {
-  const result = { keys: 0, gold_keys: 0, sub_keys: 0, config: 0 };
+): { imported: { keys: number; claw_keys: number; sub_keys: number; config: number } } {
+  const result = { keys: 0, claw_keys: 0, sub_keys: 0, config: 0 };
 
   db.transaction(() => {
     if (mode === 'overwrite') {
       // 覆蓋模式：先清空
       db.run('DELETE FROM keys');
-      db.run('DELETE FROM gold_keys');
+      db.run('DELETE FROM claw_keys');
       db.run('DELETE FROM sub_keys');
       db.run('DELETE FROM settings');
     }
@@ -317,18 +317,18 @@ export function importBackupToDb(
       }
     }
 
-    // 匯入 gold_keys
-    for (const row of data.gold_keys) {
+    // 匯入 claw_keys
+    for (const row of data.claw_keys) {
       try {
         const keyBuf = Buffer.from(row.key_encrypted, 'base64');
         db.run(
-          `INSERT INTO gold_keys (service_id, key_encrypted, model_id, is_active, daily_limit, created_at)
+          `INSERT INTO claw_keys (service_id, key_encrypted, model_id, is_active, daily_limit, created_at)
            VALUES (?, ?, ?, ?, ?, ?)`,
           [row.service_id, keyBuf, row.model_id, row.is_active, row.daily_limit, row.created_at]
         );
-        result.gold_keys++;
+        result.claw_keys++;
       } catch {
-        if (mode === 'overwrite') throw new Error(`匯入 gold_key 失敗：${row.service_id}`);
+        if (mode === 'overwrite') throw new Error(`匯入 claw_key 失敗：${row.service_id}`);
       }
     }
 
@@ -373,7 +373,7 @@ export function importBackup(
   backupFile: BackupFile,
   password: string,
   mode: ImportMode = 'merge'
-): { imported: { keys: number; gold_keys: number; sub_keys: number; config: number } } {
+): { imported: { keys: number; claw_keys: number; sub_keys: number; config: number } } {
   const data = decryptBackup(backupFile, password);
   return importBackupToDb(db, data, mode);
 }
@@ -414,8 +414,8 @@ export function validateBackupData(data: BackupData): void {
   if (!Array.isArray(data.keys)) {
     throw new Error('備份資料格式錯誤：keys 應為陣列');
   }
-  if (!Array.isArray(data.gold_keys)) {
-    throw new Error('備份資料格式錯誤：gold_keys 應為陣列');
+  if (!Array.isArray(data.claw_keys)) {
+    throw new Error('備份資料格式錯誤：claw_keys 應為陣列');
   }
   if (!Array.isArray(data.sub_keys)) {
     throw new Error('備份資料格式錯誤：sub_keys 應為陣列');

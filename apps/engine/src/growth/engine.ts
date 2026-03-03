@@ -61,7 +61,7 @@ export interface IntelligenceReport {
 /** 用量洞察（數據驅動的個人化建議） */
 export interface UsageInsight {
   /** 洞察類型 */
-  type: 'capacity' | 'gold_key' | 'rate_limit' | 'cost_saving';
+  type: 'capacity' | 'claw_key' | 'rate_limit' | 'cost_saving';
   /** 圖示 */
   icon: string;
   /** 標題 */
@@ -223,7 +223,7 @@ export class GrowthEngine {
     };
   }
 
-  // ===== 用量洞察（金鑰匙數據驅動推薦） =====
+  // ===== 用量洞察（Claw Key 數據驅動推薦） =====
 
   /**
    * 取得基於用量數據的個人化洞察
@@ -251,13 +251,13 @@ export class GrowthEngine {
       }
     }
 
-    // 洞察 2：如果有 2+ 服務但沒有用過 Gold Key，建議建一把
+    // 洞察 2：如果有 2+ 服務但沒有用過 Claw Key，建議建一把
     if (existingServices.size >= 2) {
       insights.push({
-        type: 'gold_key',
+        type: 'claw_key',
         icon: '🪙',
-        title: '你有多個服務 — 考慮用 Gold Key 統一管理',
-        detail: `一把 Gold Key 通吃所有 ${existingServices.size} 個服務，不用記每把 Key`,
+        title: '你有多個服務 — 考慮用 Claw Key 統一管理',
+        detail: `一把 Claw Key 通吃所有 ${existingServices.size} 個服務，不用記每把 Key`,
       });
     }
 

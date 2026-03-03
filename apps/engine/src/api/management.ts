@@ -8,9 +8,9 @@
 //   DELETE /api/keys/:id            刪除 Key
 //   PUT    /api/keys/:id/pin        釘選/取消釘選
 //   PUT    /api/keys/:id/rotate     輪換 Key
-//   GET    /api/gold-keys           列出金鑰匙
-//   POST   /api/gold-keys           設定金鑰匙
-//   DELETE /api/gold-keys/:id       移除金鑰匙
+//   GET    /api/claw-keys           列出 Claw Key
+//   POST   /api/claw-keys           設定 Claw Key
+//   DELETE /api/claw-keys/:id       移除 Claw Key
 //   GET    /api/sub-keys            列出 Sub-Key
 //   POST   /api/sub-keys            發行 Sub-Key
 //   DELETE /api/sub-keys/:id        撤銷 Sub-Key
@@ -70,8 +70,8 @@ export interface ManagementDeps {
   startedAt: Date;
 }
 
-/** 金鑰匙 DB 資料列 */
-interface GoldKeyRow {
+/** Claw Key DB 資料列 */
+interface ClawKeyRow {
   id: number;
   service_id: string;
   model_id: string;
@@ -288,16 +288,16 @@ export function createManagementRouter(deps: ManagementDeps): Hono {
   });
 
   // =========================================================
-  // 金鑰匙管理
+  // Claw Key 管理
   // =========================================================
 
-  /** GET /api/gold-keys — 列出金鑰匙 */
-  app.get('/gold-keys', (c: Context) => {
-    const rows = db.query<GoldKeyRow>(
-      'SELECT id, service_id, model_id, is_active, daily_used, daily_limit, created_at FROM gold_keys ORDER BY created_at DESC'
+  /** GET /api/claw-keys — 列出 Claw Key */
+  app.get('/claw-keys', (c: Context) => {
+    const rows = db.query<ClawKeyRow>(
+      'SELECT id, service_id, model_id, is_active, daily_used, daily_limit, created_at FROM claw_keys ORDER BY created_at DESC'
     );
 
-    const goldKeys = rows.map(row => ({
+    const clawKeys = rows.map(row => ({
       id: row.id,
       service_id: row.service_id,
       model_id: row.model_id,
@@ -307,11 +307,11 @@ export function createManagementRouter(deps: ManagementDeps): Hono {
       created_at: row.created_at,
     }));
 
-    return c.json({ gold_keys: goldKeys });
+    return c.json({ claw_keys: clawKeys });
   });
 
-  /** POST /api/gold-keys — 設定金鑰匙 */
-  app.post('/gold-keys', async (c: Context) => {
+  /** POST /api/claw-keys — 設定 Claw Key */
+  app.post('/claw-keys', async (c: Context) => {
     let body: {
       service_id: string;
       key_value: string;
@@ -335,7 +335,7 @@ export function createManagementRouter(deps: ManagementDeps): Hono {
       return c.json({ error: 'invalid_request', message: '缺少必填欄位：model_id' }, 400);
     }
 
-    // 金鑰匙加密後存入 DB（與 KeyPool 同等安全等級）
+    // Claw Key 加密後存入 DB（與 KeyPool 同等安全等級）
     // 安全規則：加密失敗時禁止明文 fallback，直接拒絕
     let encryptedKey: Uint8Array;
     try {
@@ -349,20 +349,20 @@ export function createManagementRouter(deps: ManagementDeps): Hono {
     let result;
     try {
       result = db.run(
-        `INSERT INTO gold_keys (service_id, key_encrypted, model_id, is_active, daily_used, daily_limit)
+        `INSERT INTO claw_keys (service_id, key_encrypted, model_id, is_active, daily_used, daily_limit)
          VALUES (?, ?, ?, 1, 0, ?)`,
         [body.service_id, encryptedKey, body.model_id, body.daily_limit ?? null]
       );
     } catch (err) {
-      console.error('[Management] 新增金鑰匙失敗:', err);
+      console.error('[Management] 新增 Claw Key 失敗:', err);
       return c.json({ error: 'db_error', message: '資料庫寫入失敗' }, 500);
     }
 
     return c.json({ success: true, id: result.lastInsertRowid }, 201);
   });
 
-  /** DELETE /api/gold-keys/:id — 移除金鑰匙 */
-  app.delete('/gold-keys/:id', (c: Context) => {
+  /** DELETE /api/claw-keys/:id — 移除 Claw Key */
+  app.delete('/claw-keys/:id', (c: Context) => {
     const id = parseInt(c.req.param('id'), 10);
     if (isNaN(id)) {
       return c.json({ error: 'invalid_request', message: 'id 必須是數字' }, 400);
@@ -370,14 +370,14 @@ export function createManagementRouter(deps: ManagementDeps): Hono {
 
     let result;
     try {
-      result = db.run('DELETE FROM gold_keys WHERE id = ?', [id]);
+      result = db.run('DELETE FROM claw_keys WHERE id = ?', [id]);
     } catch (err) {
-      console.error(`[Management] 刪除金鑰匙失敗（id=${id}）:`, err);
+      console.error(`[Management] 刪除 Claw Key 失敗（id=${id}）:`, err);
       return c.json({ error: 'db_error', message: '資料庫刪除失敗' }, 500);
     }
 
     if (result.changes === 0) {
-      return c.json({ error: 'not_found', message: `找不到金鑰匙：${id}` }, 404);
+      return c.json({ error: 'not_found', message: `找不到 Claw Key：${id}` }, 404);
     }
 
     return c.json({ success: true, id });

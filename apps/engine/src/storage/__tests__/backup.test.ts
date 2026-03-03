@@ -41,9 +41,9 @@ async function createTestDbWithData(): Promise<ClawDatabase> {
     ['openai', fakeEncrypted, 'friend', null, 'active', 1, 1]
   );
 
-  // 插入範例 gold_keys
+  // 插入範例 claw_keys
   db.run(
-    `INSERT INTO gold_keys (service_id, key_encrypted, model_id, is_active, daily_limit)
+    `INSERT INTO claw_keys (service_id, key_encrypted, model_id, is_active, daily_limit)
      VALUES (?, ?, ?, ?, ?)`,
     ['openai', fakeEncrypted, 'gpt-4o', 1, 100]
   );
@@ -92,7 +92,7 @@ describe('Backup — 資料收集', () => {
     const data = collectBackupData(db);
 
     expect(data.keys).toHaveLength(2);
-    expect(data.gold_keys).toHaveLength(1);
+    expect(data.claw_keys).toHaveLength(1);
     expect(data.sub_keys).toHaveLength(1);
     expect(data.config).toHaveLength(2);
   });
@@ -108,9 +108,9 @@ describe('Backup — 資料收集', () => {
     expect(typeof key.key_encrypted).toBe('string'); // 已轉為 base64
   });
 
-  it('gold_keys 應包含正確欄位', () => {
+  it('claw_keys 應包含正確欄位', () => {
     const data = collectBackupData(db);
-    const gk = data.gold_keys[0]!;
+    const gk = data.claw_keys[0]!;
 
     expect(gk.service_id).toBe('openai');
     expect(gk.model_id).toBe('gpt-4o');
@@ -139,7 +139,7 @@ describe('Backup — 資料收集', () => {
     const data = collectBackupData(emptyDb);
 
     expect(data.keys).toHaveLength(0);
-    expect(data.gold_keys).toHaveLength(0);
+    expect(data.claw_keys).toHaveLength(0);
     expect(data.sub_keys).toHaveLength(0);
     expect(data.config).toHaveLength(0);
 
@@ -179,14 +179,14 @@ describe('Backup — 加密 Round-Trip', () => {
 
     // 驗證資料一致
     expect(decryptedData.keys).toHaveLength(originalData.keys.length);
-    expect(decryptedData.gold_keys).toHaveLength(originalData.gold_keys.length);
+    expect(decryptedData.claw_keys).toHaveLength(originalData.claw_keys.length);
     expect(decryptedData.sub_keys).toHaveLength(originalData.sub_keys.length);
     expect(decryptedData.config).toHaveLength(originalData.config.length);
 
     // 驗證具體值
     expect(decryptedData.keys[0]!.service_id).toBe(originalData.keys[0]!.service_id);
     expect(decryptedData.keys[0]!.key_encrypted).toBe(originalData.keys[0]!.key_encrypted);
-    expect(decryptedData.gold_keys[0]!.model_id).toBe(originalData.gold_keys[0]!.model_id);
+    expect(decryptedData.claw_keys[0]!.model_id).toBe(originalData.claw_keys[0]!.model_id);
     expect(decryptedData.sub_keys[0]!.token).toBe(originalData.sub_keys[0]!.token);
   });
 
@@ -213,7 +213,7 @@ describe('Backup — 加密 Round-Trip', () => {
   it('空資料也能正常 round-trip', () => {
     const emptyData: BackupData = {
       keys: [],
-      gold_keys: [],
+      claw_keys: [],
       sub_keys: [],
       config: [],
       adapters: [],
@@ -224,7 +224,7 @@ describe('Backup — 加密 Round-Trip', () => {
     const decrypted = decryptBackup(backupFile, password);
 
     expect(decrypted.keys).toHaveLength(0);
-    expect(decrypted.gold_keys).toHaveLength(0);
+    expect(decrypted.claw_keys).toHaveLength(0);
     expect(decrypted.sub_keys).toHaveLength(0);
     expect(decrypted.config).toHaveLength(0);
   });
@@ -254,7 +254,7 @@ describe('Backup — exportBackup + importBackup round-trip', () => {
     const result = importBackup(targetDb, backupFile, password, 'overwrite');
 
     expect(result.imported.keys).toBe(2);
-    expect(result.imported.gold_keys).toBe(1);
+    expect(result.imported.claw_keys).toBe(1);
     expect(result.imported.sub_keys).toBe(1);
     expect(result.imported.config).toBe(2);
 
@@ -266,11 +266,11 @@ describe('Backup — exportBackup + importBackup round-trip', () => {
     expect(keys[0]!.service_id).toBe('groq');
     expect(keys[1]!.service_id).toBe('openai');
 
-    const goldKeys = targetDb.query<{ model_id: string }>(
-      'SELECT model_id FROM gold_keys'
+    const clawKeys = targetDb.query<{ model_id: string }>(
+      'SELECT model_id FROM claw_keys'
     );
-    expect(goldKeys).toHaveLength(1);
-    expect(goldKeys[0]!.model_id).toBe('gpt-4o');
+    expect(clawKeys).toHaveLength(1);
+    expect(clawKeys[0]!.model_id).toBe('gpt-4o');
 
     const subKeys = targetDb.query<{ token: string }>(
       'SELECT token FROM sub_keys'
@@ -311,7 +311,7 @@ describe('Backup — exportBackup + importBackup round-trip', () => {
     const result2 = importBackup(targetDb, backupFile, password, 'overwrite');
 
     expect(result2.imported.keys).toBe(2);
-    expect(result2.imported.gold_keys).toBe(1);
+    expect(result2.imported.claw_keys).toBe(1);
     expect(result2.imported.sub_keys).toBe(1);
 
     // 確認沒有多餘的
@@ -366,7 +366,7 @@ describe('Backup — 驗證', () => {
   it('validateBackupData 應通過正確資料', () => {
     const valid: BackupData = {
       keys: [],
-      gold_keys: [],
+      claw_keys: [],
       sub_keys: [],
       config: [],
       adapters: [],
@@ -378,7 +378,7 @@ describe('Backup — 驗證', () => {
   it('validateBackupData keys 不是陣列應失敗', () => {
     const invalid = {
       keys: 'not-array',
-      gold_keys: [],
+      claw_keys: [],
       sub_keys: [],
       config: [],
       adapters: [],

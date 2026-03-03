@@ -413,10 +413,10 @@ describe('Key 遮罩驗證', () => {
 });
 
 // =========================================================
-// Gold Keys CRUD
+// Claw Keys CRUD
 // =========================================================
-describe('Gold Keys CRUD', () => {
-  it('GET /api/gold-keys — 列出金鑰匙', async () => {
+describe('Claw Keys CRUD', () => {
+  it('GET /api/claw-keys — 列出Claw Key', async () => {
     const mockDb = createMockDb();
     mockDb.query = mock(<T>(_sql: string) => {
       return [{
@@ -431,18 +431,18 @@ describe('Gold Keys CRUD', () => {
     }) as typeof mockDb.query;
 
     const { app } = createTestApp({ db: mockDb });
-    const res = await req(app, 'GET', '/api/gold-keys');
+    const res = await req(app, 'GET', '/api/claw-keys');
 
     expect(res.status).toBe(200);
-    const json = await res.json() as { gold_keys: Array<{ id: number; service_id: string; model_id: string }> };
-    expect(Array.isArray(json.gold_keys)).toBe(true);
-    expect(json.gold_keys[0].service_id).toBe('openai');
-    expect(json.gold_keys[0].model_id).toBe('gpt-4o');
+    const json = await res.json() as { claw_keys: Array<{ id: number; service_id: string; model_id: string }> };
+    expect(Array.isArray(json.claw_keys)).toBe(true);
+    expect(json.claw_keys[0].service_id).toBe('openai');
+    expect(json.claw_keys[0].model_id).toBe('gpt-4o');
   });
 
-  it('POST /api/gold-keys — 設定金鑰匙', async () => {
+  it('POST /api/claw-keys — 設定Claw Key', async () => {
     const { app } = createTestApp();
-    const res = await req(app, 'POST', '/api/gold-keys', {
+    const res = await req(app, 'POST', '/api/claw-keys', {
       service_id: 'openai',
       key_value: 'sk-proj-abc123',
       model_id: 'gpt-4o',
@@ -454,29 +454,29 @@ describe('Gold Keys CRUD', () => {
     expect(json.success).toBe(true);
   });
 
-  it('POST /api/gold-keys — 缺少 model_id → 400', async () => {
+  it('POST /api/claw-keys — 缺少 model_id → 400', async () => {
     const { app } = createTestApp();
-    const res = await req(app, 'POST', '/api/gold-keys', {
+    const res = await req(app, 'POST', '/api/claw-keys', {
       service_id: 'openai',
       key_value: 'sk-proj-abc123',
     });
     expect(res.status).toBe(400);
   });
 
-  it('DELETE /api/gold-keys/1 — 移除金鑰匙', async () => {
+  it('DELETE /api/claw-keys/1 — 移除Claw Key', async () => {
     const { app } = createTestApp();
-    const res = await req(app, 'DELETE', '/api/gold-keys/1');
+    const res = await req(app, 'DELETE', '/api/claw-keys/1');
     expect(res.status).toBe(200);
     const json = await res.json() as { success: boolean };
     expect(json.success).toBe(true);
   });
 
-  it('DELETE /api/gold-keys/999 — 不存在時回傳 404', async () => {
+  it('DELETE /api/claw-keys/999 — 不存在時回傳 404', async () => {
     const mockDb = createMockDb();
     mockDb.run = mock(() => ({ changes: 0, lastInsertRowid: 0 })) as typeof mockDb.run;
 
     const { app } = createTestApp({ db: mockDb });
-    const res = await req(app, 'DELETE', '/api/gold-keys/999');
+    const res = await req(app, 'DELETE', '/api/claw-keys/999');
     expect(res.status).toBe(404);
   });
 });

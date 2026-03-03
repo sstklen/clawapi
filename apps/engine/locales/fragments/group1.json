@@ -74,25 +74,25 @@
     "en": "Manually check key health",
     "ja": "Key の健全性を手動チェック"
   },
-  "help.section.gold_key": {
-    "zh-TW": "金鑰匙：",
-    "en": "Gold Key:",
-    "ja": "ゴールドキー："
+  "help.section.claw_key": {
+    "zh-TW": "Claw Key：",
+    "en": "Claw Key:",
+    "ja": "Claw Key："
   },
-  "help.gold_key.set": {
-    "zh-TW": "設定金鑰匙",
-    "en": "Set gold key",
-    "ja": "ゴールドキーを設定"
+  "help.claw_key.set": {
+    "zh-TW": "設定Claw Key",
+    "en": "Set Claw Key",
+    "ja": "Claw Keyを設定"
   },
-  "help.gold_key.show": {
-    "zh-TW": "查看金鑰匙",
-    "en": "Show gold key",
-    "ja": "ゴールドキーを表示"
+  "help.claw_key.show": {
+    "zh-TW": "查看Claw Key",
+    "en": "Show Claw Key",
+    "ja": "Claw Keyを表示"
   },
-  "help.gold_key.remove": {
-    "zh-TW": "移除金鑰匙",
-    "en": "Remove gold key",
-    "ja": "ゴールドキーを削除"
+  "help.claw_key.remove": {
+    "zh-TW": "移除Claw Key",
+    "en": "Remove Claw Key",
+    "ja": "Claw Keyを削除"
   },
   "help.section.sub_keys": {
     "zh-TW": "Sub-Key：",

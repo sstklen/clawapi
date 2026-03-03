@@ -169,45 +169,45 @@
     "en": "Skipped (you can add one later with clawapi keys add)",
     "ja": "スキップしました（後で clawapi keys add で追加できます）"
   },
-  "cmd.setup.step_gold_key": {
-    "zh-TW": "金鑰匙設定（進階功能）",
-    "en": "Gold Key Setup (Advanced)",
-    "ja": "ゴールドキー設定（上級機能）"
+  "cmd.setup.step_claw_key": {
+    "zh-TW": "Claw Key設定（進階功能）",
+    "en": "Claw Key Setup (Advanced)",
+    "ja": "Claw Key設定（上級機能）"
   },
-  "cmd.setup.gold_key_desc": {
-    "zh-TW": "金鑰匙用於 L3 管家和 L4 多步驟任務。",
-    "en": "Gold Keys are used for L3 butler and L4 multi-step tasks.",
-    "ja": "ゴールドキーは L3 バトラーおよび L4 マルチステップタスクに使用されます。"
+  "cmd.setup.claw_key_desc": {
+    "zh-TW": "Claw Key用於 L3 管家和 L4 多步驟任務。",
+    "en": "Claw Keys are used for L3 butler and L4 multi-step tasks.",
+    "ja": "Claw Keyは L3 バトラーおよび L4 マルチステップタスクに使用されます。"
   },
-  "cmd.setup.gold_key_requirement": {
+  "cmd.setup.claw_key_requirement": {
     "zh-TW": "需要 OpenAI 或 Anthropic 等付費 API Key。",
     "en": "Requires a paid API Key from OpenAI or Anthropic.",
     "ja": "OpenAI や Anthropic などの有料 API Key が必要です。"
   },
-  "cmd.setup.setup_gold_key_now": {
-    "zh-TW": "現在設定金鑰匙？",
-    "en": "Set up a Gold Key now?",
-    "ja": "今すぐゴールドキーを設定しますか？"
+  "cmd.setup.setup_claw_key_now": {
+    "zh-TW": "現在設定Claw Key？",
+    "en": "Set up a Claw Key now?",
+    "ja": "今すぐClaw Keyを設定しますか？"
   },
-  "cmd.setup.gold_key_service": {
-    "zh-TW": "金鑰匙服務",
-    "en": "Gold Key service",
-    "ja": "ゴールドキーのサービス"
+  "cmd.setup.claw_key_service": {
+    "zh-TW": "Claw Key服務",
+    "en": "Claw Key service",
+    "ja": "Claw Keyのサービス"
   },
-  "cmd.setup.gold_key_set": {
-    "zh-TW": "金鑰匙已設定（{service}）",
-    "en": "Gold Key configured ({service})",
-    "ja": "ゴールドキーを設定しました（{service}）"
+  "cmd.setup.claw_key_set": {
+    "zh-TW": "Claw Key已設定（{service}）",
+    "en": "Claw Key configured ({service})",
+    "ja": "Claw Keyを設定しました（{service}）"
   },
-  "cmd.setup.skip_gold_key": {
-    "zh-TW": "跳過金鑰匙設定",
-    "en": "Gold Key setup skipped",
-    "ja": "ゴールドキー設定をスキップしました"
+  "cmd.setup.skip_claw_key": {
+    "zh-TW": "跳過Claw Key設定",
+    "en": "Claw Key setup skipped",
+    "ja": "Claw Key設定をスキップしました"
   },
-  "cmd.setup.skip_gold_key_later": {
-    "zh-TW": "跳過（稍後可用 clawapi gold-key set 設定）",
-    "en": "Skipped (you can set it later with clawapi gold-key set)",
-    "ja": "スキップしました（後で clawapi gold-key set で設定できます）"
+  "cmd.setup.skip_claw_key_later": {
+    "zh-TW": "跳過（稍後可用 clawapi claw-key set 設定）",
+    "en": "Skipped (you can set it later with clawapi claw-key set)",
+    "ja": "スキップしました（後で clawapi claw-key set で設定できます）"
   },
   "cmd.setup.step_vps": {
     "zh-TW": "VPS 連線設定",
@@ -249,10 +249,10 @@
     "en": "First Key: ",
     "ja": "最初の Key："
   },
-  "cmd.setup.summary_gold_key": {
-    "zh-TW": "金鑰匙：",
-    "en": "Gold Key: ",
-    "ja": "ゴールドキー："
+  "cmd.setup.summary_claw_key": {
+    "zh-TW": "Claw Key：",
+    "en": "Claw Key: ",
+    "ja": "Claw Key："
   },
   "cmd.setup.summary_vps": {
     "zh-TW": "VPS 連線：",
