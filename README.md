@@ -19,6 +19,19 @@
 
 ---
 
+## ✨ Why ClawAPI
+
+| | What happens | How |
+|---|---|---|
+| **① Zero-config setup** | Scans your env for API keys, validates, imports — done in 10 seconds | `setup_wizard auto` |
+| **② Smart recommendations** | After setup, tells you exactly which free provider to add next | `growth_guide recommend` |
+| **③ Never stuck on rate limits** | Groq quota hit? Auto-switches to Gemini. Tells you how to double your quota | L2 Smart Gateway |
+| **④ Gets smarter over time** | Anonymous usage data improves routing for everyone | Collective Intelligence |
+
+> One command to manage all your AI keys. One engine that routes every request to the best provider.
+
+---
+
 ## The Problem
 
 You have API keys scattered across OpenAI, Anthropic, Google, DeepSeek, Groq...
@@ -136,7 +149,7 @@ You now have **14 AI tools** available. Ask Claude: *"What tools do you have fro
 | `keys_add` | Add a new API key |
 | `status` | Check engine health |
 | `adapters` | List supported providers |
-| `setup_wizard` | First-time setup: scan env for keys, validate, Gold Key |
+| `setup_wizard` | First-time setup: scan env for keys, validate, Claw Key |
 | `growth_guide` | Growth guide: progress, recommendations, pool health |
 | `ask` | Ask ClawAPI anything |
 | `task` | Execute multi-step AI tasks |
@@ -226,7 +239,7 @@ Add your own provider in 30 lines of YAML. No code needed.
 ```
 Engine      start · stop · status
 Keys        keys add · list · remove · pin · rotate · import · check
-Gold Key    gold-key set · show · remove
+Claw Key    claw-key set · show · remove
 Sub-Keys    sub-keys issue · list · revoke · usage
 Mutual Aid  aid config · stats · donate
 Adapters    adapters list · install · remove · update
@@ -249,7 +262,7 @@ System      logs · config · setup · doctor · version · mcp
 │  🔐 Key Vault (AES-256)    │ Metadata │  📋 Device Registry    │
 │  🧠 Smart Router (L1-L4)   │   Only   │  📊 Telemetry Agg.    │
 │  🌐 OpenAI-Compat API      │          │  🤝 Mutual Aid Match  │
-│  🔧 MCP Server (12 tools)  │          │  🔍 Anomaly Detection │
+│  🔧 MCP Server (14 tools)  │          │  🔍 Anomaly Detection │
 │  💻 CLI (30+ commands)      │          │                        │
 │  🖥  Web UI (SSR + HTMX)   │          │                        │
 └─────────────────────────────┘          └────────────────────────┘
@@ -260,7 +273,7 @@ System      logs · config · setup · doctor · version · mcp
 
 - **AES-256-GCM** encryption at rest
 - **ECDH P-256** key exchange with VPS
-- **1,478 tests**, 0 failures
+- **1,681 tests**, 0 failures
 - Triple code review (self + Codex + Opus cross-review)
 - 5-party security audit methodology
 - Non-root Docker execution

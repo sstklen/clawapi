@@ -10,8 +10,10 @@ FROM oven/bun:1.3.7
 WORKDIR /app
 
 # 先複製依賴宣告，利用 Docker layer cache
+# 必須包含所有 workspace 的 package.json，否則 --frozen-lockfile 會因缺少 workspace 而失敗
 COPY package.json bun.lock ./
 COPY packages/protocol/package.json packages/protocol/
+COPY apps/engine/package.json apps/engine/
 COPY apps/vps/package.json apps/vps/
 
 # 安裝依賴（--frozen-lockfile 確保版本鎖定，--production 不裝 devDeps）
