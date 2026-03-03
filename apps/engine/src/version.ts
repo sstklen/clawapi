@@ -1,29 +1,13 @@
-// 動態版本號 — 從 engine 的 package.json 讀取
-// 避免跟 @clawapi/protocol 的 CLAWAPI_VERSION 常數不同步
-// （protocol 套件版本可能沒跟 engine 一起發新版）
-//
-// 此檔案位於 src/version.ts → package.json 在上一層 (apps/engine/package.json)
+// 動態版本號 — 編譯時從 package.json 注入（Bun JSON import）
+// 優點：打包成獨立執行檔後版本號仍正確（不依賴執行時讀檔）
+// 之前用 readFileSync，在 bun compile 後找不到 package.json → 顯示 unknown 或 v0.1.0
 
-import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
-
-let _version: string | null = null;
+import pkg from '../package.json';
 
 /**
- * 從 engine 的 package.json 動態讀取版本號
- * 結果會快取，整個 process 只讀一次
+ * 取得引擎版本號
+ * 使用 JSON import 在打包時直接嵌入版本，不依賴執行時讀取 package.json
  */
 export function getEngineVersion(): string {
-  if (_version !== null) return _version;
-
-  try {
-    // src/ → apps/engine/（上一層）
-    const pkgPath = join(import.meta.dir, '..', 'package.json');
-    const pkg = JSON.parse(readFileSync(pkgPath, 'utf8'));
-    _version = pkg.version || 'unknown';
-  } catch {
-    _version = 'unknown';
-  }
-
-  return _version;
+  return pkg.version ?? 'unknown';
 }
