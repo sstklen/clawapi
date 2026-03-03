@@ -46,7 +46,9 @@ async function duckDuckGoDemo(): Promise<{ ok: boolean; error?: string }> {
 
     let response: Response;
     try {
-      response = await fetch('https://api.duckduckgo.com/?q=ClawAPI+AI+API&format=json&no_html=1&skip_disambig=1', {
+      // 注意：不能用 api.duckduckgo.com — 該子域名對 Bun 的 User-Agent 回空 body
+      // duckduckgo.com（不加 api.）在所有 runtime 下都正常
+      response = await fetch('https://duckduckgo.com/?q=ClawAPI+AI+API&format=json&no_html=1&skip_disambig=1', {
         method: 'GET',
         signal: controller.signal,
       });
@@ -68,11 +70,16 @@ async function duckDuckGoDemo(): Promise<{ ok: boolean; error?: string }> {
       AbstractText?: string;
       RelatedTopics?: Array<{ Text?: string; FirstURL?: string }>;
       Heading?: string;
-    };
+    } | null;
     try {
       data = await response.json() as typeof data;
     } catch {
       return { ok: false, error: '回應格式異常（JSON 解析失敗）' };
+    }
+
+    // 防護：某些環境下 response body 為空，json() 會回傳 null
+    if (!data || typeof data !== 'object') {
+      return { ok: false, error: '回應為空（API 可能暫時不可用）' };
     }
 
     // DuckDuckGo Instant Answer API 回傳的是摘要資訊

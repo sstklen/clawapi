@@ -204,7 +204,7 @@ function checkKeyHealth(configDir: string): CheckResult {
   return { name: t('cmd.doctor.check_keys'), pass: true, detail: t('cmd.doctor.keys_need_engine') };
 }
 
-/** 6. port 可用 */
+/** 6. port 可用（獨立模式用，MCP 模式不需要） */
 async function checkPortAvailable(): Promise<CheckResult> {
   const defaultPort = 4141;
 
@@ -219,7 +219,14 @@ async function checkPortAvailable(): Promise<CheckResult> {
     server.stop(true);
     return { name: t('cmd.doctor.check_port'), pass: true, detail: `port ${defaultPort}` };
   } catch {
-    return { name: t('cmd.doctor.check_port'), pass: false, detail: t('cmd.doctor.port_in_use', { port: defaultPort }) };
+    // port 佔用不是致命問題 — MCP 模式（主要用法）不需要 port
+    // 只在 clawapi start（獨立 HTTP 模式）才需要
+    return {
+      name: t('cmd.doctor.check_port'),
+      pass: true,
+      warn: true,
+      detail: t('cmd.doctor.port_in_use_warn', { port: defaultPort }),
+    };
   }
 }
 

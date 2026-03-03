@@ -386,6 +386,7 @@
   "cmd.doctor.keys_need_engine": "完全な検査にはエンジンの起動が必要です",
   "cmd.doctor.check_port": "ポート利用可能",
   "cmd.doctor.port_in_use": "ポート {port} は使用中です",
+  "cmd.doctor.port_in_use_warn": "ポート {port} は使用中（MCP モードに影響なし、clawapi start 時のみ必要）",
   "cmd.doctor.check_config": "設定ファイル",
   "cmd.doctor.config_not_created": "config.yaml が見つかりません（clawapi init で作成されます）",
   "cmd.misc.running_migration": "データベースマイグレーションを実行中...",

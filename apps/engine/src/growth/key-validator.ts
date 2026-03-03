@@ -103,8 +103,10 @@ export async function validateKey(
 
     // 嘗試讀取 response body 以取得更精確的錯誤訊息
     // 某些服務（如 Gemini）對無效 Key 回 400 而非 401
+    // 也可能回 400 + RATE_LIMIT_EXCEEDED（而不是 429）
     let bodyMessage = '';
     let isAuthError = false;
+    let isRateLimit = false;
     try {
       const body = await res.json() as {
         error?: { message?: string; reason?: string; details?: Array<{ reason?: string }> };
@@ -116,7 +118,17 @@ export async function validateKey(
       const reason = body.error?.reason ?? '';
       const detailReasons = body.error?.details?.map(d => d.reason).join(',') ?? '';
       const allReasons = `${reason},${detailReasons}`.toLowerCase();
+
+      // 先檢查是否為 rate limit（某些服務回 400 而非 429）
       if (
+        allReasons.includes('rate_limit_exceeded') ||
+        allReasons.includes('resource_exhausted') ||
+        bodyMessage.toLowerCase().includes('rate limit') ||
+        bodyMessage.toLowerCase().includes('quota exceeded') ||
+        bodyMessage.toLowerCase().includes('too many requests')
+      ) {
+        isRateLimit = true;
+      } else if (
         allReasons.includes('api_key_invalid') ||
         allReasons.includes('unauthorized') ||
         bodyMessage.toLowerCase().includes('api key not valid') ||
@@ -127,6 +139,15 @@ export async function validateKey(
       }
     } catch {
       // body 解析失敗不影響判斷
+    }
+
+    // Rate limit（非 429 的限速）視為 Key 有效但暫時不可用
+    if (isRateLimit) {
+      return {
+        valid: true,
+        service_id: serviceId,
+        error: `目前遇到限速（HTTP ${res.status}），但 Key 仍視為有效`,
+      };
     }
 
     if (isAuthError) {
