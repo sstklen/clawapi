@@ -81,11 +81,11 @@ function createAdapter(serviceId: string, isFree: boolean = false): AdapterConfi
     },
     auth: { type: isFree ? 'none' : 'bearer' },
     base_url: `https://api.${serviceId}.com/v1`,
-    endpoints: {
-      chat: { method: 'POST', path: '/chat/completions', response_type: 'json' },
-    },
+    endpoints: isFree
+      ? { search: { method: 'POST', path: '/', response_type: 'json' } }
+      : { chat: { method: 'POST', path: '/chat/completions', response_type: 'json' } },
     capabilities: {
-      chat: true,
+      chat: !isFree,
       streaming: false,
       embeddings: false,
       images: false,
@@ -230,6 +230,38 @@ describe('整合測試：模組接縫', () => {
       // executor 呼叫時應該帶 groq 的 key
       const callArgs = (executor.execute as ReturnType<typeof mock>).mock.calls[0];
       expect(callArgs).toBeDefined();
+    });
+
+    it('搜尋請求用 search endpoint 而非 chat', async () => {
+      const adapters = new Map<string, AdapterConfig>([
+        ['duckduckgo', createAdapter('duckduckgo', true)],
+      ]);
+      const executor = createSuccessExecutor();
+
+      const emptyKeyPool = {
+        selectKey: mock(async () => null),
+        getServiceIds: mock(() => []),
+        reportSuccess: mock(async () => {}),
+        reportRateLimit: mock(async () => {}),
+        reportAuthError: mock(async () => {}),
+        reportError: mock(async () => {}),
+      } as unknown as KeyPool;
+
+      const gateway = new L2Gateway(emptyKeyPool, executor, adapters);
+
+      // 帶 type: 'search' 的請求
+      const result = await gateway.execute({
+        model: 'auto',
+        params: { query: 'test', type: 'search' },
+      });
+
+      expect(result.success).toBe(true);
+
+      // executor 應該被呼叫，且 endpoint 是 'search'（不是 'chat'）
+      const calls = (executor.execute as ReturnType<typeof mock>).mock.calls;
+      expect(calls.length).toBeGreaterThan(0);
+      // 第二個參數是 endpointName
+      expect(calls[0]![1]).toBe('search');
     });
   });
 

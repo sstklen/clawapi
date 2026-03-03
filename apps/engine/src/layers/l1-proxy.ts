@@ -122,9 +122,15 @@ export class L1Proxy {
     for (const key of availableKeys) {
       keysAttempted++;
 
+      // 動態選擇 endpoint：search tool 傳 type='search'，其餘預設 'chat'
+      const requestType = req.params?.type as string | undefined;
+      const endpointName = (requestType && adapter.endpoints[requestType])
+        ? requestType
+        : adapter.endpoints['chat'] ? 'chat' : Object.keys(adapter.endpoints)[0] ?? 'chat';
+
       const result = await this.executor.execute(
         adapter,
-        'chat',  // L1 目前只支援 chat endpoint
+        endpointName,
         requestParams,
         key
       );

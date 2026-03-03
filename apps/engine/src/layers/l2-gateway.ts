@@ -174,9 +174,12 @@ export class L2Gateway {
         model: modelName,
       };
 
+      // 動態選擇 endpoint：search tool 傳 type='search'，其餘預設 'chat'
+      const endpointName = this.resolveEndpoint(adapter, req.params?.type as string | undefined);
+
       const result = await this.executor.execute(
         adapter,
-        'chat',
+        endpointName,
         requestParams,
         key
       );
@@ -257,6 +260,21 @@ export class L2Gateway {
     }
 
     return candidates;
+  }
+
+  /**
+   * 根據請求類型和 adapter 支援的 endpoint 決定要呼叫哪個 endpoint
+   * - params.type='search' → 先找 'search' endpoint，沒有就回 'chat'
+   * - 預設 → 'chat'
+   */
+  private resolveEndpoint(adapter: AdapterConfig, requestType?: string): string {
+    if (requestType && adapter.endpoints[requestType]) {
+      return requestType;
+    }
+    // 預設 chat；如果 adapter 沒有 chat 但有其他 endpoint，用第一個
+    if (adapter.endpoints['chat']) return 'chat';
+    const available = Object.keys(adapter.endpoints);
+    return available.length > 0 ? available[0]! : 'chat';
   }
 
   /**

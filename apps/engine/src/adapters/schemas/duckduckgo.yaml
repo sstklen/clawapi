@@ -11,7 +11,8 @@ adapter:
 auth:
   type: none
 
-base_url: https://api.duckduckgo.com
+# 注意：不能用 api.duckduckgo.com — 該子域名對 Bun 的 User-Agent 回空 body
+base_url: https://duckduckgo.com
 
 endpoints:
   search:
