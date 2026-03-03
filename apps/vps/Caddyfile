@@ -1,9 +1,9 @@
 # ============================================================
 # ClawAPI VPS — Caddy 反向代理配置
-# 自動 HTTPS（HTTP challenge，不需 Cloudflare DNS 模組）
+# Cloudflare 代理模式：Cloudflare 處理對外 TLS，Caddy 用自簽憑證
 # ============================================================
 
-api.clawapi.com {
+clawapi.washinmura.jp {
     # ─── WebSocket 升級請求 ───
     # 必須放在一般 reverse_proxy 前面，確保 WS 連線正確處理
     @websocket {
