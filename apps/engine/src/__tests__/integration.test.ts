@@ -339,6 +339,29 @@ describe('整合測試：模組接縫', () => {
       const keys = await harness.keyPool.listKeys();
       expect(keys.length).toBe(2);
     });
+
+    it('N3 修復：重複匯入時 daily_used 重置為 0', async () => {
+      const keyValue = 'gsk_n3_daily_used_test_12345';
+      const id = await harness.keyPool.addKey('groq', keyValue, 'king');
+
+      // 模擬使用：手動更新 daily_used 到 12
+      harness.db.run('UPDATE keys SET daily_used = 12 WHERE id = ?', [id]);
+
+      // 驗證 daily_used 已經是 12
+      let keys = await harness.keyPool.listKeys();
+      expect(keys[0]!.daily_used).toBe(12);
+
+      // 重新匯入同一把 Key
+      const id2 = await harness.keyPool.addKey('groq', keyValue, 'king');
+      expect(id2).toBe(id); // 同一個 id
+
+      // daily_used 應該被重置為 0
+      keys = await harness.keyPool.listKeys();
+      expect(keys.length).toBe(1);
+      expect(keys[0]!.daily_used).toBe(0);
+      expect(keys[0]!.consecutive_failures).toBe(0);
+      expect(keys[0]!.status).toBe('active');
+    });
   });
 
   // ── 接縫 5：addKey daily_used 初始值 ──

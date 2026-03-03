@@ -152,7 +152,13 @@ export class KeyPool {
       try {
         const existing = this.crypto.decrypt(row.key_encrypted);
         if (existing === keyValue) {
-          // 已存在相同 Key，不重複新增，直接回傳現有 id
+          // 已存在相同 Key，不重複新增
+          // 重置 daily_used 和 consecutive_failures，確保重新匯入後計數乾淨
+          // （修復 N3：uninstall 後 re-init，殘留的 daily_used 不會被帶到新環境）
+          this.db.run(
+            'UPDATE keys SET daily_used = 0, consecutive_failures = 0, status = ? WHERE id = ?',
+            ['active', row.id]
+          );
           return row.id;
         }
       } catch {
