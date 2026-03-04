@@ -141,11 +141,11 @@ describe('OFFICIAL_ADAPTERS', () => {
   });
 });
 
-// 4. RATE_LIMITS 有 21 個端點
+// 4. RATE_LIMITS 有 23 個端點（含互助 leaderboard + credits）
 describe('RATE_LIMITS', () => {
-  test('共有 21 個端點', () => {
+  test('共有 23 個端點', () => {
     const endpoints = Object.keys(RATE_LIMITS);
-    expect(endpoints.length).toBe(21);
+    expect(endpoints.length).toBe(23);
   });
 
   test('每個端點都有 limit 和 windowSeconds', () => {

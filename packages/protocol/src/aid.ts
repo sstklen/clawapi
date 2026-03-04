@@ -106,6 +106,32 @@ export interface AidResponsePayload {
   error_message?: string;
 }
 
+// ===== 感謝榜 + 積分 =====
+
+/** 感謝榜項目（匿名顯示） */
+export interface LeaderboardEntry {
+  /** 排名（1-based） */
+  rank: number;
+  /** 匿名名稱（如「龍蝦 #42」） */
+  anonymous_name: string;
+  /** 累計幫助次數 */
+  total_helped: number;
+  /** 幫助過的服務類別 */
+  services: string[];
+  /** 信譽分數（0.0 ~ 1.0） */
+  reputation_score: number;
+}
+
+/** 積分資訊 */
+export interface AidCredits {
+  /** 目前可用積分 */
+  credits: number;
+  /** 累計賺取的積分 */
+  earned_total: number;
+  /** 累計花費的積分（目前未使用，保留） */
+  spent_total: number;
+}
+
 // 別名
 export type AidRequestParams = AidRequest;
 export type AidRequestResponse = AidAccepted;

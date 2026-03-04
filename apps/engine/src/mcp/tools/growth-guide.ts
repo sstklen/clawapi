@@ -196,6 +196,24 @@ async function handleOverview(
     // 用量洞察失敗不影響 overview 輸出
   }
 
+  // Claw Key 數據驅動建議
+  try {
+    const clawKeyInsights = await engine.getClawKeyRecommendations();
+    if (clawKeyInsights.length > 0) {
+      lines.push('');
+      lines.push('🪙 Claw Key 建議：');
+      for (const insight of clawKeyInsights) {
+        lines.push(`  ${insight.icon} ${insight.title}`);
+        lines.push(`     ${insight.detail}`);
+        if (insight.action) {
+          lines.push(`     → ${insight.action}`);
+        }
+      }
+    }
+  } catch {
+    // Claw Key 建議失敗不影響 overview
+  }
+
   // 額度池簡報
   lines.push('');
   lines.push(
@@ -401,6 +419,12 @@ async function handleIntel(
     lines.push('✨ 目前使用狀況很好，沒有需要特別調整的。');
     lines.push('');
   }
+
+  // 感謝榜提示
+  lines.push('🏆 感謝榜：');
+  lines.push('  使用 `clawapi aid leaderboard` 查看 Top 20 龍蝦互助排行');
+  lines.push('  使用 `clawapi aid stats` 查看自己的互助積分');
+  lines.push('');
 
   // 尾巴
   lines.push('───────────────────────');

@@ -22,13 +22,18 @@ export async function adaptersCommand(args: ParsedArgs): Promise<void> {
       return adaptersRemove(args);
     case 'update':
       return adaptersUpdate(args);
+    case 'search':
+      return adaptersSearch(args);
+    case 'marketplace':
+    case 'market':
+      return adaptersMarketplace(args);
     default:
       if (isJsonMode()) {
-        jsonOutput({ error: 'unknown_subcommand', available: ['list', 'install', 'remove', 'update'] });
+        jsonOutput({ error: 'unknown_subcommand', available: ['list', 'install', 'remove', 'update', 'search', 'marketplace'] });
         process.exit(1);
       }
       error(t('common.unknown_subcmd', { subcmd: sub ?? '(無)' }));
-      print(t('common.available_subcmds', { list: 'list, install, remove, update' }));
+      print(t('common.available_subcmds', { list: 'list, install, remove, update, search, marketplace' }));
       process.exit(1);
   }
 }
@@ -161,6 +166,52 @@ async function adaptersUpdate(_args: ParsedArgs): Promise<void> {
       blank();
     },
     { updates }
+  );
+}
+
+// ===== adapters search =====
+
+async function adaptersSearch(args: ParsedArgs): Promise<void> {
+  const query = args.positional[1];
+  if (!query) {
+    error('請提供搜尋關鍵字：clawapi adapters search <query>');
+    process.exit(1);
+  }
+
+  blank();
+  info(`🔍 搜尋市集：${query}`);
+  blank();
+
+  // 實際整合時會透過 AdapterRegistry.search() 查詢
+  // 目前先顯示提示
+  output(
+    () => {
+      print('  市集搜尋功能需要引擎啟動後才能使用。');
+      print('  啟動引擎後使用 MCP tool：adapters(view=search, query="xxx")');
+      blank();
+    },
+    { query, results: [] }
+  );
+}
+
+// ===== adapters marketplace =====
+
+async function adaptersMarketplace(_args: ParsedArgs): Promise<void> {
+  blank();
+  info('🏪 Adapter 市集');
+  blank();
+
+  // 實際整合時會透過 AdapterRegistry.fetchCatalog() 查詢
+  // 目前先顯示提示
+  output(
+    () => {
+      print('  市集瀏覽功能需要引擎啟動後才能使用。');
+      print('  啟動引擎後使用 MCP tool：adapters(view=marketplace)');
+      blank();
+      print('  或使用：clawapi adapters search <keyword> 搜尋特定 Adapter');
+      blank();
+    },
+    { catalog: null }
   );
 }
 

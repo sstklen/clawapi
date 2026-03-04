@@ -3,6 +3,7 @@
 
 import { Database, type SQLQueryBindings } from 'bun:sqlite';
 import { migration001 } from './migrations/001-init';
+import { migration002 } from './migrations/002-aid-credits';
 
 // 裝置資料型別（對應 devices 資料表）
 export interface Device {
@@ -135,7 +136,10 @@ export class VPSDatabase {
 
   // 執行 migration（若尚未套用）
   private applyMigration(): void {
-    // 確認 schema_version 表存在，不存在則執行 up SQL
+    // 所有 migration 按版本順序排列
+    const migrations = [migration001, migration002];
+
+    // 確認 schema_version 表存在，不存在則執行第一個 migration
     const tableExists = this.db
       .prepare(
         `SELECT name FROM sqlite_master WHERE type='table' AND name='schema_version'`,
@@ -143,25 +147,28 @@ export class VPSDatabase {
       .get();
 
     if (!tableExists) {
-      // 首次初始化，執行整個 migration SQL
-      this.db.exec(migration001.up);
-      // 寫入版本記錄
-      this.run(
-        'INSERT OR IGNORE INTO schema_version (version, description) VALUES (?, ?)',
-        [migration001.version, migration001.description],
-      );
-    } else {
-      // 檢查此版本是否已套用
-      const applied = this.query<{ version: number }>(
-        'SELECT version FROM schema_version WHERE version = ?',
-        [migration001.version],
-      );
-      if (applied.length === 0) {
-        this.db.exec(migration001.up);
+      // 首次初始化，執行所有 migration
+      for (const migration of migrations) {
+        this.db.exec(migration.up);
         this.run(
           'INSERT OR IGNORE INTO schema_version (version, description) VALUES (?, ?)',
-          [migration001.version, migration001.description],
+          [migration.version, migration.description],
         );
+      }
+    } else {
+      // 逐個檢查並套用未執行的 migration
+      for (const migration of migrations) {
+        const applied = this.query<{ version: number }>(
+          'SELECT version FROM schema_version WHERE version = ?',
+          [migration.version],
+        );
+        if (applied.length === 0) {
+          this.db.exec(migration.up);
+          this.run(
+            'INSERT OR IGNORE INTO schema_version (version, description) VALUES (?, ?)',
+            [migration.version, migration.description],
+          );
+        }
       }
     }
   }

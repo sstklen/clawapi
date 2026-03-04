@@ -1,7 +1,7 @@
 // aid 命令群組 — 互助功能管理
 // 子命令：config, stats, donate
 
-import { color, print, blank, success, error, info, warn, jsonOutput, isJsonMode, output } from '../utils/output';
+import { color, print, blank, success, error, info, warn, table, jsonOutput, isJsonMode, output } from '../utils/output';
 import { ask, confirm, select, password } from '../utils/prompt';
 import { t } from '../utils/i18n';
 import type { ParsedArgs } from '../index';
@@ -18,13 +18,16 @@ export async function aidCommand(args: ParsedArgs): Promise<void> {
       return aidStats(args);
     case 'donate':
       return aidDonate(args);
+    case 'leaderboard':
+    case 'lb':
+      return aidLeaderboard(args);
     default:
       if (isJsonMode()) {
-        jsonOutput({ error: 'unknown_subcommand', available: ['config', 'stats', 'donate'] });
+        jsonOutput({ error: 'unknown_subcommand', available: ['config', 'stats', 'donate', 'leaderboard'] });
         process.exit(1);
       }
       error(t('common.unknown_subcmd', { subcmd: sub ?? '(無)' }));
-      print(t('common.available_subcmds', { list: 'config, stats, donate' }));
+      print(t('common.available_subcmds', { list: 'config, stats, donate, leaderboard' }));
       process.exit(1);
   }
 }
@@ -91,6 +94,7 @@ async function aidStats(_args: ParsedArgs): Promise<void> {
     total_helped: 156,
     total_received: 42,
     reputation_score: 0.85,
+    credits: { credits: 24, earned_total: 28, spent_total: 4 },
   };
 
   output(
@@ -106,6 +110,10 @@ async function aidStats(_args: ParsedArgs): Promise<void> {
       print(`  ${t('cmd.aid.total_helped')}：${stats.total_helped} ${t('cmd.aid.times_suffix')}`);
       print(`  ${t('cmd.aid.total_received')}：${stats.total_received} ${t('cmd.aid.times_suffix')}`);
       print(`  ${t('cmd.aid.reputation_score')}：${stats.reputation_score}`);
+      blank();
+      // 互助積分
+      print(`  🪙 積分餘額：${stats.credits.credits}`);
+      print(`     累計賺取：${stats.credits.earned_total} | 累計花費：${stats.credits.spent_total}`);
       blank();
     },
     stats
@@ -150,6 +158,47 @@ async function aidDonate(_args: ParsedArgs): Promise<void> {
       status: 'donated',
       service_id: service,
     }
+  );
+}
+
+// ===== aid leaderboard =====
+
+async function aidLeaderboard(_args: ParsedArgs): Promise<void> {
+  // 實際整合時會透過 AidClient.getLeaderboard() 從 VPS 取得
+  // 目前先用模擬資料
+  const leaderboard = [
+    { rank: 1, anonymous_name: '龍蝦 #742', total_helped: 312, services: ['groq', 'gemini'], reputation_score: 0.95 },
+    { rank: 2, anonymous_name: '龍蝦 #156', total_helped: 267, services: ['openai', 'anthropic', 'groq'], reputation_score: 0.91 },
+    { rank: 3, anonymous_name: '龍蝦 #389', total_helped: 198, services: ['gemini', 'cerebras'], reputation_score: 0.88 },
+    { rank: 4, anonymous_name: '龍蝦 #067', total_helped: 154, services: ['groq'], reputation_score: 0.85 },
+    { rank: 5, anonymous_name: '龍蝦 #523', total_helped: 128, services: ['deepseek', 'groq'], reputation_score: 0.82 },
+  ];
+
+  output(
+    () => {
+      blank();
+      info('🏆 感謝榜 — 互助排行');
+      blank();
+
+      table(
+        [
+          { header: '#', key: 'rank', minWidth: 4 },
+          { header: '龍蝦', key: 'anonymous_name', minWidth: 12 },
+          { header: '幫助次數', key: 'total_helped', minWidth: 10 },
+          { header: '服務', key: 'services_str', minWidth: 20 },
+          { header: '信譽', key: 'reputation_str', minWidth: 6 },
+        ],
+        leaderboard.map(entry => ({
+          ...entry,
+          services_str: entry.services.join(', '),
+          reputation_str: `${Math.round(entry.reputation_score * 100)}%`,
+        }))
+      );
+      blank();
+      print('  排名每小時更新 | 名稱經匿名化處理');
+      blank();
+    },
+    { leaderboard }
   );
 }
 

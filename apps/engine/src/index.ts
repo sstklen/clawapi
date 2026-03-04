@@ -16,6 +16,8 @@ import { WriteBuffer } from './storage/write-buffer';
 import { AdapterExecutor } from './adapters/executor';
 import { AdapterLoader } from './adapters/loader';
 import type { AdapterConfig } from './adapters/loader';
+import { AdapterScanner } from './adapters/scanner';
+import { AdapterRegistry } from './adapters/registry';
 import { Router } from './core/router';
 import { handleRoutingUpdate, loadCollectiveIntelFromDB } from './intelligence/routing-handler';
 import { VPSClient } from './intelligence/vps-client';
@@ -49,6 +51,7 @@ let engineServer: ClawEngineServer | null = null;
 let engineDb: ClawDatabase | null = null;
 let engineWriteBuffer: WriteBuffer | null = null;
 let engineVpsClient: VPSClient | null = null;
+let engineAdapterRegistry: AdapterRegistry | null = null;
 
 // ===== 啟動流程 =====
 
@@ -151,6 +154,23 @@ export async function start(options?: EngineOptions): Promise<ClawEngineServer> 
     }
   } catch (err) {
     console.warn(`[ClawAPI] ⚠️ Adapter 載入失敗，將以空 Adapter 啟動:`, err);
+  }
+
+  // 8.5 初始化 Adapter 市集（Registry）
+  let adapterRegistry: AdapterRegistry | undefined;
+  if (config.registry.enabled) {
+    const scanner = new AdapterScanner();
+    const userAdapterDir = join(dataDir, 'adapters');
+    adapterRegistry = new AdapterRegistry({
+      registryUrl: config.registry.url,
+      loader: adapterLoader,
+      scanner,
+      userAdapterDir,
+    });
+    engineAdapterRegistry = adapterRegistry;
+    if (options?.verbose) {
+      console.log(`[ClawAPI] ✅ Adapter 市集初始化完成`);
+    }
   }
 
   // 9. 初始化 VPS 客戶端（可選）
@@ -296,6 +316,13 @@ export async function stop(): Promise<void> {
     await engineDb.close();
     engineDb = null;
   }
+}
+
+// ===== 公開 Getter（模組級依賴） =====
+
+/** 取得 Adapter 市集實例（MCP 模式需要） */
+export function getAdapterRegistry(): AdapterRegistry | null {
+  return engineAdapterRegistry;
 }
 
 // ===== Dummy 物件（VPS 離線模式用） =====

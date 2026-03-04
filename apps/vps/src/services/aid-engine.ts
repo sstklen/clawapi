@@ -5,7 +5,7 @@
 
 import { ErrorCode } from '@clawapi/protocol';
 import type { VPSDatabase } from '../storage/database';
-import type { WSServerMessage } from '@clawapi/protocol';
+import type { WSServerMessage, LeaderboardEntry, AidCredits } from '@clawapi/protocol';
 
 // ===== 常數定義 =====
 
@@ -141,6 +141,97 @@ export class AidEngine {
   // ===== 公開 API =====
 
   /**
+   * getLeaderboard — GET /v1/aid/leaderboard
+   * 感謝榜：按累計幫助次數排名，匿名化顯示
+   *
+   * @param limit 回傳筆數（預設 20）
+   */
+  getLeaderboard(limit: number = 20): LeaderboardEntry[] {
+    // 從 aid_stats（direction='given'）彙總各裝置的累計幫助次數
+    const rows = this.db.query<{
+      device_id: string;
+      total_helped: number;
+      services: string;
+    }>(
+      `SELECT
+        device_id,
+        SUM(total_count) AS total_helped,
+        GROUP_CONCAT(DISTINCT service_id) AS services
+       FROM aid_stats
+       WHERE direction = 'given'
+       GROUP BY device_id
+       ORDER BY total_helped DESC
+       LIMIT ?`,
+      [limit],
+    );
+
+    // 查詢信譽分數
+    return rows.map((row, index) => {
+      // 匿名名稱：device_id 的 hash 取模產生「龍蝦 #XXX」
+      const hashNum = this._simpleHash(row.device_id) % 1000;
+      const anonymousName = `龍蝦 #${hashNum}`;
+
+      // 查信譽分數（從 devices 表取 reputation_weight，正規化到 0~1）
+      const deviceRows = this.db.query<{ reputation_weight: number }>(
+        `SELECT reputation_weight FROM devices WHERE device_id = ?`,
+        [row.device_id],
+      );
+      const reputationWeight = deviceRows[0]?.reputation_weight ?? 0.5;
+      // reputation_weight 範圍 0.1~2.0，正規化到 0~1
+      const reputationScore = Math.min(1, Math.max(0, (reputationWeight - 0.1) / 1.9));
+
+      return {
+        rank: index + 1,
+        anonymous_name: anonymousName,
+        total_helped: row.total_helped,
+        services: row.services ? row.services.split(',') : [],
+        reputation_score: Math.round(reputationScore * 100) / 100,
+      };
+    });
+  }
+
+  /**
+   * getCredits — GET /v1/aid/credits
+   * 查詢裝置的互助積分
+   */
+  getCredits(deviceId: string): AidCredits {
+    const rows = this.db.query<{
+      credits: number;
+      earned_total: number;
+      spent_total: number;
+    }>(
+      `SELECT credits, earned_total, spent_total FROM aid_credits WHERE device_id = ?`,
+      [deviceId],
+    );
+
+    if (rows.length === 0) {
+      return { credits: 0, earned_total: 0, spent_total: 0 };
+    }
+
+    return {
+      credits: rows[0].credits,
+      earned_total: rows[0].earned_total,
+      spent_total: rows[0].spent_total,
+    };
+  }
+
+  /**
+   * _awardCredit — 互助成功時頒發積分給 helper
+   * 每次成功幫助 +1 積分
+   */
+  _awardCredit(helperId: string): void {
+    this.db.run(
+      `INSERT INTO aid_credits (device_id, credits, earned_total, spent_total, updated_at)
+       VALUES (?, 1, 1, 0, datetime('now'))
+       ON CONFLICT (device_id) DO UPDATE SET
+         credits = credits + 1,
+         earned_total = earned_total + 1,
+         updated_at = datetime('now')`,
+      [helperId],
+    );
+  }
+
+  /**
    * handleRequest — POST /v1/aid/request
    * 發起互助請求：產生 aid_id、觸發配對、回傳 202
    */
@@ -228,15 +319,20 @@ export class AidEngine {
       return;
     }
 
-    // ===== 2. 評分並選出最高分 =====
+    // ===== 2. 取得 requester 的積分加成 =====
+    const requesterCredits = this.getCredits(requesterId);
+    // 下限 0 防止負積分產生負加成，上限 2.0 防止過度加權
+    const creditBonus = Math.max(0, Math.min(requesterCredits.credits / 10, 2.0));
+
+    // ===== 3. 評分並選出最高分 =====
     const scored = candidates.map((c) => ({
       candidate: c,
-      score: this._calculateHelperScore(c),
+      score: this._calculateHelperScore(c, creditBonus),
     }));
     scored.sort((a, b) => b.score - a.score);
     const best = scored[0].candidate;
 
-    // ===== 3. 更新 aid_records（記錄 helper） =====
+    // ===== 4. 更新 aid_records（記錄 helper） =====
     this.db.run(
       `UPDATE aid_records SET
         helper_device_id = ?,
@@ -247,7 +343,7 @@ export class AidEngine {
       [best.device_id, best.helper_public_key, aidId],
     );
 
-    // ===== 4. 雙向推送 aid_matched =====
+    // ===== 5. 雙向推送 aid_matched =====
 
     // 推送給求助者（requester B）：含 helper 的公鑰，不含 helper device_id
     const msgToRequester: WSServerMessage = {
@@ -281,7 +377,7 @@ export class AidEngine {
     };
     this.wsManager.sendToDevice(best.device_id, msgToHelper);
 
-    // ===== 5. 記錄進行中的配對，並設置超時計時器 =====
+    // ===== 6. 記錄進行中的配對，並設置超時計時器 =====
     this.activeMatches.set(aidId, {
       requesterId,
       helperId: best.device_id,
@@ -294,7 +390,7 @@ export class AidEngine {
     );
     this.matchTimers.set(aidId, timer);
 
-    // ===== 6. 更新 helper 的 daily_given（統計） =====
+    // ===== 7. 更新 helper 的 daily_given（統計） =====
     this.db.run(
       `UPDATE aid_configs SET
         daily_given = daily_given + 1,
@@ -535,6 +631,8 @@ export class AidEngine {
     // 更新 helper 的成功率統計（fulfilled 才算成功）
     if (status === 'fulfilled') {
       this._updateHelperStats(match.helperId, true, actualLatency);
+      // 頒發積分給 helper（互助成功 +1）
+      this._awardCredit(match.helperId);
     } else {
       this._updateHelperStats(match.helperId, false, actualLatency);
       // 連續失敗：增加 requester 的冷卻計數
@@ -630,8 +728,12 @@ export class AidEngine {
    * - 歷史成功率：successRate × 3                 → 最高 3 分
    * - 回應延遲分：max(0, 3 - avgLatency / 5000)   → 最高 3 分（10s 以上得 0）
    * - 信譽分數：reputation_weight（0.1–2.0）       → 加權乘數
+   *
+   * 積分加成（requesterCredits 由呼叫方帶入）：
+   * - creditBonus = min(credits / 10, 2.0)         → 最高 +2 分
+   * - 高積分的龍蝦 = 更好的配對品質
    */
-  private _calculateHelperScore(candidate: HelperCandidate): number {
+  private _calculateHelperScore(candidate: HelperCandidate, requesterCreditBonus: number = 0): number {
     const remaining = candidate.daily_limit - candidate.daily_given;
 
     // 剩餘額度分（每 10 次額度 = 1 分，最高 5 分）
@@ -643,8 +745,8 @@ export class AidEngine {
     // 回應延遲分（延遲越低越高分）
     const latencyScore = Math.max(0, 3 - candidate.avg_aid_latency_ms / 5000);
 
-    // 基礎分相加後乘以信譽權重
-    const baseScore = capacityScore + successScore + latencyScore;
+    // 基礎分相加後乘以信譽權重，再加上 requester 的積分加成
+    const baseScore = capacityScore + successScore + latencyScore + requesterCreditBonus;
     return baseScore * candidate.reputation_weight;
   }
 
@@ -805,6 +907,9 @@ export class AidEngine {
     // 更新 helper 統計
     this._updateHelperStats(helperId, true, latencyMs);
 
+    // 頒發積分給 helper（互助成功 +1）
+    this._awardCredit(helperId);
+
     // 更新雙方 aid_stats
     this._updateAidStats(match.requesterId, helperId, aidId);
 
@@ -916,6 +1021,19 @@ export class AidEngine {
     midnight.setUTCDate(midnight.getUTCDate() + 1);
     midnight.setUTCHours(0, 0, 0, 0);
     return Math.ceil((midnight.getTime() - now.getTime()) / 1000);
+  }
+
+  /**
+   * _simpleHash — 簡易字串 hash（用於匿名名稱產生）
+   * djb2 演算法：非密碼學用途，只求分佈均勻
+   */
+  private _simpleHash(str: string): number {
+    let hash = 5381;
+    for (let i = 0; i < str.length; i++) {
+      hash = ((hash << 5) + hash) + str.charCodeAt(i);
+      hash = hash & hash; // 轉為 32 位整數
+    }
+    return Math.abs(hash);
   }
 
   // ===== 測試輔助方法（僅供測試使用）=====

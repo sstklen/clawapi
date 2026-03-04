@@ -22,6 +22,7 @@ const EXPECTED_TABLES = [
   'aid_records',
   'aid_stats',
   'aid_suspicious',
+  'aid_credits',
   'backups',
   'subkey_validation_cache',
   'schema_version',
@@ -57,7 +58,7 @@ describe('VPSDatabase', () => {
       for (const expected of EXPECTED_TABLES) {
         expect(tableNames).toContain(expected);
       }
-      // 確認總數正確（21 張使用者資料表）
+      // 確認總數正確（22 張使用者資料表，含 aid_credits）
       expect(tables.length).toBe(EXPECTED_TABLES.length);
     });
 

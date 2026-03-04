@@ -268,7 +268,7 @@ describe('GrowthEngine — getUsageInsights', () => {
     expect(costSaving).toBeUndefined();
   });
 
-  it('最多回傳 3 個洞察', async () => {
+  it('最多回傳 5 個洞察（含新增的 resilience、rate_limit_alternative、claw_key_mismatch）', async () => {
     const engine = createEngineWithDb(
       [{ service_id: 'openai' }, { service_id: 'anthropic' }],
       [{
@@ -291,7 +291,7 @@ describe('GrowthEngine — getUsageInsights', () => {
     );
 
     const insights = await engine.getUsageInsights();
-    expect(insights.length).toBeLessThanOrEqual(3);
+    expect(insights.length).toBeLessThanOrEqual(5);
   });
 });
 
@@ -491,6 +491,324 @@ describe('GrowthEngine — getIntelligenceReport', () => {
     expect(report.data_sufficient).toBe(false);
     expect(report.personal_stats).toHaveLength(0);
     expect(report.collective_intel).toHaveLength(0);
+  });
+});
+
+// ===== getClawKeyRecommendations 測試 =====
+
+/** 用量列型別（方便重複使用） */
+type UsageRow = {
+  service_id: string;
+  total_requests: number;
+  success_count: number;
+  error_count: number;
+  rate_limited_count: number;
+  avg_latency_ms: number;
+  total_tokens: number;
+};
+
+/** 建立帶完整 DB mock 的 engine（可控制 usage_log + gold_keys） */
+function createEngineWithFullDb(
+  keys: MockKey[],
+  usageRows: UsageRow[],
+  goldKeys: Array<{ service_id: string; is_active: number }>,
+): GrowthEngine {
+  const keyPool = {
+    listKeys: async () => keys.map((k, idx) => toKeyListItem(k, idx)),
+  } as unknown as KeyPool;
+
+  const adapters = new Map<string, AdapterConfig>();
+
+  // mock DB：根據 SQL 內容回傳對應資料
+  const db = {
+    query: (sql: string) => {
+      if (sql.includes('gold_keys')) {
+        // 只回傳 is_active = 1 的列（模擬 WHERE is_active = 1）
+        return goldKeys
+          .filter(g => g.is_active === 1)
+          .map(g => ({ service_id: g.service_id }));
+      }
+      if (sql.includes('usage_log')) {
+        return usageRows;
+      }
+      if (sql.includes('routing_intel')) {
+        return [];
+      }
+      return [];
+    },
+    run: () => {},
+  } as unknown as ClawDatabase;
+
+  return new GrowthEngine(keyPool, adapters, db);
+}
+
+describe('GrowthEngine — getClawKeyRecommendations', () => {
+  it('覆蓋缺口：Claw Key 在 groq 但用量最高是 openai', async () => {
+    const engine = createEngineWithFullDb(
+      [{ service_id: 'openai' }, { service_id: 'groq' }],
+      [{
+        service_id: 'openai',
+        total_requests: 50,
+        success_count: 48,
+        error_count: 2,
+        rate_limited_count: 0,
+        avg_latency_ms: 500,
+        total_tokens: 80000,
+      }, {
+        service_id: 'groq',
+        total_requests: 10,
+        success_count: 10,
+        error_count: 0,
+        rate_limited_count: 0,
+        avg_latency_ms: 200,
+        total_tokens: 5000,
+      }],
+      [{ service_id: 'groq', is_active: 1 }],
+    );
+
+    const recommendations = await engine.getClawKeyRecommendations();
+    const gap = recommendations.find(r => r.type === 'coverage_gap');
+    expect(gap).toBeDefined();
+    expect(gap!.title).toContain('openai');
+    expect(gap!.detail).toContain('openai');
+  });
+
+  it('效能不佳：Claw Key 涵蓋的 openai 成功率 < 80%', async () => {
+    const engine = createEngineWithFullDb(
+      [{ service_id: 'openai' }],
+      [{
+        service_id: 'openai',
+        total_requests: 40,
+        success_count: 28,   // 28/40 = 70% < 80%
+        error_count: 12,
+        rate_limited_count: 0,
+        avg_latency_ms: 600,
+        total_tokens: 30000,
+      }],
+      [{ service_id: 'openai', is_active: 1 }],
+    );
+
+    const recommendations = await engine.getClawKeyRecommendations();
+    const poor = recommendations.find(r => r.type === 'poor_performance');
+    expect(poor).toBeDefined();
+    expect(poor!.title).toContain('openai');
+    expect(poor!.title).toContain('70%');
+  });
+
+  it('優化建議：全部免費服務但用量大', async () => {
+    const engine = createEngineWithFullDb(
+      [{ service_id: 'groq' }, { service_id: 'gemini' }],
+      [{
+        service_id: 'groq',
+        total_requests: 80,
+        success_count: 78,
+        error_count: 2,
+        rate_limited_count: 0,
+        avg_latency_ms: 200,
+        total_tokens: 50000,
+      }, {
+        service_id: 'gemini',
+        total_requests: 40,
+        success_count: 39,
+        error_count: 1,
+        rate_limited_count: 0,
+        avg_latency_ms: 300,
+        total_tokens: 20000,
+      }],
+      // Claw Key 全是免費服務
+      [
+        { service_id: 'groq', is_active: 1 },
+        { service_id: 'gemini', is_active: 1 },
+      ],
+    );
+
+    // 總用量 120 > 100，且全是免費服務 → 應產出 optimization 建議
+    const recommendations = await engine.getClawKeyRecommendations();
+    const opt = recommendations.find(r => r.type === 'optimization');
+    expect(opt).toBeDefined();
+    expect(opt!.title).toContain('免費');
+    expect(opt!.detail).toContain('120');
+  });
+
+  it('無 Claw Key（gold_keys 為空）→ 回傳空陣列', async () => {
+    const engine = createEngineWithFullDb(
+      [{ service_id: 'openai' }],
+      [{
+        service_id: 'openai',
+        total_requests: 30,
+        success_count: 28,
+        error_count: 2,
+        rate_limited_count: 0,
+        avg_latency_ms: 500,
+        total_tokens: 20000,
+      }],
+      [], // 沒有任何 Claw Key
+    );
+
+    const recommendations = await engine.getClawKeyRecommendations();
+    expect(recommendations).toHaveLength(0);
+  });
+
+  it('gold_keys 表查詢拋錯時回傳空陣列（不爆炸）', async () => {
+    const keyPool = {
+      listKeys: async () => [],
+    } as unknown as KeyPool;
+
+    // 模擬 gold_keys 表不存在的情況
+    const db = {
+      query: (sql: string) => {
+        if (sql.includes('gold_keys')) {
+          throw new Error('no such table: gold_keys');
+        }
+        return [];
+      },
+      run: () => {},
+    } as unknown as ClawDatabase;
+
+    const engine = new GrowthEngine(keyPool, new Map(), db);
+    const recommendations = await engine.getClawKeyRecommendations();
+    expect(recommendations).toHaveLength(0);
+  });
+
+  it('最多回傳 3 個建議', async () => {
+    const engine = createEngineWithFullDb(
+      [{ service_id: 'openai' }, { service_id: 'groq' }, { service_id: 'gemini' }],
+      [{
+        service_id: 'openai',
+        total_requests: 60,
+        success_count: 40,   // 成功率 66% < 80%
+        error_count: 20,
+        rate_limited_count: 0,
+        avg_latency_ms: 600,
+        total_tokens: 50000,
+      }, {
+        service_id: 'groq',
+        total_requests: 50,
+        success_count: 50,
+        error_count: 0,
+        rate_limited_count: 0,
+        avg_latency_ms: 200,
+        total_tokens: 30000,
+      }],
+      // Claw Key 全是免費服務（觸發 optimization），且不涵蓋 openai（觸發 coverage_gap）
+      // openai 成功率低（觸發 poor_performance）— 但 openai 不在 clawKeyServiceSet 所以不觸發
+      [
+        { service_id: 'groq', is_active: 1 },
+        { service_id: 'gemini', is_active: 1 },
+      ],
+    );
+
+    const recommendations = await engine.getClawKeyRecommendations();
+    expect(recommendations.length).toBeLessThanOrEqual(3);
+  });
+});
+
+// ===== 新 insights 測試（resilience, rate_limit_alternative） =====
+
+describe('GrowthEngine — getUsageInsights 新洞察', () => {
+  it('resilience：高用量服務只有 1 把 key 時應產出韌性建議', async () => {
+    const engine = createEngineWithFullDb(
+      [{ service_id: 'openai' }],
+      [{
+        service_id: 'openai',
+        total_requests: 30,
+        success_count: 28,
+        error_count: 2,
+        rate_limited_count: 0,
+        avg_latency_ms: 500,
+        total_tokens: 40000,
+      }],
+      [], // 沒有 Claw Key
+    );
+
+    const insights = await engine.getUsageInsights();
+    const resilience = insights.find(i => i.type === 'resilience');
+    expect(resilience).toBeDefined();
+    expect(resilience!.title).toContain('openai');
+    expect(resilience!.detail).toContain('備援');
+  });
+
+  it('rate_limit_alternative：被 429 超過 3 次時應推薦免費替代', async () => {
+    const engine = createEngineWithFullDb(
+      [{ service_id: 'openai' }],
+      [{
+        service_id: 'openai',
+        total_requests: 30,
+        success_count: 20,
+        error_count: 5,
+        rate_limited_count: 5,   // > 3 次
+        avg_latency_ms: 800,
+        total_tokens: 30000,
+      }],
+      [], // 沒有 Claw Key
+    );
+
+    const insights = await engine.getUsageInsights();
+    const altInsight = insights.find(i => i.type === 'rate_limit_alternative');
+    expect(altInsight).toBeDefined();
+    expect(altInsight!.title).toContain('groq');       // openai 的免費替代是 groq
+    expect(altInsight!.detail).toContain('429');
+  });
+
+  it('rate_limit_alternative：已有免費替代時不應重複推薦', async () => {
+    const engine = createEngineWithFullDb(
+      [{ service_id: 'openai' }, { service_id: 'groq' }],
+      [{
+        service_id: 'openai',
+        total_requests: 30,
+        success_count: 20,
+        error_count: 5,
+        rate_limited_count: 5,
+        avg_latency_ms: 800,
+        total_tokens: 30000,
+      }],
+      [], // 沒有 Claw Key
+    );
+
+    const insights = await engine.getUsageInsights();
+    // 已有 groq，不應該再推薦 groq 作為 openai 的替代
+    const altInsight = insights.find(i => i.type === 'rate_limit_alternative');
+    expect(altInsight).toBeUndefined();
+  });
+
+  it('claw_key_mismatch：Claw Key 不涵蓋主力服務時應在洞察中出現', async () => {
+    const engine = createEngineWithFullDb(
+      [{ service_id: 'openai' }, { service_id: 'groq' }],
+      [{
+        service_id: 'openai',
+        total_requests: 50,
+        success_count: 48,
+        error_count: 2,
+        rate_limited_count: 0,
+        avg_latency_ms: 500,
+        total_tokens: 80000,
+      }],
+      [{ service_id: 'groq', is_active: 1 }],  // Claw Key 只有 groq，沒涵蓋 openai
+    );
+
+    const insights = await engine.getUsageInsights();
+    const mismatch = insights.find(i => i.type === 'claw_key_mismatch');
+    expect(mismatch).toBeDefined();
+    expect(mismatch!.title).toContain('openai');
+  });
+
+  it('洞察最多回傳 5 個', async () => {
+    const engine = createEngineWithFullDb(
+      [{ service_id: 'openai' }],
+      [{
+        service_id: 'openai',
+        total_requests: 50,
+        success_count: 30,
+        error_count: 10,
+        rate_limited_count: 10,
+        avg_latency_ms: 800,
+        total_tokens: 100000,
+      }],
+      [{ service_id: 'groq', is_active: 1 }],
+    );
+
+    const insights = await engine.getUsageInsights();
+    expect(insights.length).toBeLessThanOrEqual(5);
   });
 });
 

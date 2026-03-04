@@ -71,6 +71,14 @@ export interface ClawConfig {
     key_expiring: boolean;
     service_degraded: boolean;
   };
+  registry: {
+    /** Registry URL（GitHub raw） */
+    url: string;
+    /** 是否啟用市集功能 */
+    enabled: boolean;
+    /** 啟動時自動檢查 Adapter 更新 */
+    auto_check_updates: boolean;
+  };
   advanced: {
     db_path: string | null;
     adapter_dirs: (string | null)[];
@@ -158,6 +166,11 @@ export function getDefaultConfig(): ClawConfig {
       quota_low: true,
       key_expiring: true,
       service_degraded: true,
+    },
+    registry: {
+      url: 'https://raw.githubusercontent.com/clawapi/adapters/main/registry.json',
+      enabled: true,
+      auto_check_updates: true,
     },
     advanced: {
       db_path: null,

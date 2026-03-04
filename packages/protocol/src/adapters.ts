@@ -58,3 +58,51 @@ export interface AdapterListResponse {
   }>;
   last_updated: string;
 }
+
+// ===== Adapter 市集（Registry）型別 =====
+
+/** 市集目錄（registry.json 格式） */
+export interface RegistryCatalog {
+  /** 目錄格式版本 */
+  version: number;
+  /** 最後更新時間（ISO 8601） */
+  updated_at: string;
+  /** 可用的社群 Adapter 清單 */
+  adapters: RegistryAdapter[];
+}
+
+/** 市集中的一個 Adapter */
+export interface RegistryAdapter {
+  /** Adapter ID（如 'custom-llm'） */
+  id: string;
+  /** 顯示名稱 */
+  name: string;
+  /** 語意版本（如 '1.0.0'） */
+  version: string;
+  /** 作者（GitHub 帳號或暱稱） */
+  author: string;
+  /** 一句話描述 */
+  description: string;
+  /** 分類：llm / search / translate / image / audio / tool */
+  category: string;
+  /** 是否需要 API Key */
+  requires_key: boolean;
+  /** 是否有免費方案 */
+  free_tier: boolean;
+  /** YAML 下載 URL（GitHub raw） */
+  yaml_url: string;
+  /** 累計安裝次數 */
+  downloads: number;
+  /** 是否已通過官方驗證 */
+  verified: boolean;
+}
+
+/** 版本更新資訊 */
+export interface RegistryUpdateInfo {
+  /** Adapter ID */
+  id: string;
+  /** 目前安裝的版本 */
+  current_version: string;
+  /** 市集最新版本 */
+  latest_version: string;
+}

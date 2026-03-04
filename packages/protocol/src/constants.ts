@@ -42,6 +42,8 @@ export const RATE_LIMITS: Record<string, RateLimitConfig> = {
   'PUT /v1/aid/config':             { limit: 10, windowSeconds: 3600 },
   'GET /v1/aid/config':             { limit: 30, windowSeconds: 3600 },
   'GET /v1/aid/stats':              { limit: 30, windowSeconds: 3600 },
+  'GET /v1/aid/leaderboard':        { limit: 10, windowSeconds: 3600 },
+  'GET /v1/aid/credits':            { limit: 30, windowSeconds: 3600 },
   'GET /v1/version/check':          { limit: 5,  windowSeconds: 3600 },
   'GET /v1/adapters/updates':       { limit: 5,  windowSeconds: 3600 },
   'GET /v1/adapters/official':      { limit: 10, windowSeconds: 3600 },

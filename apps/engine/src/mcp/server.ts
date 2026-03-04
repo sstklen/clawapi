@@ -29,7 +29,8 @@ import { imageGenerateToolSchema, executeImageGenerateTool, type ImageGenerateTo
 import { audioTranscribeToolSchema, executeAudioTranscribeTool, type AudioTranscribeToolInput } from './tools/audio';
 import { keysListToolSchema, keysAddToolSchema, executeKeysListTool, executeKeysAddTool, type KeysListToolInput, type KeysAddToolInput } from './tools/keys';
 import { statusToolSchema, executeStatusTool, type EngineStatusDeps } from './tools/status';
-import { adaptersToolSchema, executeAdaptersTool } from './tools/adapters';
+import { adaptersToolSchema, executeAdaptersTool, type AdaptersToolInput } from './tools/adapters';
+import type { AdapterRegistry } from '../adapters/registry';
 import { setupWizardToolSchema, executeSetupWizardTool, type SetupWizardToolInput } from './tools/setup-wizard';
 import { growthGuideToolSchema, executeGrowthGuideTool, type GrowthGuideToolInput } from './tools/growth-guide';
 import type { GrowthEngine } from '../growth/engine';
@@ -83,6 +84,8 @@ export interface McpServerDeps {
   costEngine?: CostEngine;
   /** 資料庫（可選，接力棒系統用） */
   db?: import('../storage/database').ClawDatabase;
+  /** Adapter 市集（可選，市集瀏覽/搜尋用） */
+  adapterRegistry?: AdapterRegistry;
 }
 
 // ===== MCP 指令（告訴 AI 該怎麼用 ClawAPI） =====
@@ -388,7 +391,11 @@ export class McpServer {
         });
 
       case 'adapters':
-        return executeAdaptersTool({}, this.deps.adapters);
+        return executeAdaptersTool(
+          args as unknown as AdaptersToolInput,
+          this.deps.adapters,
+          this.deps.adapterRegistry
+        );
 
       case 'setup_wizard':
         return executeSetupWizardTool(args as unknown as SetupWizardToolInput, {

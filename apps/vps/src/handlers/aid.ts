@@ -203,6 +203,44 @@ export function createAidRouter(
     return c.json(config, 200);
   });
 
+  // ===== GET /v1/aid/leaderboard =====
+  // 感謝榜：Top N 匿名排行
+  // Query: ?limit=20（預設 20，最大 100）
+  // Response: 200 + { leaderboard: LeaderboardEntry[] }
+  router.get('/leaderboard', (c) => {
+    // 感謝榜不需要認證（公開 API）
+    const limitParam = c.req.query('limit');
+    let limit = 20;
+    if (limitParam) {
+      const parsed = parseInt(limitParam, 10);
+      if (!isNaN(parsed) && parsed >= 1 && parsed <= 100) {
+        limit = parsed;
+      }
+    }
+
+    const leaderboard = aidEngine.getLeaderboard(limit);
+    return c.json({ leaderboard }, 200);
+  });
+
+  // ===== GET /v1/aid/credits =====
+  // 查詢自己的互助積分
+  // Response: 200 + AidCredits
+  router.get('/credits', (c) => {
+    const deviceId = c.get('deviceId');
+    if (!deviceId) {
+      return c.json(
+        {
+          error: ErrorCode.AUTH_DEVICE_NOT_FOUND,
+          message: '無法識別裝置身份',
+        },
+        401,
+      );
+    }
+
+    const credits = aidEngine.getCredits(deviceId);
+    return c.json(credits, 200);
+  });
+
   // ===== POST /v1/aid/relay =====
   // 密文轉發（內部用）
   // Body: { aid_id, from_device_id, encrypted_payload, iv, tag, kind, helper_public_key? }

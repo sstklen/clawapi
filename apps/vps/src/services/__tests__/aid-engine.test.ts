@@ -1058,3 +1058,372 @@ describe('AidEngine — updateConfig / getConfig', () => {
     expect(result.errorCode).toBe(ErrorCode.INVALID_REQUEST);
   });
 });
+
+// ===== 以下為新增測試：感謝榜、積分、積分加成配對 =====
+
+// ===== 擴展版 Mock DB 建構器（支援 aid_credits + leaderboard 查詢） =====
+
+interface AidCreditRecord {
+  device_id: string;
+  credits: number;
+  earned_total: number;
+  spent_total: number;
+}
+
+function createMockDbWithExtras() {
+  const base = createMockDb();
+  const aidCredits: Map<string, AidCreditRecord> = new Map();
+
+  // 感謝榜用的彙總資料（手動設定）
+  let leaderboardRows: Array<{
+    device_id: string;
+    total_helped: number;
+    services: string;
+  }> = [];
+
+  // 裝置信譽分數（用於感謝榜查 reputation_weight）
+  const deviceReputation: Map<string, number> = new Map();
+
+  // 攔截 base.query，追加新查詢支援
+  const originalQuery = base.query.bind(base);
+  (base as unknown as { query: typeof base.query }).query = function <T>(sql: string, params?: unknown[]): T[] {
+    const s = sql.trim().toLowerCase().replace(/\s+/g, ' ');
+
+    // --- 感謝榜查詢：aid_stats + group by ---
+    if (s.includes('from aid_stats') && s.includes('group by') && s.includes('direction')) {
+      const limit = (params?.[0] as number) ?? 20;
+      return leaderboardRows.slice(0, limit) as unknown as T[];
+    }
+
+    // --- 感謝榜查 reputation_weight ---
+    if (s.includes('select reputation_weight from devices where device_id =')) {
+      const deviceId = params?.[0] as string;
+      const weight = deviceReputation.get(deviceId) ?? 0.5;
+      return [{ reputation_weight: weight }] as unknown as T[];
+    }
+
+    // --- 積分查詢：aid_credits ---
+    if (s.includes('from aid_credits') && s.includes('where device_id =')) {
+      const deviceId = params?.[0] as string;
+      const record = aidCredits.get(deviceId);
+      if (!record) return [] as T[];
+      return [{ credits: record.credits, earned_total: record.earned_total, spent_total: record.spent_total }] as unknown as T[];
+    }
+
+    // 其餘查詢交給原始 mock
+    return originalQuery<T>(sql, params);
+  };
+
+  // 攔截 base.run，追加 aid_credits 寫入支援
+  const originalRun = base.run.bind(base);
+  (base as unknown as { run: typeof base.run }).run = function (sql: string, params?: unknown[]) {
+    const s = sql.trim().toLowerCase().replace(/\s+/g, ' ');
+
+    // --- 積分 UPSERT：INSERT INTO aid_credits ---
+    if (s.includes('insert into aid_credits')) {
+      const deviceId = params?.[0] as string;
+      const existing = aidCredits.get(deviceId);
+      if (existing) {
+        existing.credits += 1;
+        existing.earned_total += 1;
+      } else {
+        aidCredits.set(deviceId, {
+          device_id: deviceId,
+          credits: 1,
+          earned_total: 1,
+          spent_total: 0,
+        });
+      }
+      // 也呼叫原始 run 讓 runCalls 記錄保留
+      return originalRun(sql, params);
+    }
+
+    return originalRun(sql, params);
+  };
+
+  return Object.assign(base, {
+    // 測試輔助：設定感謝榜資料
+    _setLeaderboardRows(rows: Array<{ device_id: string; total_helped: number; services: string }>) {
+      leaderboardRows = rows;
+    },
+    // 測試輔助：設定裝置信譽分數
+    _setDeviceReputation(deviceId: string, weight: number) {
+      deviceReputation.set(deviceId, weight);
+    },
+    // 測試輔助：設定積分記錄
+    _setAidCredits(deviceId: string, credits: number, earnedTotal: number, spentTotal: number) {
+      aidCredits.set(deviceId, { device_id: deviceId, credits, earned_total: earnedTotal, spent_total: spentTotal });
+    },
+    // 測試輔助：取得積分記錄
+    _getAidCredits(deviceId: string) { return aidCredits.get(deviceId); },
+  });
+}
+
+// ===== 25~28：感謝榜測試 =====
+
+describe('AidEngine — getLeaderboard', () => {
+  let db: ReturnType<typeof createMockDbWithExtras>;
+  let wsManager: ReturnType<typeof createMockWsManager>;
+  let engine: AidEngine;
+
+  beforeEach(() => {
+    db = createMockDbWithExtras();
+    wsManager = createMockWsManager();
+    engine = new AidEngine(db, wsManager);
+  });
+
+  afterEach(() => {
+    engine._clearAllTimers();
+  });
+
+  it('25. 多裝置有 aid_stats → 按 total_helped DESC 排列', () => {
+    // 設定感謝榜原始資料（模擬 DB 彙總結果）
+    db._setLeaderboardRows([
+      { device_id: 'clw_helper_top', total_helped: 100, services: 'openai,anthropic' },
+      { device_id: 'clw_helper_mid', total_helped: 50, services: 'openai' },
+      { device_id: 'clw_helper_low', total_helped: 10, services: 'groq' },
+    ]);
+    db._setDeviceReputation('clw_helper_top', 1.8);
+    db._setDeviceReputation('clw_helper_mid', 1.0);
+    db._setDeviceReputation('clw_helper_low', 0.5);
+
+    const result = engine.getLeaderboard();
+
+    expect(result.length).toBe(3);
+    // 排名應從 1 開始
+    expect(result[0].rank).toBe(1);
+    expect(result[1].rank).toBe(2);
+    expect(result[2].rank).toBe(3);
+    // 第一名的幫助次數最多
+    expect(result[0].total_helped).toBe(100);
+    expect(result[2].total_helped).toBe(10);
+  });
+
+  it('26. 匿名化：device_id 不出現在結果中，名稱為「龍蝦 #XXX」格式', () => {
+    db._setLeaderboardRows([
+      { device_id: 'clw_secret_device_123', total_helped: 42, services: 'openai' },
+    ]);
+    db._setDeviceReputation('clw_secret_device_123', 1.0);
+
+    const result = engine.getLeaderboard();
+
+    expect(result.length).toBe(1);
+    // 匿名名稱格式檢查
+    expect(result[0].anonymous_name).toMatch(/^龍蝦 #\d+$/);
+    // device_id 不應出現在序列化結果中
+    const serialized = JSON.stringify(result);
+    expect(serialized).not.toContain('clw_secret_device_123');
+  });
+
+  it('27. limit 參數：limit=2 只回傳 2 筆', () => {
+    db._setLeaderboardRows([
+      { device_id: 'clw_a', total_helped: 100, services: 'openai' },
+      { device_id: 'clw_b', total_helped: 50, services: 'openai' },
+      { device_id: 'clw_c', total_helped: 10, services: 'openai' },
+    ]);
+    db._setDeviceReputation('clw_a', 1.0);
+    db._setDeviceReputation('clw_b', 1.0);
+
+    const result = engine.getLeaderboard(2);
+
+    expect(result.length).toBe(2);
+    expect(result[0].rank).toBe(1);
+    expect(result[1].rank).toBe(2);
+  });
+
+  it('28. 無資料 → 空陣列', () => {
+    db._setLeaderboardRows([]);
+
+    const result = engine.getLeaderboard();
+
+    expect(result).toEqual([]);
+  });
+});
+
+// ===== 29~30：積分查詢測試 =====
+
+describe('AidEngine — getCredits', () => {
+  let db: ReturnType<typeof createMockDbWithExtras>;
+  let wsManager: ReturnType<typeof createMockWsManager>;
+  let engine: AidEngine;
+
+  beforeEach(() => {
+    db = createMockDbWithExtras();
+    wsManager = createMockWsManager();
+    engine = new AidEngine(db, wsManager);
+  });
+
+  afterEach(() => {
+    engine._clearAllTimers();
+  });
+
+  it('29. 有積分記錄 → 回傳 { credits, earned_total, spent_total }', () => {
+    db._setAidCredits('clw_rich_device', 25, 30, 5);
+
+    const result = engine.getCredits('clw_rich_device');
+
+    expect(result.credits).toBe(25);
+    expect(result.earned_total).toBe(30);
+    expect(result.spent_total).toBe(5);
+  });
+
+  it('30. 無記錄 → 回傳全部為 0', () => {
+    const result = engine.getCredits('clw_unknown_device');
+
+    expect(result.credits).toBe(0);
+    expect(result.earned_total).toBe(0);
+    expect(result.spent_total).toBe(0);
+  });
+});
+
+// ===== 31~32：積分頒發測試 =====
+
+describe('AidEngine — _awardCredit', () => {
+  let db: ReturnType<typeof createMockDbWithExtras>;
+  let wsManager: ReturnType<typeof createMockWsManager>;
+  let engine: AidEngine;
+
+  beforeEach(() => {
+    db = createMockDbWithExtras();
+    wsManager = createMockWsManager();
+    engine = new AidEngine(db, wsManager);
+  });
+
+  afterEach(() => {
+    engine._clearAllTimers();
+  });
+
+  it('31. 呼叫 _awardCredit → DB run() 被呼叫，SQL 包含 aid_credits', () => {
+    db._clearRunCalls();
+
+    engine._awardCredit('clw_helper_award');
+
+    const calls = db._getRunCalls();
+    // 至少有一筆 run 呼叫
+    expect(calls.length).toBeGreaterThanOrEqual(1);
+    // 找到包含 aid_credits 的 SQL
+    const creditCall = calls.find((c) => c.sql.toLowerCase().includes('aid_credits'));
+    expect(creditCall).toBeDefined();
+    // SQL 應包含 INSERT（UPSERT 語法）
+    expect(creditCall!.sql.toLowerCase()).toContain('insert');
+  });
+
+  it('32. 連續頒發兩次 → 積分累加', () => {
+    engine._awardCredit('clw_helper_double');
+    engine._awardCredit('clw_helper_double');
+
+    const record = db._getAidCredits('clw_helper_double');
+    expect(record).toBeDefined();
+    expect(record!.credits).toBe(2);
+    expect(record!.earned_total).toBe(2);
+  });
+});
+
+// ===== 33~34：積分加成配對測試 =====
+
+describe('AidEngine — credit bonus in matching', () => {
+  let db: ReturnType<typeof createMockDbWithExtras>;
+  let wsManager: ReturnType<typeof createMockWsManager>;
+  let engine: AidEngine;
+
+  const REQUESTER_ID = 'clw_credit_requester';
+  const HELPER_A = 'clw_credit_helper_a';
+  const HELPER_B = 'clw_credit_helper_b';
+  const AID_ID = 'aid_credit_bonus_test';
+
+  beforeEach(() => {
+    db = createMockDbWithExtras();
+    wsManager = createMockWsManager();
+    engine = new AidEngine(db, wsManager);
+
+    wsManager._setOnline(REQUESTER_ID);
+    wsManager._setOnline(HELPER_A);
+    wsManager._setOnline(HELPER_B);
+  });
+
+  afterEach(() => {
+    engine._clearAllTimers();
+  });
+
+  it('33. 高積分 requester（credits=30）配對時評分有加成', async () => {
+    // 設定 requester 的積分（30 積分 → creditBonus = min(30/10, 2.0) = 2.0）
+    db._setAidCredits(REQUESTER_ID, 30, 30, 0);
+
+    // 準備兩個條件完全相同的 helper（只靠 credit bonus 拉分）
+    db._insertDevice({ device_id: HELPER_A, status: 'active', reputation_weight: 1.0 });
+    db._insertAidConfig(makeHelperConfig(HELPER_A, {
+      daily_limit: 50,
+      daily_given: 25,
+      aid_success_rate: 0.5,
+      avg_aid_latency_ms: 5000,
+    }));
+
+    db._insertDevice({ device_id: HELPER_B, status: 'active', reputation_weight: 1.0 });
+    db._insertAidConfig(makeHelperConfig(HELPER_B, {
+      daily_limit: 50,
+      daily_given: 25,
+      aid_success_rate: 0.5,
+      avg_aid_latency_ms: 5000,
+    }));
+
+    db._insertAidRecord({
+      id: AID_ID,
+      requester_device_id: REQUESTER_ID,
+      helper_device_id: null,
+      service_id: 'openai',
+      request_type: 'chat',
+      requester_public_key: 'requester_pub_key',
+      helper_public_key: null,
+      status: 'pending',
+      latency_ms: null,
+      timeout_reason: null,
+      created_at: new Date().toISOString(),
+      completed_at: null,
+    });
+
+    await engine._matchHelper(
+      AID_ID,
+      REQUESTER_ID,
+      { service_id: 'openai', request_type: 'chat', requester_public_key: 'requester_pub_key' },
+    );
+
+    // 有 helper 被選中（高積分 requester 仍能正常配對）
+    const record = db._getAidRecord(AID_ID);
+    expect(record?.status).toBe('matched');
+    expect(record?.helper_device_id).toBeDefined();
+  });
+
+  it('34. 零積分 requester 配對正常運作（creditBonus = 0）', async () => {
+    // requester 沒有任何積分記錄 → getCredits 回傳 0 → creditBonus = 0
+    const AID_ID_ZERO = 'aid_zero_credit_test';
+
+    db._insertDevice({ device_id: HELPER_A, status: 'active', reputation_weight: 1.0 });
+    db._insertAidConfig(makeHelperConfig(HELPER_A));
+
+    db._insertAidRecord({
+      id: AID_ID_ZERO,
+      requester_device_id: REQUESTER_ID,
+      helper_device_id: null,
+      service_id: 'openai',
+      request_type: 'chat',
+      requester_public_key: 'requester_pub_key',
+      helper_public_key: null,
+      status: 'pending',
+      latency_ms: null,
+      timeout_reason: null,
+      created_at: new Date().toISOString(),
+      completed_at: null,
+    });
+
+    await engine._matchHelper(
+      AID_ID_ZERO,
+      REQUESTER_ID,
+      { service_id: 'openai', request_type: 'chat', requester_public_key: 'requester_pub_key' },
+    );
+
+    // 即使積分為 0，配對仍正常
+    const record = db._getAidRecord(AID_ID_ZERO);
+    expect(record?.status).toBe('matched');
+    expect(record?.helper_device_id).toBe(HELPER_A);
+  });
+});

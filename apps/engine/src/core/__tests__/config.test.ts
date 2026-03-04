@@ -39,10 +39,10 @@ function writeYaml(content: string): string {
 // ===== 測試案例 =====
 
 describe('getDefaultConfig()', () => {
-  it('應回傳完整的預設設定物件，包含所有 12 個區塊', () => {
+  it('應回傳完整的預設設定物件，包含所有 13 個區塊', () => {
     const config = getDefaultConfig();
 
-    // 驗證 12 個區塊都存在
+    // 驗證 13 個區塊都存在
     expect(config.server).toBeDefined();
     expect(config.routing).toBeDefined();
     expect(config.claw_key).toBeDefined();
@@ -54,6 +54,7 @@ describe('getDefaultConfig()', () => {
     expect(config.logging).toBeDefined();
     expect(config.backup).toBeDefined();
     expect(config.notifications).toBeDefined();
+    expect(config.registry).toBeDefined();
     expect(config.advanced).toBeDefined();
   });
 
@@ -82,6 +83,13 @@ describe('getDefaultConfig()', () => {
     expect(config.aid.daily_limit).toBe(50);
     expect(config.aid.blackout_hours).toEqual([]);
     expect(config.aid.allowed_services).toBeNull();
+  });
+
+  it('registry 區塊預設值應正確', () => {
+    const config = getDefaultConfig();
+    expect(config.registry.enabled).toBe(true);
+    expect(config.registry.auto_check_updates).toBe(true);
+    expect(config.registry.url).toContain('github');
   });
 
   it('backup.auto_interval_hours 預設應為 null', () => {

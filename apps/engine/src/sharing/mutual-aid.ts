@@ -16,6 +16,8 @@ import type {
   AidResultNotification,
   AidEncryptedRequest,
   AidEncryptedResponse,
+  LeaderboardEntry,
+  AidCredits,
 } from '@clawapi/protocol';
 
 // ===== 常數 =====
@@ -378,6 +380,64 @@ export class AidClient {
    */
   async getStats(): Promise<AidStats> {
     return this.getAidStats();
+  }
+
+  /**
+   * 取得感謝榜
+   * GET /v1/aid/leaderboard
+   */
+  async getLeaderboard(limit: number = 20): Promise<LeaderboardEntry[]> {
+    const client = this.vpsClient as unknown as Record<string, unknown>;
+    const http = client['http'] as Record<string, unknown> | undefined;
+
+    if (http && typeof http['getLeaderboard'] === 'function') {
+      return (http['getLeaderboard'] as (limit: number) => Promise<LeaderboardEntry[]>)(limit);
+    }
+
+    // 備援：直接呼叫 VPS API
+    try {
+      const baseUrl = (client['baseUrl'] as string) ?? '';
+      const response = await fetch(`${baseUrl}/v1/aid/leaderboard?limit=${limit}`);
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const data = await response.json() as { leaderboard: LeaderboardEntry[] };
+      return data.leaderboard;
+    } catch {
+      return [];
+    }
+  }
+
+  /**
+   * 取得互助積分
+   * GET /v1/aid/credits
+   */
+  async getCredits(): Promise<AidCredits> {
+    const client = this.vpsClient as unknown as Record<string, unknown>;
+    const http = client['http'] as Record<string, unknown> | undefined;
+
+    if (http && typeof http['getCredits'] === 'function') {
+      return (http['getCredits'] as () => Promise<AidCredits>)();
+    }
+
+    // 備援：從本地 DB 查
+    try {
+      const rows = this.db.query<{
+        credits: number;
+        earned_total: number;
+        spent_total: number;
+      }>(`SELECT credits, earned_total, spent_total FROM aid_credits LIMIT 1`);
+
+      if (rows.length > 0) {
+        return {
+          credits: rows[0]!.credits,
+          earned_total: rows[0]!.earned_total,
+          spent_total: rows[0]!.spent_total,
+        };
+      }
+    } catch {
+      // 表不存在或查詢失敗
+    }
+
+    return { credits: 0, earned_total: 0, spent_total: 0 };
   }
 
   /**

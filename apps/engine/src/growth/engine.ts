@@ -9,6 +9,7 @@ import {
   type ServicePoolInfo,
   type PersonalizedSuggestion,
   type RecommendRoute,
+  type ClawKeyInsight,
   LLM_SERVICES,
   SEARCH_SERVICES,
   TRANSLATE_SERVICES,
@@ -61,7 +62,8 @@ export interface IntelligenceReport {
 /** 用量洞察（數據驅動的個人化建議） */
 export interface UsageInsight {
   /** 洞察類型 */
-  type: 'capacity' | 'claw_key' | 'rate_limit' | 'cost_saving';
+  type: 'capacity' | 'claw_key' | 'rate_limit' | 'cost_saving'
+    | 'resilience' | 'rate_limit_alternative' | 'claw_key_mismatch';
   /** 圖示 */
   icon: string;
   /** 標題 */
@@ -287,7 +289,138 @@ export class GrowthEngine {
       });
     }
 
-    return insights.slice(0, 3); // 最多顯示 3 個洞察
+    // 洞察 5（新）：韌性 — 最高用量服務只有 1 把 key + 每週 > 20 次
+    if (topService && topService.total_requests >= 20) {
+      const serviceKeys = keys.filter(k => k.service_id === topService.service_id);
+      if (serviceKeys.length === 1) {
+        insights.push({
+          type: 'resilience',
+          icon: '🛡️',
+          title: `${topService.service_id} 只靠一把 Key 撐著`,
+          detail: `每週 ${topService.total_requests} 次請求，加第 2 把 Key 當備援更安全`,
+        });
+      }
+    }
+
+    // 洞察 6（新）：限速替代 — 被 429 > 3 次的服務推薦免費替代
+    const freeAlternatives: Record<string, string> = {
+      openai: 'groq',
+      anthropic: 'gemini',
+      deepseek: 'cerebras',
+    };
+    for (const stat of stats) {
+      if (stat.rate_limited_count > 3 && stat.total_requests >= 10) {
+        const alt = freeAlternatives[stat.service_id];
+        if (alt && !existingServices.has(alt)) {
+          insights.push({
+            type: 'rate_limit_alternative',
+            icon: '🔄',
+            title: `${stat.service_id} 常被限速 → 推薦加 ${alt}`,
+            detail: `本週 ${stat.rate_limited_count} 次被 429，加 ${alt}（免費）分流可大幅減少`,
+          });
+          break; // 只推一個
+        }
+      }
+    }
+
+    // 洞察 7（新）：Claw Key 錯配 — Claw Key 服務 vs 實際最多用量不匹配
+    const clawKeyRecommendations = await this.getClawKeyRecommendations();
+    const mismatch = clawKeyRecommendations.find(r => r.type === 'coverage_gap');
+    if (mismatch) {
+      insights.push({
+        type: 'claw_key_mismatch',
+        icon: '🪙',
+        title: mismatch.title,
+        detail: mismatch.detail,
+      });
+    }
+
+    return insights.slice(0, 5); // 最多顯示 5 個洞察
+  }
+
+  // ===== Claw Key 數據驅動建議 =====
+
+  /**
+   * 取得 Claw Key 相關的個人化建議
+   *
+   * 邏輯：
+   * 1. 查 gold_keys 表（is_active=1）→ Claw Key 涵蓋的 service_id
+   * 2. 查 usage_log 過去 7 天 → 各 service 請求量排行
+   * 3. 比對產出建議：
+   *    - 覆蓋缺口：用量最高的服務不在 Claw Key → 建議加入
+   *    - 效能不佳：Claw Key 服務成功率 < 80% → 建議換一個
+   *    - 優化建議：Claw Key 只用免費但用量大 → 升級建議
+   */
+  async getClawKeyRecommendations(): Promise<ClawKeyInsight[]> {
+    const insights: ClawKeyInsight[] = [];
+
+    // 1. 查 gold_keys 表（Claw Key 涵蓋的服務）
+    let clawKeyServices: string[];
+    try {
+      const rows = this.db.query<{ service_id: string }>(
+        `SELECT DISTINCT service_id FROM gold_keys WHERE is_active = 1`
+      );
+      clawKeyServices = rows.map(r => r.service_id);
+    } catch {
+      // gold_keys 表不存在 → 沒有 Claw Key，不給建議
+      return insights;
+    }
+
+    if (clawKeyServices.length === 0) return insights;
+
+    // 2. 查 usage_log 過去 7 天各服務用量
+    const stats = this.queryPersonalStats();
+    if (stats.length === 0) return insights;
+
+    const clawKeyServiceSet = new Set(clawKeyServices);
+
+    // 3a. 覆蓋缺口：用量最高的服務不在 Claw Key
+    const topUsage = stats[0];
+    if (topUsage && !clawKeyServiceSet.has(topUsage.service_id) && topUsage.total_requests >= 10) {
+      insights.push({
+        type: 'coverage_gap',
+        icon: '🎯',
+        title: `Claw Key 沒涵蓋你的主力 ${topUsage.service_id}`,
+        detail: `${topUsage.service_id} 本週 ${topUsage.total_requests} 次請求，但 Claw Key 不包含此服務`,
+        action: `考慮把 ${topUsage.service_id} 加入 Claw Key 涵蓋範圍`,
+      });
+    }
+
+    // 3b. 效能不佳：Claw Key 涵蓋的服務成功率 < 80%
+    for (const stat of stats) {
+      if (
+        clawKeyServiceSet.has(stat.service_id) &&
+        stat.success_rate < 0.8 &&
+        stat.total_requests >= 10
+      ) {
+        const pct = Math.round(stat.success_rate * 100);
+        insights.push({
+          type: 'poor_performance',
+          icon: '⚠️',
+          title: `${stat.service_id} 成功率只有 ${pct}%（Claw Key 服務）`,
+          detail: `過去 7 天 ${stat.total_requests} 次請求，${stat.error_count} 次失敗`,
+          action: `檢查 ${stat.service_id} 的 Key 是否有效，或切換到其他服務`,
+        });
+        break; // 只顯示最嚴重的一個
+      }
+    }
+
+    // 3c. 優化建議：Claw Key 只用免費服務但用量大
+    const freeServices = new Set(['groq', 'gemini', 'cerebras', 'sambanova']);
+    const allFree = clawKeyServices.every(s => freeServices.has(s));
+    const totalRequests = stats.reduce((sum, s) => sum + s.total_requests, 0);
+
+    if (allFree && totalRequests > 100) {
+      insights.push({
+        type: 'optimization',
+        icon: '📈',
+        title: 'Claw Key 全是免費服務，但用量已經不小',
+        detail: `每週 ${totalRequests} 次請求，考慮加入付費服務（如 DeepSeek）提升品質和穩定性`,
+        action: '加一把 DeepSeek 或 OpenAI Key，Claw Key 會自動切換',
+      });
+    }
+
+    return insights.slice(0, 3);
   }
 
   // ===== 群體智慧（爽點 4） =====

@@ -121,11 +121,11 @@ describe('rateLimiter Middleware', () => {
     expect(res.headers.get('X-RateLimit-Limit')).toBeNull();
   });
 
-  // ===== 21 個端點全部覆蓋測試 =====
+  // ===== 23 個端點全部覆蓋測試（含互助 leaderboard + credits） =====
 
-  it('RATE_LIMITS 應定義 21 個端點', () => {
+  it('RATE_LIMITS 應定義 23 個端點', () => {
     const count = Object.keys(RATE_LIMITS).length;
-    expect(count).toBe(21);
+    expect(count).toBe(23);
   });
 
   describe('各端點 limit 驗證', () => {

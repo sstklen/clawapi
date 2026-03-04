@@ -242,6 +242,9 @@ export async function mcpCommand(args: ParsedArgs): Promise<void> {
     const { GrowthEngine } = await import('../../growth/engine');
     const growthEngine = new GrowthEngine(keyPool, adapters, db);
 
+    // 取得 Adapter 市集（由引擎初始化，可能為 null）
+    const adapterRegistry = engineModule.getAdapterRegistry();
+
     // 建立 MCP Server（含 subKeyManager → Claw Key 產生才能用）
     const { createMcpServer } = await import('../../mcp/server');
     const mcpServer = createMcpServer({
@@ -251,6 +254,7 @@ export async function mcpCommand(args: ParsedArgs): Promise<void> {
       db,
       growthEngine,
       subKeyManager,
+      adapterRegistry: adapterRegistry ?? undefined,
       statusDeps: {
         keyPool,
         startedAt: new Date(),
