@@ -174,24 +174,8 @@ export interface ServicePoolInfo {
   suggestion?: string;
 }
 
-// ===== Claw Key 數據驅動建議 =====
-
-/** Claw Key 洞察類型 */
-export type ClawKeyInsightType = 'coverage_gap' | 'poor_performance' | 'optimization';
-
-/** Claw Key 數據驅動的建議 */
-export interface ClawKeyInsight {
-  /** 洞察類型 */
-  type: ClawKeyInsightType;
-  /** 圖示 */
-  icon: string;
-  /** 標題 */
-  title: string;
-  /** 詳細說明 */
-  detail: string;
-  /** 建議的行動（可選） */
-  action?: string;
-}
+// ===== Claw Key 數據驅動建議（型別定義在 @clawapi/protocol，此處重新匯出） =====
+export type { ClawKeyInsight, ClawKeyInsightType } from '@clawapi/protocol';
 
 // ===== 群體智慧（Phase 3） =====
 

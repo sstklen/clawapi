@@ -132,6 +132,25 @@ export interface AidCredits {
   spent_total: number;
 }
 
+// ===== Claw Key 數據驅動建議 =====
+
+/** Claw Key 洞察類型 */
+export type ClawKeyInsightType = 'coverage_gap' | 'poor_performance' | 'optimization';
+
+/** Claw Key 數據驅動的建議 */
+export interface ClawKeyInsight {
+  /** 洞察類型 */
+  type: ClawKeyInsightType;
+  /** 圖示 */
+  icon: string;
+  /** 標題 */
+  title: string;
+  /** 詳細說明 */
+  detail: string;
+  /** 建議的行動（可選） */
+  action?: string;
+}
+
 // 別名
 export type AidRequestParams = AidRequest;
 export type AidRequestResponse = AidAccepted;

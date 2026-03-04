@@ -22,13 +22,18 @@ export type AuthVariables = {
   device: Device;
 };
 
-// 不需要裝置認證的路徑前綴（v1.2 修訂：加入 /v1/ws）
-const SKIP_AUTH_PATHS = [
+// 不需要裝置認證的路徑（v1.3 修訂：改為精確匹配 + 前綴匹配分離）
+// 精確匹配的路徑
+const SKIP_AUTH_EXACT = [
+  '/v1/aid/leaderboard',  // 感謝榜：公開端點，不需要認證
+  '/health',
+] as const;
+
+// 前綴匹配的路徑（這些路徑底下有子路由）
+const SKIP_AUTH_PREFIX = [
   '/v1/devices/register',
   '/v1/subkeys/validate',
   '/v1/ws',        // WebSocket 端點：認證透過 ?token= 參數，不是 HTTP header
-  '/v1/aid/leaderboard',  // 感謝榜：公開端點，不需要認證
-  '/health',
 ] as const;
 
 // 裝置認證中介層
@@ -36,7 +41,11 @@ const SKIP_AUTH_PATHS = [
 export function deviceAuth(db: VPSDatabase): MiddlewareHandler<{ Variables: AuthVariables }> {
   return async (c, next) => {
     // 跳過不需要認證的端點
-    if (SKIP_AUTH_PATHS.some((p) => c.req.path.startsWith(p))) {
+    const reqPath = c.req.path;
+    if (
+      SKIP_AUTH_EXACT.some((p) => reqPath === p) ||
+      SKIP_AUTH_PREFIX.some((p) => reqPath.startsWith(p))
+    ) {
       return next();
     }
 
