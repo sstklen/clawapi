@@ -27,6 +27,7 @@ const SKIP_AUTH_PATHS = [
   '/v1/devices/register',
   '/v1/subkeys/validate',
   '/v1/ws',        // WebSocket 端點：認證透過 ?token= 參數，不是 HTTP header
+  '/v1/aid/leaderboard',  // 感謝榜：公開端點，不需要認證
   '/health',
 ] as const;
 
