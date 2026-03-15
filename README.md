@@ -294,6 +294,14 @@ System      logs · config · setup · doctor · version · mcp
 
 ---
 
+## 🩺 Included: Dr. Claw — AI Debug Knowledge Base
+
+This repo includes [**Dr. Claw**](drclaw/) — an AI debugging knowledge base that remembers every bug ever solved. Ask once, never repeat.
+
+- 6,800+ issues indexed, 980+ verified fixes
+- MCP Server + REST API
+- Spun off from Confucius Debug, now lives in `clawapi/drclaw/`
+
 ## 📝 License
 
 **AGPL-3.0** — Free to use, modify, and distribute. Contributions welcome.

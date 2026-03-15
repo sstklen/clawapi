@@ -294,6 +294,14 @@ Claw Key  claw-key set · show · remove
 
 ---
 
+## 🩺 內含：Dr. Claw — AI 除錯知識庫
+
+本 repo 包含 [**Dr. Claw**](../drclaw/) — 記住每個解過的 bug 的 AI 除錯知識庫。問一次，不再重複。
+
+- 6,800+ 個問題索引，980+ 個已驗證修復
+- MCP Server + REST API
+- 從 Confucius Debug 獨立出來，現在住在 `clawapi/drclaw/`
+
 ## 📝 授權條款
 
 **AGPL-3.0** — 可自由使用、修改和散布。歡迎貢獻。
