@@ -300,6 +300,10 @@ System      logs · config · setup · doctor · version · mcp
 
 See [LICENSE](LICENSE) for details.
 
+## Pair With
+
+- **Opus Relay** ([`sstklen/opus-relay`](https://github.com/sstklen/opus-relay)) — Bridge your local Claude CLI to any VPS. ClawAPI manages the keys, Opus Relay bridges the compute.
+
 ---
 
 <p align="center">

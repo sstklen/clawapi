@@ -302,6 +302,12 @@ Claw Key   claw-key set · show · remove
 
 ---
 
+## 組み合わせ
+
+- **Opus Relay** ([`sstklen/opus-relay`](https://github.com/sstklen/opus-relay)) — ローカルのClaude CLIを任意のVPSにブリッジ。ClawAPIがキーを管理し、Opus Relayが計算をブリッジ。
+
+---
+
 <p align="center">
   <sub>🦞 <a href="https://github.com/sstklen">sstklen</a> が房総半島から届けます</sub>
 </p>

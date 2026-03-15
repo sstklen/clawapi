@@ -302,6 +302,12 @@ Claw Key  claw-key set · show · remove
 
 ---
 
+## 搭配使用
+
+- **Opus Relay** ([`sstklen/opus-relay`](https://github.com/sstklen/opus-relay)) — 把本機 Claude CLI 橋接到任何 VPS。ClawAPI 管金鑰，Opus Relay 橋接算力。
+
+---
+
 <p align="center">
   <sub>由 <a href="https://github.com/sstklen">sstklen</a> 在日本房總半島用 🦞 打造</sub>
 </p>
