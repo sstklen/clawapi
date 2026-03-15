@@ -1,0 +1,60 @@
+# ============================================================
+# ClawAPI — Dependabot 自動更新配置
+# 監控：npm 套件 / Docker 映像 / GitHub Actions
+# ============================================================
+
+version: 2
+
+updates:
+  # ─── npm 套件更新（根目錄 + workspace）───
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "08:00"
+      timezone: "Asia/Tokyo"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+      - "npm"
+    # 將相關更新合併為一個 PR
+    groups:
+      dev-dependencies:
+        patterns:
+          - "bun-types"
+          - "@types/*"
+          - "typescript"
+        update-types:
+          - "minor"
+          - "patch"
+      production-dependencies:
+        patterns:
+          - "hono"
+          - "js-yaml"
+
+  # ─── Docker 映像更新 ───
+  - package-ecosystem: "docker"
+    directory: "/apps/vps"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "08:00"
+      timezone: "Asia/Tokyo"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "docker"
+
+  # ─── GitHub Actions 版本更新 ───
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "08:00"
+      timezone: "Asia/Tokyo"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "github-actions"

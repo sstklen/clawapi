@@ -1,0 +1,52 @@
+schema_version: 1
+
+adapter:
+  id: deepl
+  name: DeepL Translator
+  version: "1.0.0"
+  category: translation
+  requires_key: true
+  free_tier: true
+
+auth:
+  type: header
+  header_name: Authorization
+  key_url: https://www.deepl.com/account/summary
+
+base_url: https://api-free.deepl.com
+
+endpoints:
+  translate:
+    method: POST
+    path: /v2/translate
+    response_type: json
+    body:
+      text:
+        - "{{ text }}"
+      target_lang: "{{ target_lang }}"
+      source_lang: "{{ source_lang | default: }}"
+      formality: "{{ formality | default: default }}"
+
+  languages:
+    method: GET
+    path: /v2/languages
+    response_type: json
+
+  usage:
+    method: GET
+    path: /v2/usage
+    response_type: json
+
+capabilities:
+  chat: false
+  streaming: false
+  embeddings: false
+  images: false
+  audio: false
+  models:
+    - id: deepl-translate
+      name: DeepL 翻譯（免費方案每月 50 萬字）
+
+rate_limits:
+  requests_per_minute: 30
+  cooldown_on_429: 60

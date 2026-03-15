@@ -1,0 +1,67 @@
+schema_version: 1
+
+adapter:
+  id: deepseek
+  name: DeepSeek
+  version: "1.0.0"
+  category: llm
+  requires_key: true
+  free_tier: false
+
+auth:
+  type: bearer
+  key_url: https://platform.deepseek.com/api_keys
+
+base_url: https://api.deepseek.com
+
+endpoints:
+  chat:
+    method: POST
+    path: /chat/completions
+    response_type: json
+    body:
+      model: "{{ model }}"
+      messages: "{{ messages }}"
+      temperature: "{{ temperature | default: 0.7 }}"
+      max_tokens: "{{ max_tokens | default: 8192 }}"
+      stream: false
+
+  chat_stream:
+    method: POST
+    path: /chat/completions
+    response_type: sse
+    body:
+      model: "{{ model }}"
+      messages: "{{ messages }}"
+      temperature: "{{ temperature | default: 0.7 }}"
+      max_tokens: "{{ max_tokens | default: 8192 }}"
+      stream: true
+
+  models:
+    method: GET
+    path: /models
+    response_type: json
+
+capabilities:
+  chat: true
+  streaming: true
+  embeddings: false
+  images: false
+  audio: false
+  models:
+    - id: deepseek-chat
+      name: DeepSeek Chat
+      context_window: 65536
+      max_output_tokens: 8192
+    - id: deepseek-coder
+      name: DeepSeek Coder
+      context_window: 65536
+      max_output_tokens: 8192
+    - id: deepseek-reasoner
+      name: DeepSeek Reasoner
+      context_window: 65536
+      max_output_tokens: 8192
+
+rate_limits:
+  requests_per_minute: 60
+  cooldown_on_429: 30

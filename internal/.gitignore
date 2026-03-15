@@ -1,0 +1,37 @@
+# 依賴
+node_modules/
+
+# 建置產出
+dist/
+*.exe
+
+# 環境變數（含密碼）
+.env
+.env.local
+.env.production
+
+# 資料庫
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+
+# Master Key（絕對不能上傳）
+master.key
+*.key
+
+# 備份檔
+*.clawapi-backup
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Bun
+bun.lockb
+
+# 測試覆蓋率
+coverage/
+
+# 暫存
+*.bak-*

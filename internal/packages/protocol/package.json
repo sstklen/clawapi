@@ -1,0 +1,27 @@
+{
+  "name": "@clawapi/protocol",
+  "version": "0.1.0",
+  "description": "Shared types and constants for ClawAPI ecosystem",
+  "keywords": ["clawapi", "types", "protocol"],
+  "homepage": "https://github.com/sstklen/clawapi",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sstklen/clawapi.git",
+    "directory": "packages/protocol"
+  },
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "files": [
+    "src/**/*.ts",
+    "package.json",
+    "tsconfig.json"
+  ],
+  "scripts": {
+    "typecheck": "bunx tsc --noEmit",
+    "test": "bun test"
+  },
+  "license": "AGPL-3.0",
+  "devDependencies": {
+    "bun-types": "^1.3.10"
+  }
+}

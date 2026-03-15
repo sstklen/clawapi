@@ -1,0 +1,530 @@
+{
+  "common.none": {
+    "zh-TW": "(無)",
+    "en": "(none)",
+    "ja": "（なし）"
+  },
+  "common.cancelled": {
+    "zh-TW": "已取消",
+    "en": "Cancelled",
+    "ja": "キャンセルしました"
+  },
+  "common.unknown_subcmd": {
+    "zh-TW": "未知的子命令：{subcmd}",
+    "en": "Unknown subcommand: {subcmd}",
+    "ja": "不明なサブコマンド：{subcmd}"
+  },
+  "common.available_subcmds": {
+    "zh-TW": "可用的子命令：{list}",
+    "en": "Available subcommands: {list}",
+    "ja": "利用可能なサブコマンド：{list}"
+  },
+  "common.invalid_id": {
+    "zh-TW": "無效的 ID：{id}",
+    "en": "Invalid ID: {id}",
+    "ja": "無効な ID：{id}"
+  },
+  "common.no_empty": {
+    "zh-TW": "{field}不能為空",
+    "en": "{field} cannot be empty",
+    "ja": "{field}は空にできません"
+  },
+  "common.enter_service_id": {
+    "zh-TW": "輸入服務 ID",
+    "en": "Enter service ID",
+    "ja": "サービス ID を入力"
+  },
+  "common.api_key_empty": {
+    "zh-TW": "API Key 不能為空",
+    "en": "API Key cannot be empty",
+    "ja": "API Key は空にできません"
+  },
+  "common.specify_key_id": {
+    "zh-TW": "請指定 Key ID。用法：clawapi {cmd} <id>",
+    "en": "Please specify a Key ID. Usage: clawapi {cmd} <id>",
+    "ja": "Key ID を指定してください。使い方：clawapi {cmd} <id>"
+  },
+
+  "cmd.keys.svc_groq": {
+    "zh-TW": "免費、超快推論",
+    "en": "Free, ultra-fast inference",
+    "ja": "無料・超高速推論"
+  },
+  "cmd.keys.svc_openai": {
+    "zh-TW": "GPT-4o, o1 系列",
+    "en": "GPT-4o, o1 series",
+    "ja": "GPT-4o, o1 シリーズ"
+  },
+  "cmd.keys.svc_anthropic": {
+    "zh-TW": "Claude 系列",
+    "en": "Claude series",
+    "ja": "Claude シリーズ"
+  },
+  "cmd.keys.svc_google": {
+    "zh-TW": "Gemini 系列",
+    "en": "Gemini series",
+    "ja": "Gemini シリーズ"
+  },
+  "cmd.keys.svc_mistral": {
+    "zh-TW": "Mistral/Mixtral 系列",
+    "en": "Mistral/Mixtral series",
+    "ja": "Mistral/Mixtral シリーズ"
+  },
+  "cmd.keys.svc_together": {
+    "zh-TW": "開源模型推論",
+    "en": "Open-source model inference",
+    "ja": "オープンソースモデル推論"
+  },
+  "cmd.keys.svc_openrouter": {
+    "zh-TW": "多模型閘道",
+    "en": "Multi-model gateway",
+    "ja": "マルチモデルゲートウェイ"
+  },
+  "cmd.keys.svc_deepseek": {
+    "zh-TW": "DeepSeek 系列",
+    "en": "DeepSeek series",
+    "ja": "DeepSeek シリーズ"
+  },
+  "cmd.keys.svc_other": {
+    "zh-TW": "自行輸入服務 ID",
+    "en": "Enter service ID manually",
+    "ja": "サービス ID を手動入力"
+  },
+  "cmd.keys.other_label": {
+    "zh-TW": "其他",
+    "en": "Other",
+    "ja": "その他"
+  },
+  "cmd.keys.add_title": {
+    "zh-TW": "新增 API Key",
+    "en": "Add API Key",
+    "ja": "API Key を追加"
+  },
+  "cmd.keys.select_service": {
+    "zh-TW": "選擇服務",
+    "en": "Select service",
+    "ja": "サービスを選択"
+  },
+  "cmd.keys.service_id_empty": {
+    "zh-TW": "服務 ID 不能為空",
+    "en": "Service ID cannot be empty",
+    "ja": "サービス ID は空にできません"
+  },
+  "cmd.keys.paste_key": {
+    "zh-TW": "貼上 API Key",
+    "en": "Paste API Key",
+    "ja": "API Key を貼り付け"
+  },
+  "cmd.keys.select_pool": {
+    "zh-TW": "選擇 Key 池",
+    "en": "Select Key pool",
+    "ja": "Key プールを選択"
+  },
+  "cmd.keys.pool_king": {
+    "zh-TW": "King（國王池 — 自己的 Key）",
+    "en": "King (King pool — your own Key)",
+    "ja": "King（キングプール — 自分の Key）"
+  },
+  "cmd.keys.pool_friend": {
+    "zh-TW": "Friend（朋友池 — 別人給的 Key）",
+    "en": "Friend (Friend pool — shared Key)",
+    "ja": "Friend（フレンドプール — 他者から共有された Key）"
+  },
+  "cmd.keys.label_prompt": {
+    "zh-TW": "Key 標籤（可留空）",
+    "en": "Key label (optional)",
+    "ja": "Key ラベル（省略可）"
+  },
+  "cmd.keys.added": {
+    "zh-TW": "已新增 Key：{service} ({pool})",
+    "en": "Key added: {service} ({pool})",
+    "ja": "Key を追加しました：{service}（{pool}）"
+  },
+  "cmd.keys.label_display": {
+    "zh-TW": "  標籤：{label}",
+    "en": "  Label: {label}",
+    "ja": "  ラベル：{label}"
+  },
+  "cmd.keys.key_display": {
+    "zh-TW": "  Key：{key}",
+    "en": "  Key: {key}",
+    "ja": "  Key：{key}"
+  },
+  "cmd.keys.list_title": {
+    "zh-TW": "Key 列表",
+    "en": "Key List",
+    "ja": "Key 一覧"
+  },
+  "cmd.keys.list_title_filtered": {
+    "zh-TW": "Key 列表（{service}）",
+    "en": "Key List ({service})",
+    "ja": "Key 一覧（{service}）"
+  },
+  "cmd.keys.no_keys": {
+    "zh-TW": "  目前沒有任何 Key。使用 clawapi keys add 新增。",
+    "en": "  No keys found. Use clawapi keys add to add one.",
+    "ja": "  Key がありません。clawapi keys add で追加してください。"
+  },
+  "cmd.keys.header_service": {
+    "zh-TW": "服務",
+    "en": "Service",
+    "ja": "サービス"
+  },
+  "cmd.keys.header_pool": {
+    "zh-TW": "池",
+    "en": "Pool",
+    "ja": "プール"
+  },
+  "cmd.keys.header_label": {
+    "zh-TW": "標籤",
+    "en": "Label",
+    "ja": "ラベル"
+  },
+  "cmd.keys.header_status": {
+    "zh-TW": "狀態",
+    "en": "Status",
+    "ja": "状態"
+  },
+  "cmd.keys.header_daily_usage": {
+    "zh-TW": "今日用量",
+    "en": "Today's Usage",
+    "ja": "本日使用量"
+  },
+  "cmd.keys.confirm_remove": {
+    "zh-TW": "確定要刪除 Key #{id}？",
+    "en": "Are you sure you want to remove Key #{id}?",
+    "ja": "Key #{id} を削除してよろしいですか？"
+  },
+  "cmd.keys.removed": {
+    "zh-TW": "已刪除 Key #{id}",
+    "en": "Key #{id} removed",
+    "ja": "Key #{id} を削除しました"
+  },
+  "cmd.keys.pinned": {
+    "zh-TW": "已釘選 Key #{id}（優先使用）",
+    "en": "Key #{id} pinned (prioritized)",
+    "ja": "Key #{id} をピン留めしました（優先使用）"
+  },
+  "cmd.keys.paste_new_key": {
+    "zh-TW": "貼上新的 API Key",
+    "en": "Paste new API Key",
+    "ja": "新しい API Key を貼り付け"
+  },
+  "cmd.keys.new_key_empty": {
+    "zh-TW": "新 Key 不能為空",
+    "en": "New Key cannot be empty",
+    "ja": "新しい Key は空にできません"
+  },
+  "cmd.keys.rotated": {
+    "zh-TW": "已輪換 Key #{id}",
+    "en": "Key #{id} rotated",
+    "ja": "Key #{id} をローテーションしました"
+  },
+  "cmd.keys.new_key_display": {
+    "zh-TW": "  新 Key：{key}",
+    "en": "  New Key: {key}",
+    "ja": "  新しい Key：{key}"
+  },
+  "cmd.keys.import_title": {
+    "zh-TW": "批量匯入 Key",
+    "en": "Bulk Import Keys",
+    "ja": "Key の一括インポート"
+  },
+  "cmd.keys.import_format": {
+    "zh-TW": "  支援格式：每行一個 Key，格式為 service_id:key_value",
+    "en": "  Supported format: one Key per line as service_id:key_value",
+    "ja": "  対応形式：1行1Key、service_id:key_value 形式"
+  },
+  "cmd.keys.import_example_header": {
+    "zh-TW": "  例如：",
+    "en": "  Example:",
+    "ja": "  例："
+  },
+  "cmd.keys.import_prompt": {
+    "zh-TW": "請貼上 Key 列表（按 Enter 結束）",
+    "en": "Paste Key list (press Enter to finish)",
+    "ja": "Key リストを貼り付けてください（Enter で終了）"
+  },
+  "cmd.keys.import_done": {
+    "zh-TW": "匯入完成：{added} 個成功，{failed} 個失敗",
+    "en": "Import complete: {added} succeeded, {failed} failed",
+    "ja": "インポート完了：{added} 件成功、{failed} 件失敗"
+  },
+  "cmd.keys.check_title": {
+    "zh-TW": "檢查所有 Key 健康度...",
+    "en": "Checking all Key health...",
+    "ja": "すべての Key の健全性を確認中..."
+  },
+  "cmd.keys.check_done": {
+    "zh-TW": "檢查完成：{count} 個 Key",
+    "en": "Check complete: {count} keys",
+    "ja": "確認完了：{count} 件の Key"
+  },
+
+  "cmd.claw_key.set_title": {
+    "zh-TW": "設定Claw Key",
+    "en": "Set Claw Key",
+    "ja": "Claw Keyを設定"
+  },
+  "cmd.claw_key.set_desc": {
+    "zh-TW": "  Claw Key用於 L3 Concierge 和 L4 Task 層，需要高品質模型。",
+    "en": "  Claw Key is used for L3 Concierge and L4 Task tiers, requiring high-quality models.",
+    "ja": "  Claw Keyは L3 Concierge と L4 Task 層で使用され、高品質モデルが必要です。"
+  },
+  "cmd.claw_key.select_service": {
+    "zh-TW": "選擇Claw Key服務",
+    "en": "Select Claw Key service",
+    "ja": "Claw Keyのサービスを選択"
+  },
+  "cmd.claw_key.rec_gpt4o": {
+    "zh-TW": "GPT-4o 推薦",
+    "en": "GPT-4o recommended",
+    "ja": "GPT-4o 推奨"
+  },
+  "cmd.claw_key.rec_opus": {
+    "zh-TW": "Claude Opus 推薦",
+    "en": "Claude Opus recommended",
+    "ja": "Claude Opus 推奨"
+  },
+  "cmd.claw_key.paste_key": {
+    "zh-TW": "貼上Claw Key API Key",
+    "en": "Paste Claw Key API Key",
+    "ja": "Claw Keyの API Key を貼り付け"
+  },
+  "cmd.claw_key.default_model_prompt": {
+    "zh-TW": "預設模型（可留空，系統自動選擇）",
+    "en": "Default model (leave blank for auto-select)",
+    "ja": "デフォルトモデル（空欄でシステム自動選択）"
+  },
+  "cmd.claw_key.reserve_pct_prompt": {
+    "zh-TW": "保留百分比（%）",
+    "en": "Reserve percentage (%)",
+    "ja": "予約割合（%）"
+  },
+  "cmd.claw_key.set_done": {
+    "zh-TW": "Claw Key已設定！",
+    "en": "Claw Key configured!",
+    "ja": "Claw Keyを設定しました！"
+  },
+  "cmd.claw_key.service_label": {
+    "zh-TW": "  服務：{service}",
+    "en": "  Service: {service}",
+    "ja": "  サービス：{service}"
+  },
+  "cmd.claw_key.key_label": {
+    "zh-TW": "  Key：{key}",
+    "en": "  Key: {key}",
+    "ja": "  Key：{key}"
+  },
+  "cmd.claw_key.model_label": {
+    "zh-TW": "  預設模型：{model}",
+    "en": "  Default model: {model}",
+    "ja": "  デフォルトモデル：{model}"
+  },
+  "cmd.claw_key.reserve_label": {
+    "zh-TW": "  保留百分比：{pct}%",
+    "en": "  Reserve: {pct}%",
+    "ja": "  予約割合：{pct}%"
+  },
+  "cmd.claw_key.show_title": {
+    "zh-TW": "Claw Key設定",
+    "en": "Claw Key Configuration",
+    "ja": "Claw Key設定"
+  },
+  "cmd.claw_key.model_auto": {
+    "zh-TW": "(自動)",
+    "en": "(auto)",
+    "ja": "（自動）"
+  },
+  "cmd.claw_key.not_configured": {
+    "zh-TW": "尚未設定Claw Key",
+    "en": "Claw Key not configured",
+    "ja": "Claw Keyが未設定です"
+  },
+  "cmd.claw_key.use_set_cmd": {
+    "zh-TW": "使用 {cmd} 進行設定",
+    "en": "Use {cmd} to configure",
+    "ja": "{cmd} で設定してください"
+  },
+  "cmd.claw_key.confirm_remove": {
+    "zh-TW": "確定要移除Claw Key？L3/L4 功能將無法使用。",
+    "en": "Remove Claw Key? L3/L4 features will be unavailable.",
+    "ja": "Claw Keyを削除しますか？L3/L4 機能が使用できなくなります。"
+  },
+  "cmd.claw_key.removed": {
+    "zh-TW": "Claw Key已移除",
+    "en": "Claw Key removed",
+    "ja": "Claw Keyを削除しました"
+  },
+
+  "cmd.sub_keys.issue_title": {
+    "zh-TW": "發行新的 Sub-Key",
+    "en": "Issue New Sub-Key",
+    "ja": "新しい Sub-Key を発行"
+  },
+  "cmd.sub_keys.label_prompt": {
+    "zh-TW": "Sub-Key 標籤",
+    "en": "Sub-Key label",
+    "ja": "Sub-Key ラベル"
+  },
+  "cmd.sub_keys.label_empty": {
+    "zh-TW": "標籤不能為空",
+    "en": "Label cannot be empty",
+    "ja": "ラベルは空にできません"
+  },
+  "cmd.sub_keys.expiry_prompt": {
+    "zh-TW": "有效期（天數，0=永久）",
+    "en": "Expiry (days, 0=permanent)",
+    "ja": "有効期間（日数、0=無期限）"
+  },
+  "cmd.sub_keys.daily_limit_prompt": {
+    "zh-TW": "每日用量上限（0=無限制）",
+    "en": "Daily usage limit (0=unlimited)",
+    "ja": "日次使用上限（0=無制限）"
+  },
+  "cmd.sub_keys.rate_limit_prompt": {
+    "zh-TW": "每小時速率上限（0=無限制）",
+    "en": "Hourly rate limit (0=unlimited)",
+    "ja": "時間あたりのレート上限（0=無制限）"
+  },
+  "cmd.sub_keys.allowed_services_prompt": {
+    "zh-TW": "允許的服務（逗號分隔，留空=全部）",
+    "en": "Allowed services (comma-separated, blank=all)",
+    "ja": "許可サービス（カンマ区切り、空欄=全て）"
+  },
+  "cmd.sub_keys.issued": {
+    "zh-TW": "Sub-Key 已發行！",
+    "en": "Sub-Key issued!",
+    "ja": "Sub-Key を発行しました！"
+  },
+  "cmd.sub_keys.token_display": {
+    "zh-TW": "  Token：{token}",
+    "en": "  Token: {token}",
+    "ja": "  Token：{token}"
+  },
+  "cmd.sub_keys.label_display": {
+    "zh-TW": "  標籤：{label}",
+    "en": "  Label: {label}",
+    "ja": "  ラベル：{label}"
+  },
+  "cmd.sub_keys.expiry_display_permanent": {
+    "zh-TW": "  有效期：永久",
+    "en": "  Expiry: permanent",
+    "ja": "  有効期間：無期限"
+  },
+  "cmd.sub_keys.expiry_display_days": {
+    "zh-TW": "  有效期：{days} 天",
+    "en": "  Expiry: {days} days",
+    "ja": "  有効期間：{days} 日"
+  },
+  "cmd.sub_keys.daily_limit_display_unlimited": {
+    "zh-TW": "  每日上限：無限制",
+    "en": "  Daily limit: unlimited",
+    "ja": "  日次上限：無制限"
+  },
+  "cmd.sub_keys.daily_limit_display": {
+    "zh-TW": "  每日上限：{limit}",
+    "en": "  Daily limit: {limit}",
+    "ja": "  日次上限：{limit}"
+  },
+  "cmd.sub_keys.rate_limit_display_unlimited": {
+    "zh-TW": "  每小時速率：無限制",
+    "en": "  Hourly rate: unlimited",
+    "ja": "  時間あたりのレート：無制限"
+  },
+  "cmd.sub_keys.rate_limit_display": {
+    "zh-TW": "  每小時速率：{limit}",
+    "en": "  Hourly rate: {limit}",
+    "ja": "  時間あたりのレート：{limit}"
+  },
+  "cmd.sub_keys.allowed_services_display": {
+    "zh-TW": "  允許的服務：{services}",
+    "en": "  Allowed services: {services}",
+    "ja": "  許可サービス：{services}"
+  },
+  "cmd.sub_keys.token_warning": {
+    "zh-TW": "請妥善保管此 Token，它不會再次顯示！",
+    "en": "Keep this Token safe — it will not be shown again!",
+    "ja": "この Token を安全に保管してください。再表示されません！"
+  },
+  "cmd.sub_keys.list_title": {
+    "zh-TW": "Sub-Key 列表",
+    "en": "Sub-Key List",
+    "ja": "Sub-Key 一覧"
+  },
+  "cmd.sub_keys.no_sub_keys": {
+    "zh-TW": "  目前沒有任何 Sub-Key。使用 clawapi sub-keys issue 發行。",
+    "en": "  No Sub-Keys found. Use clawapi sub-keys issue to create one.",
+    "ja": "  Sub-Key がありません。clawapi sub-keys issue で発行してください。"
+  },
+  "cmd.sub_keys.header_label": {
+    "zh-TW": "標籤",
+    "en": "Label",
+    "ja": "ラベル"
+  },
+  "cmd.sub_keys.header_daily_limit": {
+    "zh-TW": "每日上限",
+    "en": "Daily Limit",
+    "ja": "日次上限"
+  },
+  "cmd.sub_keys.header_daily_usage": {
+    "zh-TW": "今日用量",
+    "en": "Today's Usage",
+    "ja": "本日使用量"
+  },
+  "cmd.sub_keys.header_status": {
+    "zh-TW": "狀態",
+    "en": "Status",
+    "ja": "状態"
+  },
+  "cmd.sub_keys.header_expiry": {
+    "zh-TW": "到期日",
+    "en": "Expiry",
+    "ja": "有効期限"
+  },
+  "cmd.sub_keys.specify_id": {
+    "zh-TW": "請指定 Sub-Key ID。用法：clawapi sub-keys {cmd} <id>",
+    "en": "Please specify a Sub-Key ID. Usage: clawapi sub-keys {cmd} <id>",
+    "ja": "Sub-Key ID を指定してください。使い方：clawapi sub-keys {cmd} <id>"
+  },
+  "cmd.sub_keys.confirm_revoke": {
+    "zh-TW": "確定要撤銷 Sub-Key #{id}？撤銷後無法恢復。",
+    "en": "Revoke Sub-Key #{id}? This cannot be undone.",
+    "ja": "Sub-Key #{id} を取り消しますか？この操作は元に戻せません。"
+  },
+  "cmd.sub_keys.revoked": {
+    "zh-TW": "Sub-Key #{id} 已撤銷",
+    "en": "Sub-Key #{id} revoked",
+    "ja": "Sub-Key #{id} を取り消しました"
+  },
+  "cmd.sub_keys.usage_title": {
+    "zh-TW": "Sub-Key #{id} 用量統計",
+    "en": "Sub-Key #{id} Usage Statistics",
+    "ja": "Sub-Key #{id} 使用統計"
+  },
+  "cmd.sub_keys.usage_label": {
+    "zh-TW": "  標籤：{label}",
+    "en": "  Label: {label}",
+    "ja": "  ラベル：{label}"
+  },
+  "cmd.sub_keys.usage_daily": {
+    "zh-TW": "  今日用量：{used} / {limit}",
+    "en": "  Today's usage: {used} / {limit}",
+    "ja": "  本日使用量：{used} / {limit}"
+  },
+  "cmd.sub_keys.usage_rate": {
+    "zh-TW": "  本小時速率：{used} / {limit}",
+    "en": "  This hour's rate: {used} / {limit}",
+    "ja": "  今時間のレート：{used} / {limit}"
+  },
+  "cmd.sub_keys.usage_total": {
+    "zh-TW": "  累計請求：{total}",
+    "en": "  Total requests: {total}",
+    "ja": "  累計リクエスト：{total}"
+  },
+  "cmd.sub_keys.usage_last_used": {
+    "zh-TW": "  最後使用：{time}",
+    "en": "  Last used: {time}",
+    "ja": "  最終使用：{time}"
+  }
+}

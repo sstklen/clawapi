@@ -1,0 +1,123 @@
+# ClawAPI 引擎預設設定檔
+# 所有選項皆有預設值，可依需求覆蓋
+# 優先順序：CLI 參數 > 此檔案 > 環境變數 > 程式預設值
+
+# ===== 伺服器 =====
+server:
+  # 監聽 port（1-65535）
+  port: 4141
+  # 監聽位址
+  host: '127.0.0.1'
+  # port 被占用時自動嘗試下一個 port
+  auto_port: true
+
+# ===== 路由策略 =====
+routing:
+  # 預設路由策略：
+  #   fast  — 選回應最快的服務（適合即時對話）
+  #   smart — 綜合考慮速度、成本、成功率（預設，適合大多數場景）
+  #   cheap — 選最便宜的服務（適合批量處理）
+  # 需要 2 個以上服務才有路由效果（L2 智慧路由）
+  default_strategy: 'smart'
+  # 啟用自動 failover（某服務失敗時自動切換到下一個）
+  failover_enabled: true
+  # 每個 key 最多重試次數
+  max_retries_per_key: 1
+  # 各 L 層超時設定（毫秒）
+  timeout:
+    l1: 30000
+    l2: 30000
+    l3: 60000
+    l4_step: 60000
+    l4_total: 300000
+
+# ===== Claw Key =====
+claw_key:
+  # 為 Claw Key 保留的流量百分比
+  reserve_percent: 5
+  # Claw Key 使用的模型（null = 跟隨服務預設）
+  default_model: null
+  # 各 L 層提示詞（null = 不覆蓋）
+  prompt:
+    l3: null
+    l4: null
+
+# ===== 遙測 =====
+telemetry:
+  # 是否啟用匿名使用統計上傳
+  enabled: true
+  # 上傳間隔（毫秒）
+  upload_interval_ms: 3600000
+  # 待上傳資料最多保留天數
+  max_pending_days: 30
+
+# ===== L0 本機模型 =====
+l0:
+  # 啟用 L0 本機推理
+  enabled: true
+  # 自動偵測本機 Ollama 服務
+  ollama_auto_detect: true
+  # Ollama 服務位址
+  ollama_url: 'http://localhost:11434'
+
+# ===== 互助（AID）=====
+aid:
+  # 啟用互助功能（預設關閉，需用戶主動開啟）
+  enabled: false
+  # 允許互助的服務清單（null = 全部）
+  allowed_services: null
+  # 每日互助請求上限
+  daily_limit: 50
+  # 禁止互助的時間段（0-23，空陣列表示無限制）
+  blackout_hours: []
+
+# ===== VPS 連線 =====
+vps:
+  # 啟用 VPS 連線
+  enabled: true
+  # VPS API 基礎 URL
+  base_url: 'https://api.clawapi.com'
+  # VPS WebSocket URL
+  websocket_url: 'wss://api.clawapi.com/v1/ws'
+
+# ===== 介面 =====
+ui:
+  # 主題：light | dark | system
+  theme: 'system'
+  # 介面語言：zh-TW | en | ja
+  locale: 'zh-TW'
+
+# ===== 記錄 =====
+logging:
+  # 記錄層級：debug | info | warn | error
+  level: 'info'
+  # 日誌檔保留天數
+  retention_days: 30
+
+# ===== 備份 =====
+backup:
+  # 自動備份間隔（小時，null = 停用自動備份）
+  auto_interval_hours: null
+
+# ===== 通知 =====
+notifications:
+  # Key 失效通知
+  key_dead: true
+  # 額度不足通知
+  quota_low: true
+  # Key 即將到期通知
+  key_expiring: true
+  # 服務品質降低通知
+  service_degraded: true
+
+# ===== 進階設定 =====
+advanced:
+  # SQLite 資料庫路徑（null = ~/.clawapi/data.db）
+  db_path: null
+  # 自訂轉接器目錄清單（null = ~/.clawapi/adapters/）
+  adapter_dirs:
+    - null
+  # 每個服務最多管理的 Key 數量
+  max_keys_per_service: 5
+  # HTTP 請求的 User-Agent 字串（不設定時自動使用 ClawAPI/版號）
+  # user_agent: 'ClawAPI/0.1.5'

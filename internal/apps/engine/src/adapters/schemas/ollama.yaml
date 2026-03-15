@@ -1,0 +1,69 @@
+schema_version: 1
+
+adapter:
+  id: ollama
+  name: Ollama (本機)
+  version: "1.0.0"
+  category: llm
+  requires_key: false
+  free_tier: true
+
+auth:
+  type: none
+
+base_url: http://localhost:11434
+
+endpoints:
+  chat:
+    method: POST
+    path: /api/chat
+    response_type: json
+    body:
+      model: "{{ model }}"
+      messages: "{{ messages }}"
+      stream: false
+      options:
+        temperature: "{{ temperature | default: 0.7 }}"
+        num_predict: "{{ max_tokens | default: 4096 }}"
+
+  chat_stream:
+    method: POST
+    path: /api/chat
+    response_type: sse
+    body:
+      model: "{{ model }}"
+      messages: "{{ messages }}"
+      stream: true
+      options:
+        temperature: "{{ temperature | default: 0.7 }}"
+
+  models:
+    method: GET
+    path: /api/tags
+    response_type: json
+
+  generate:
+    method: POST
+    path: /api/generate
+    response_type: json
+    body:
+      model: "{{ model }}"
+      prompt: "{{ prompt }}"
+      stream: false
+
+capabilities:
+  chat: true
+  streaming: true
+  embeddings: true
+  images: false
+  audio: false
+  models:
+    - id: llama3.2
+      name: Llama 3.2 (需本機安裝)
+    - id: mistral
+      name: Mistral (需本機安裝)
+    - id: gemma2
+      name: Gemma 2 (需本機安裝)
+
+rate_limits:
+  requests_per_minute: 600

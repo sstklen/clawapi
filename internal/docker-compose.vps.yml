@@ -1,0 +1,79 @@
+# ============================================================
+# ClawAPI VPS — Docker Compose 生產環境配置
+# 服務：clawapi-vps（應用）+ caddy（反向代理）
+# ============================================================
+
+services:
+  # ─── ClawAPI VPS 主服務 ───
+  clawapi-vps:
+    build:
+      context: .
+      dockerfile: apps/vps/Dockerfile.vps
+    container_name: clawapi-vps
+    restart: unless-stopped
+    # 安全規則：不對外暴露 port，只讓 Caddy 內網存取
+    expose:
+      - "3100"
+    environment:
+      - NODE_ENV=${NODE_ENV:-production}
+      - VPS_PORT=${VPS_PORT:-3100}
+      - ADMIN_TOKEN=${ADMIN_TOKEN}
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN:-}
+      - TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID:-}
+      - GITHUB_TOKEN=${GITHUB_TOKEN:-}
+      - GITHUB_REPO=${GITHUB_REPO:-clawapi/clawapi}
+      - DB_PATH=${DB_PATH:-/data/clawapi-vps.db}
+      - ECDH_KEY_DIR=${ECDH_KEY_DIR:-/keys/ecdh}
+    volumes:
+      - vps-data:/data
+      - vps-logs:/logs
+      - vps-keys:/keys
+    networks:
+      - clawapi-net
+    healthcheck:
+      test: ["CMD", "bun", "-e", "fetch('http://localhost:3100/health').then(r=>r.ok?process.exit(0):process.exit(1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  # ─── Caddy 反向代理 + 自動 HTTPS ───
+  caddy:
+    image: caddy:2-alpine
+    container_name: clawapi-caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"  # HTTP/3 (QUIC)
+    volumes:
+      - ./apps/vps/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data/caddy
+      - caddy-config:/config
+      - caddy-logs:/var/log/caddy
+    networks:
+      - clawapi-net
+    depends_on:
+      clawapi-vps:
+        condition: service_healthy
+
+# ─── 持久化 Volume ───
+volumes:
+  vps-data:
+    name: clawapi-vps-data
+  vps-logs:
+    name: clawapi-vps-logs
+  vps-keys:
+    name: clawapi-vps-keys
+  caddy-data:
+    name: clawapi-caddy-data
+  caddy-config:
+    name: clawapi-caddy-config
+  caddy-logs:
+    name: clawapi-caddy-logs
+
+# ─── 自訂網路 ───
+networks:
+  clawapi-net:
+    name: clawapi-net
+    driver: bridge

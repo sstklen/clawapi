@@ -1,0 +1,62 @@
+schema_version: 1
+
+adapter:
+  id: cohere
+  name: Cohere
+  version: "1.0.0"
+  category: llm
+  requires_key: true
+  free_tier: true
+
+auth:
+  type: bearer
+  key_url: https://dashboard.cohere.com/api-keys
+
+base_url: https://api.cohere.com/compatibility
+
+endpoints:
+  chat:
+    method: POST
+    path: /v1/chat/completions
+    response_type: json
+    body:
+      model: "{{ model }}"
+      messages: "{{ messages }}"
+      temperature: "{{ temperature | default: 0.7 }}"
+      max_tokens: "{{ max_tokens | default: 4096 }}"
+      stream: false
+
+  chat_stream:
+    method: POST
+    path: /v1/chat/completions
+    response_type: sse
+    body:
+      model: "{{ model }}"
+      messages: "{{ messages }}"
+      temperature: "{{ temperature | default: 0.7 }}"
+      max_tokens: "{{ max_tokens | default: 4096 }}"
+      stream: true
+
+capabilities:
+  chat: true
+  streaming: true
+  embeddings: true
+  images: false
+  audio: false
+  models:
+    - id: command-r-plus
+      name: Command R+
+      context_window: 128000
+      max_output_tokens: 4096
+    - id: command-r
+      name: Command R
+      context_window: 128000
+      max_output_tokens: 4096
+    - id: command-light
+      name: Command Light
+      context_window: 4096
+      max_output_tokens: 4096
+
+rate_limits:
+  requests_per_minute: 40
+  cooldown_on_429: 60

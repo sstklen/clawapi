@@ -1,0 +1,637 @@
+{
+  "cmd.config.unknown_subcommand": {
+    "zh-TW": "未知的子命令：{sub}",
+    "en": "Unknown subcommand: {sub}",
+    "ja": "不明なサブコマンド：{sub}"
+  },
+  "cmd.config.available_subcommands": {
+    "zh-TW": "可用的子命令：show, set",
+    "en": "Available subcommands: show, set",
+    "ja": "利用可能なサブコマンド：show, set"
+  },
+  "cmd.config.no_config": {
+    "zh-TW": "尚未建立設定檔，使用預設值",
+    "en": "No config file found, using defaults",
+    "ja": "設定ファイルが見つかりません、デフォルト値を使用中"
+  },
+  "cmd.config.expected_path": {
+    "zh-TW": "預期路徑：",
+    "en": "Expected path: ",
+    "ja": "想定パス："
+  },
+  "cmd.config.use_setup": {
+    "zh-TW": "使用 {cmd} 進行初始設定",
+    "en": "Run {cmd} to configure",
+    "ja": "{cmd} で初期設定を行ってください"
+  },
+  "cmd.config.config_file": {
+    "zh-TW": "設定檔：{path}",
+    "en": "Config file: {path}",
+    "ja": "設定ファイル：{path}"
+  },
+  "cmd.config.set_usage": {
+    "zh-TW": "用法：clawapi config set <key> <value>",
+    "en": "Usage: clawapi config set <key> <value>",
+    "ja": "使い方：clawapi config set <key> <value>"
+  },
+  "cmd.config.set_examples": {
+    "zh-TW": "範例：",
+    "en": "Examples:",
+    "ja": "例："
+  },
+  "cmd.config.invalid_key": {
+    "zh-TW": "無效的設定 key：{key}",
+    "en": "Invalid config key: {key}",
+    "ja": "無効な設定キー：{key}"
+  },
+  "cmd.config.valid_prefixes": {
+    "zh-TW": "有效的前綴：{prefixes}",
+    "en": "Valid prefixes: {prefixes}",
+    "ja": "有効なプレフィックス：{prefixes}"
+  },
+  "cmd.config.updated": {
+    "zh-TW": "已更新設定：{key} = {value}",
+    "en": "Config updated: {key} = {value}",
+    "ja": "設定を更新しました：{key} = {value}"
+  },
+  "common.restart_required": {
+    "zh-TW": "重啟引擎後生效",
+    "en": "Restart engine to apply",
+    "ja": "エンジンを再起動して適用"
+  },
+  "common.cancelled": {
+    "zh-TW": "已取消",
+    "en": "Cancelled",
+    "ja": "キャンセルしました"
+  },
+  "common.none": {
+    "zh-TW": "(無)",
+    "en": "(none)",
+    "ja": "（なし）"
+  },
+  "cmd.setup.no_json_mode": {
+    "zh-TW": "setup 不支援 --json 模式，請使用互動式模式",
+    "en": "Setup does not support --json mode, please use interactive mode",
+    "ja": "setup は --json モードに対応していません。対話モードをご利用ください"
+  },
+  "cmd.setup.first_run_title": {
+    "zh-TW": "首次安裝引導",
+    "en": "First-Time Setup",
+    "ja": "初回セットアップ"
+  },
+  "cmd.setup.intro": {
+    "zh-TW": "這個引導會幫你完成基本設定。隨時按 Ctrl+C 離開。",
+    "en": "This wizard will walk you through the basic setup. Press Ctrl+C anytime to quit.",
+    "ja": "このウィザードで基本設定を行います。Ctrl+C でいつでも終了できます。"
+  },
+  "cmd.setup.step_language": {
+    "zh-TW": "語言設定",
+    "en": "Language",
+    "ja": "言語設定"
+  },
+  "cmd.setup.select_language": {
+    "zh-TW": "選擇語言",
+    "en": "Choose language",
+    "ja": "言語を選択"
+  },
+  "cmd.setup.lang_zh_tw": {
+    "zh-TW": "繁體中文",
+    "en": "Traditional Chinese",
+    "ja": "繁体字中国語"
+  },
+  "cmd.setup.lang_ja": {
+    "zh-TW": "日本語",
+    "en": "Japanese",
+    "ja": "日本語"
+  },
+  "cmd.setup.language_set": {
+    "zh-TW": "語言已設定為：{lang}",
+    "en": "Language set to: {lang}",
+    "ja": "言語を設定しました：{lang}"
+  },
+  "cmd.setup.step_add_key": {
+    "zh-TW": "新增第一把 API Key",
+    "en": "Add Your First API Key",
+    "ja": "最初の API Key を追加"
+  },
+  "cmd.setup.recommend_groq": {
+    "zh-TW": "推薦使用 {groq}（免費、速度極快）",
+    "en": "We recommend {groq} (free, blazing fast)",
+    "ja": "{groq} がおすすめです（無料、超高速）"
+  },
+  "cmd.setup.groq_url": {
+    "zh-TW": "前往 {url} 取得 API Key",
+    "en": "Get your API Key at {url}",
+    "ja": "{url} で API Key を取得してください"
+  },
+  "cmd.setup.add_key_now": {
+    "zh-TW": "現在新增 API Key？",
+    "en": "Add an API Key now?",
+    "ja": "今すぐ API Key を追加しますか？"
+  },
+  "cmd.setup.select_service": {
+    "zh-TW": "選擇服務",
+    "en": "Choose a service",
+    "ja": "サービスを選択"
+  },
+  "cmd.setup.groq_recommended": {
+    "zh-TW": "Groq（推薦）",
+    "en": "Groq (recommended)",
+    "ja": "Groq（おすすめ）"
+  },
+  "cmd.setup.groq_desc": {
+    "zh-TW": "免費、超快",
+    "en": "Free, ultra fast",
+    "ja": "無料、超高速"
+  },
+  "cmd.setup.other": {
+    "zh-TW": "其他",
+    "en": "Other",
+    "ja": "その他"
+  },
+  "cmd.setup.enter_service_id": {
+    "zh-TW": "輸入服務 ID",
+    "en": "Enter service ID",
+    "ja": "サービス ID を入力"
+  },
+  "cmd.setup.paste_api_key": {
+    "zh-TW": "貼上 API Key",
+    "en": "Paste your API Key",
+    "ja": "API Key を貼り付け"
+  },
+  "cmd.setup.key_added": {
+    "zh-TW": "已新增 {service} Key",
+    "en": "{service} Key added",
+    "ja": "{service} Key を追加しました"
+  },
+  "cmd.setup.skip_key": {
+    "zh-TW": "跳過（稍後可用 clawapi keys add 新增）",
+    "en": "Skipped (you can add one later with clawapi keys add)",
+    "ja": "スキップしました（後で clawapi keys add で追加できます）"
+  },
+  "cmd.setup.step_claw_key": {
+    "zh-TW": "Claw Key設定（進階功能）",
+    "en": "Claw Key Setup (Advanced)",
+    "ja": "Claw Key設定（上級機能）"
+  },
+  "cmd.setup.claw_key_desc": {
+    "zh-TW": "Claw Key用於 L3 管家和 L4 多步驟任務。",
+    "en": "Claw Keys are used for L3 butler and L4 multi-step tasks.",
+    "ja": "Claw Keyは L3 バトラーおよび L4 マルチステップタスクに使用されます。"
+  },
+  "cmd.setup.claw_key_requirement": {
+    "zh-TW": "需要 OpenAI 或 Anthropic 等付費 API Key。",
+    "en": "Requires a paid API Key from OpenAI or Anthropic.",
+    "ja": "OpenAI や Anthropic などの有料 API Key が必要です。"
+  },
+  "cmd.setup.setup_claw_key_now": {
+    "zh-TW": "現在設定Claw Key？",
+    "en": "Set up a Claw Key now?",
+    "ja": "今すぐClaw Keyを設定しますか？"
+  },
+  "cmd.setup.claw_key_service": {
+    "zh-TW": "Claw Key服務",
+    "en": "Claw Key service",
+    "ja": "Claw Keyのサービス"
+  },
+  "cmd.setup.claw_key_set": {
+    "zh-TW": "Claw Key已設定（{service}）",
+    "en": "Claw Key configured ({service})",
+    "ja": "Claw Keyを設定しました（{service}）"
+  },
+  "cmd.setup.skip_claw_key": {
+    "zh-TW": "跳過Claw Key設定",
+    "en": "Claw Key setup skipped",
+    "ja": "Claw Key設定をスキップしました"
+  },
+  "cmd.setup.skip_claw_key_later": {
+    "zh-TW": "跳過（稍後可用 clawapi claw-key set 設定）",
+    "en": "Skipped (you can set it later with clawapi claw-key set)",
+    "ja": "スキップしました（後で clawapi claw-key set で設定できます）"
+  },
+  "cmd.setup.step_vps": {
+    "zh-TW": "VPS 連線設定",
+    "en": "VPS Connection",
+    "ja": "VPS 接続設定"
+  },
+  "cmd.setup.vps_desc": {
+    "zh-TW": "連接 ClawAPI VPS 可啟用互助、遙測、聊天室等線上功能。",
+    "en": "Connecting to the ClawAPI VPS enables mutual aid, telemetry, chat, and other online features.",
+    "ja": "ClawAPI VPS に接続すると、相互援助、テレメトリー、チャットなどのオンライン機能が有効になります。"
+  },
+  "cmd.setup.vps_optional": {
+    "zh-TW": "不連接也能正常使用所有本機功能。",
+    "en": "All local features work fine without a VPS connection.",
+    "ja": "VPS に接続しなくても、すべてのローカル機能は正常に動作します。"
+  },
+  "cmd.setup.enable_vps": {
+    "zh-TW": "啟用 VPS 連線？",
+    "en": "Enable VPS connection?",
+    "ja": "VPS 接続を有効にしますか？"
+  },
+  "cmd.setup.step_confirm": {
+    "zh-TW": "確認設定",
+    "en": "Confirm Settings",
+    "ja": "設定の確認"
+  },
+  "cmd.setup.summary": {
+    "zh-TW": "設定摘要：",
+    "en": "Summary:",
+    "ja": "設定の概要："
+  },
+  "cmd.setup.summary_language": {
+    "zh-TW": "語言：",
+    "en": "Language: ",
+    "ja": "言語："
+  },
+  "cmd.setup.summary_first_key": {
+    "zh-TW": "第一把 Key：",
+    "en": "First Key: ",
+    "ja": "最初の Key："
+  },
+  "cmd.setup.summary_claw_key": {
+    "zh-TW": "Claw Key：",
+    "en": "Claw Key: ",
+    "ja": "Claw Key："
+  },
+  "cmd.setup.summary_vps": {
+    "zh-TW": "VPS 連線：",
+    "en": "VPS Connection: ",
+    "ja": "VPS 接続："
+  },
+  "cmd.setup.not_set": {
+    "zh-TW": "(未設定)",
+    "en": "(not set)",
+    "ja": "（未設定）"
+  },
+  "cmd.setup.enabled": {
+    "zh-TW": "啟用",
+    "en": "Enabled",
+    "ja": "有効"
+  },
+  "cmd.setup.disabled": {
+    "zh-TW": "停用",
+    "en": "Disabled",
+    "ja": "無効"
+  },
+  "cmd.setup.confirm_settings": {
+    "zh-TW": "確認以上設定？",
+    "en": "Confirm these settings?",
+    "ja": "上記の設定でよろしいですか？"
+  },
+  "cmd.setup.complete": {
+    "zh-TW": "設定完成！",
+    "en": "Setup complete!",
+    "ja": "セットアップ完了！"
+  },
+  "cmd.setup.hint_start": {
+    "zh-TW": "使用 {cmd} 啟動引擎",
+    "en": "Run {cmd} to start the engine",
+    "ja": "{cmd} でエンジンを起動"
+  },
+  "cmd.setup.hint_doctor": {
+    "zh-TW": "使用 {cmd} 檢查系統狀態",
+    "en": "Run {cmd} to check system health",
+    "ja": "{cmd} でシステム状態を確認"
+  },
+  "cmd.setup.hint_help": {
+    "zh-TW": "使用 {cmd} 查看所有命令",
+    "en": "Run {cmd} to see all commands",
+    "ja": "{cmd} で全コマンドを表示"
+  },
+  "cmd.doctor.title": {
+    "zh-TW": "系統診斷報告",
+    "en": "System Diagnostic Report",
+    "ja": "システム診断レポート"
+  },
+  "cmd.doctor.all_passed": {
+    "zh-TW": "全部 {count} 項檢查通過！",
+    "en": "All {count} checks passed!",
+    "ja": "全 {count} 項目の検査に合格しました！"
+  },
+  "cmd.doctor.some_failed": {
+    "zh-TW": "{fail} 項檢查失敗，{pass} 項通過",
+    "en": "{fail} check(s) failed, {pass} passed",
+    "ja": "{fail} 項目が不合格、{pass} 項目が合格"
+  },
+  "cmd.doctor.check_db": {
+    "zh-TW": "DB 可寫",
+    "en": "DB writable",
+    "ja": "DB 書き込み可能"
+  },
+  "cmd.doctor.dir_not_found": {
+    "zh-TW": "目錄不存在：{path}",
+    "en": "Directory not found: {path}",
+    "ja": "ディレクトリが見つかりません：{path}"
+  },
+  "cmd.doctor.no_rw_permission": {
+    "zh-TW": "檔案無讀寫權限",
+    "en": "File has no read/write permission",
+    "ja": "ファイルに読み書き権限がありません"
+  },
+  "cmd.doctor.db_not_created": {
+    "zh-TW": "資料庫尚未建立（首次啟動會自動建立）",
+    "en": "Database not yet created (will be created on first start)",
+    "ja": "データベースはまだ作成されていません（初回起動時に自動作成されます）"
+  },
+  "cmd.doctor.no_write_permission": {
+    "zh-TW": "目錄無寫入權限",
+    "en": "Directory has no write permission",
+    "ja": "ディレクトリに書き込み権限がありません"
+  },
+  "cmd.doctor.check_master_key": {
+    "zh-TW": "master.key 存在",
+    "en": "master.key exists",
+    "ja": "master.key 存在"
+  },
+  "cmd.doctor.master_key_not_created": {
+    "zh-TW": "尚未產生（首次啟動會自動建立）",
+    "en": "Not yet generated (will be created on first start)",
+    "ja": "まだ生成されていません（初回起動時に自動作成されます）"
+  },
+  "cmd.doctor.check_vps": {
+    "zh-TW": "VPS 可達",
+    "en": "VPS reachable",
+    "ja": "VPS 到達可能"
+  },
+  "cmd.doctor.vps_unreachable": {
+    "zh-TW": "無法連線（離線模式仍可使用）",
+    "en": "Cannot connect (offline mode still works)",
+    "ja": "接続できません（オフラインモードでも使用可能）"
+  },
+  "cmd.doctor.check_adapters": {
+    "zh-TW": "Adapter 完整",
+    "en": "Adapters intact",
+    "ja": "アダプター完備"
+  },
+  "cmd.doctor.adapter_dir_missing": {
+    "zh-TW": "Adapter 目錄不存在：{path}",
+    "en": "Adapter directory not found: {path}",
+    "ja": "アダプターディレクトリが見つかりません：{path}"
+  },
+  "cmd.doctor.adapters_ready": {
+    "zh-TW": "{count} 個核心 Adapter 就緒",
+    "en": "{count} core adapters ready",
+    "ja": "{count} 個のコアアダプターが準備完了"
+  },
+  "cmd.doctor.adapters_missing": {
+    "zh-TW": "缺少：{list}",
+    "en": "Missing: {list}",
+    "ja": "不足：{list}"
+  },
+  "cmd.doctor.check_keys": {
+    "zh-TW": "Key 健康",
+    "en": "Key health",
+    "ja": "Key 健全性"
+  },
+  "cmd.doctor.no_keys_yet": {
+    "zh-TW": "尚無 Key（首次使用）",
+    "en": "No keys yet (first use)",
+    "ja": "Key がまだありません（初回使用）"
+  },
+  "cmd.doctor.keys_need_engine": {
+    "zh-TW": "需啟動引擎後進行完整檢查",
+    "en": "Full check requires engine to be running",
+    "ja": "完全な検査にはエンジンの起動が必要です"
+  },
+  "cmd.doctor.check_port": {
+    "zh-TW": "port 可用",
+    "en": "Port available",
+    "ja": "ポート利用可能"
+  },
+  "cmd.doctor.port_in_use": {
+    "zh-TW": "port {port} 被占用",
+    "en": "Port {port} is in use",
+    "ja": "ポート {port} は使用中です"
+  },
+  "cmd.misc.running_migration": {
+    "zh-TW": "執行資料庫遷移...",
+    "en": "Running database migration...",
+    "ja": "データベースマイグレーションを実行中..."
+  },
+  "cmd.misc.migration_done": {
+    "zh-TW": "遷移完成",
+    "en": "Migration complete",
+    "ja": "マイグレーション完了"
+  },
+  "cmd.misc.device_reset": {
+    "zh-TW": "裝置重置",
+    "en": "Device Reset",
+    "ja": "デバイスリセット"
+  },
+  "cmd.misc.reset_will": {
+    "zh-TW": "這個操作會：",
+    "en": "This operation will:",
+    "ja": "この操作により："
+  },
+  "cmd.misc.reset_step1": {
+    "zh-TW": "刪除所有 Key（加密資料）",
+    "en": "Delete all keys (encrypted data)",
+    "ja": "すべての Key を削除（暗号化データ）"
+  },
+  "cmd.misc.reset_step2": {
+    "zh-TW": "重新產生 master.key",
+    "en": "Regenerate master.key",
+    "ja": "master.key を再生成"
+  },
+  "cmd.misc.reset_step3": {
+    "zh-TW": "重新產生 auth.token",
+    "en": "Regenerate auth.token",
+    "ja": "auth.token を再生成"
+  },
+  "cmd.misc.reset_step4": {
+    "zh-TW": "清除所有 Sub-Key",
+    "en": "Clear all Sub-Keys",
+    "ja": "すべての Sub-Key をクリア"
+  },
+  "cmd.misc.reset_step5": {
+    "zh-TW": "重置 VPS 裝置註冊",
+    "en": "Reset VPS device registration",
+    "ja": "VPS デバイス登録をリセット"
+  },
+  "cmd.misc.warning_irreversible": {
+    "zh-TW": "警告：此操作不可逆！",
+    "en": "Warning: This action is irreversible!",
+    "ja": "警告：この操作は元に戻せません！"
+  },
+  "cmd.misc.confirm_reset": {
+    "zh-TW": "確定要重置裝置？",
+    "en": "Are you sure you want to reset the device?",
+    "ja": "デバイスをリセットしてよろしいですか？"
+  },
+  "cmd.misc.type_reset": {
+    "zh-TW": "請輸入 RESET 確認",
+    "en": "Type RESET to confirm",
+    "ja": "確認のため RESET と入力してください"
+  },
+  "cmd.misc.wrong_input_cancelled": {
+    "zh-TW": "輸入不正確，已取消",
+    "en": "Incorrect input, cancelled",
+    "ja": "入力が正しくありません、キャンセルしました"
+  },
+  "cmd.misc.reset_done": {
+    "zh-TW": "裝置已重置",
+    "en": "Device has been reset",
+    "ja": "デバイスがリセットされました"
+  },
+  "cmd.misc.use_setup_again": {
+    "zh-TW": "請使用 clawapi setup 重新設定",
+    "en": "Run clawapi setup to reconfigure",
+    "ja": "clawapi setup で再設定してください"
+  },
+  "cmd.logs.not_found": {
+    "zh-TW": "沒有找到日誌檔",
+    "en": "No log file found",
+    "ja": "ログファイルが見つかりません"
+  },
+  "cmd.logs.read_failed": {
+    "zh-TW": "讀取日誌失敗：{error}",
+    "en": "Failed to read logs: {error}",
+    "ja": "ログの読み取りに失敗しました：{error}"
+  },
+  "cmd.logs.recent": {
+    "zh-TW": "最近 {count} 筆日誌",
+    "en": "Last {count} log entries",
+    "ja": "最新 {count} 件のログ"
+  },
+  "cmd.logs.no_records": {
+    "zh-TW": "(無記錄)",
+    "en": "(no records)",
+    "ja": "（記録なし）"
+  },
+  "prompt.enter_number": {
+    "zh-TW": "請輸入編號",
+    "en": "Enter a number",
+    "ja": "番号を入力してください"
+  },
+  "prompt.invalid_range": {
+    "zh-TW": "請輸入 1~{max} 之間的數字",
+    "en": "Please enter a number between 1 and {max}",
+    "ja": "1〜{max} の数字を入力してください"
+  },
+  "prompt.enter_numbers": {
+    "zh-TW": "請輸入編號（用逗號分隔，如 1,3,5）",
+    "en": "Enter numbers separated by commas (e.g. 1,3,5)",
+    "ja": "番号をカンマ区切りで入力してください（例：1,3,5）"
+  },
+  "server.already_running": {
+    "zh-TW": "Server 已在運行中",
+    "en": "Server is already running",
+    "ja": "サーバーはすでに実行中です"
+  },
+  "server.shutdown_signal": {
+    "zh-TW": "收到關機信號，開始優雅關機...",
+    "en": "Shutdown signal received, starting graceful shutdown...",
+    "ja": "シャットダウン信号を受信、グレースフルシャットダウンを開始..."
+  },
+  "server.flushing_buffer": {
+    "zh-TW": "正在 flush 寫入緩衝區...",
+    "en": "Flushing write buffer...",
+    "ja": "書き込みバッファをフラッシュ中..."
+  },
+  "server.closing_db": {
+    "zh-TW": "正在關閉資料庫...",
+    "en": "Closing database...",
+    "ja": "データベースを閉じています..."
+  },
+  "server.shutdown_complete": {
+    "zh-TW": "已安全關機",
+    "en": "Shutdown complete",
+    "ja": "安全にシャットダウンしました"
+  },
+  "server.shutting_down": {
+    "zh-TW": "Server 正在關機，請稍後再試",
+    "en": "Server is shutting down, please try again later",
+    "ja": "サーバーはシャットダウン中です。後でもう一度お試しください"
+  },
+  "server.master_only": {
+    "zh-TW": "管理 API 僅允許 Master Token，Sub-Key 無權存取",
+    "en": "Management API requires Master Token; Sub-Keys are not allowed",
+    "ja": "管理 API は Master Token のみ許可されています。Sub-Key ではアクセスできません"
+  },
+  "server.path_not_found": {
+    "zh-TW": "路徑 {method} {path} 不存在",
+    "en": "Path {method} {path} not found",
+    "ja": "パス {method} {path} が見つかりません"
+  },
+  "server.internal_error": {
+    "zh-TW": "伺服器發生內部錯誤",
+    "en": "Internal server error",
+    "ja": "サーバー内部エラーが発生しました"
+  },
+  "server.shutdown_timeout": {
+    "zh-TW": "優雅關機超時（{ms}ms），仍有 {count} 個請求未完成，強制關機",
+    "en": "Graceful shutdown timed out ({ms}ms), {count} request(s) still pending, forcing shutdown",
+    "ja": "グレースフルシャットダウンがタイムアウト（{ms}ms）、{count} 件のリクエストが未完了、強制シャットダウンします"
+  },
+  "server.waiting_requests": {
+    "zh-TW": "等待 {count} 個進行中請求完成...",
+    "en": "Waiting for {count} in-flight request(s) to complete...",
+    "ja": "{count} 件の進行中リクエストの完了を待機中..."
+  },
+  "server.all_requests_done": {
+    "zh-TW": "所有請求已完成",
+    "en": "All requests completed",
+    "ja": "すべてのリクエストが完了しました"
+  },
+  "server.token_hidden": {
+    "zh-TW": "（已隱藏）",
+    "en": "(hidden)",
+    "ja": "（非表示）"
+  },
+  "server.token_not_init": {
+    "zh-TW": "（尚未初始化）",
+    "en": "(not initialized)",
+    "ja": "（未初期化）"
+  },
+  "server.engine_started": {
+    "zh-TW": "ClawAPI 開源引擎 已啟動",
+    "en": "ClawAPI Open Engine Started",
+    "ja": "ClawAPI オープンエンジン 起動完了"
+  },
+  "server.label_version": {
+    "zh-TW": "版本：",
+    "en": "Version: ",
+    "ja": "バージョン："
+  },
+  "server.label_address": {
+    "zh-TW": "位址：",
+    "en": "Address: ",
+    "ja": "アドレス："
+  },
+  "server.label_token": {
+    "zh-TW": "Token：",
+    "en": "Token: ",
+    "ja": "Token："
+  },
+  "server.mounted_routes": {
+    "zh-TW": "已掛載路由：",
+    "en": "Mounted routes:",
+    "ja": "マウント済みルート："
+  },
+  "server.simplified_api": {
+    "zh-TW": "ClawAPI 簡化 API：",
+    "en": "ClawAPI Simplified API:",
+    "ja": "ClawAPI 簡易 API："
+  },
+  "server.mgmt_api_sse": {
+    "zh-TW": "管理 API 和 SSE：",
+    "en": "Management API & SSE:",
+    "ja": "管理 API と SSE："
+  },
+  "server.sse_label": {
+    "zh-TW": "（SSE）",
+    "en": " (SSE)",
+    "ja": "（SSE）"
+  },
+  "server.ui_label": {
+    "zh-TW": "（Dashboard + 12 頁）",
+    "en": " (Dashboard + 12 pages)",
+    "ja": "（Dashboard + 12 ページ）"
+  },
+  "server.ctrl_c_shutdown": {
+    "zh-TW": "按 Ctrl+C 安全關機",
+    "en": "Press Ctrl+C to shut down safely",
+    "ja": "Ctrl+C で安全にシャットダウン"
+  }
+}

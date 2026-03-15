@@ -1,0 +1,22 @@
+{
+  "name": "@clawapi/vps",
+  "version": "0.1.0",
+  "description": "ClawAPI VPS 集體智慧服務",
+  "private": true,
+  "main": "src/index.ts",
+  "scripts": {
+    "dev": "bun run src/index.ts",
+    "typecheck": "bunx tsc --noEmit",
+    "test": "bun test",
+    "build": "bun build src/index.ts --target=bun --outdir=dist"
+  },
+  "dependencies": {
+    "@clawapi/protocol": "workspace:*",
+    "hono": "^4.0.0",
+    "typescript": "^5.9.3"
+  },
+  "license": "UNLICENSED",
+  "devDependencies": {
+    "bun-types": "^1.3.10"
+  }
+}

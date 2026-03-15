@@ -1,0 +1,45 @@
+schema_version: 1
+
+adapter:
+  id: duckduckgo
+  name: DuckDuckGo Search
+  version: "1.0.0"
+  category: search
+  requires_key: false
+  free_tier: true
+
+auth:
+  type: none
+
+# 注意：不能用 api.duckduckgo.com — 該子域名對 Bun 的 User-Agent 回空 body
+base_url: https://duckduckgo.com
+
+endpoints:
+  # DuckDuckGo Instant Answer API — 必須用 GET + query params
+  # POST + JSON body 會被忽略（回空 body）
+  search:
+    method: GET
+    path: "/?q={{ query }}&format=json&no_html=1&skip_disambig=1"
+    response_type: json
+    headers:
+      User-Agent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36"
+
+  instant_answer:
+    method: GET
+    path: "/?q={{ query }}&format=json&no_html=1"
+    response_type: json
+    headers:
+      User-Agent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36"
+
+capabilities:
+  chat: false
+  streaming: false
+  embeddings: false
+  images: false
+  audio: false
+  models:
+    - id: duckduckgo-search
+      name: DuckDuckGo 搜尋（免費，無需 API Key）
+
+rate_limits:
+  requests_per_minute: 30

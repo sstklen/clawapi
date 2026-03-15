@@ -1,0 +1,452 @@
+{
+  "help.subtitle": {
+    "zh-TW": "開源 AI API 鑰匙管理器 + 智慧路由器",
+    "en": "Open-source AI API Key Manager + Smart Router",
+    "ja": "オープンソース AI API キーマネージャー + スマートルーター"
+  },
+  "help.usage_title": {
+    "zh-TW": "用法：",
+    "en": "Usage:",
+    "ja": "使い方："
+  },
+  "help.usage_line": {
+    "zh-TW": "clawapi <命令> [子命令] [選項]",
+    "en": "clawapi <command> [subcommand] [options]",
+    "ja": "clawapi <コマンド> [サブコマンド] [オプション]"
+  },
+  "help.section.engine": {
+    "zh-TW": "引擎控制：",
+    "en": "Engine:",
+    "ja": "エンジン制御："
+  },
+  "help.engine.start": {
+    "zh-TW": "啟動引擎 (-p/--port, --host, --daemon, --no-vps, --verbose)",
+    "en": "Start engine (-p/--port, --host, --daemon, --no-vps, --verbose)",
+    "ja": "エンジンを起動 (-p/--port, --host, --daemon, --no-vps, --verbose)"
+  },
+  "help.engine.stop": {
+    "zh-TW": "停止引擎",
+    "en": "Stop engine",
+    "ja": "エンジンを停止"
+  },
+  "help.engine.status": {
+    "zh-TW": "查看引擎狀態",
+    "en": "View engine status",
+    "ja": "エンジンの状態を確認"
+  },
+  "help.section.keys": {
+    "zh-TW": "Key 管理：",
+    "en": "Key Management:",
+    "ja": "Key 管理："
+  },
+  "help.keys.add": {
+    "zh-TW": "新增 Key（互動式）",
+    "en": "Add key (interactive)",
+    "ja": "Key を追加（対話式）"
+  },
+  "help.keys.list": {
+    "zh-TW": "列出 Key",
+    "en": "List keys",
+    "ja": "Key を一覧表示"
+  },
+  "help.keys.remove": {
+    "zh-TW": "刪除 Key",
+    "en": "Remove key",
+    "ja": "Key を削除"
+  },
+  "help.keys.pin": {
+    "zh-TW": "釘選 Key",
+    "en": "Pin key",
+    "ja": "Key をピン留め"
+  },
+  "help.keys.rotate": {
+    "zh-TW": "輪換 Key",
+    "en": "Rotate key",
+    "ja": "Key をローテーション"
+  },
+  "help.keys.import": {
+    "zh-TW": "批量匯入",
+    "en": "Bulk import",
+    "ja": "一括インポート"
+  },
+  "help.keys.check": {
+    "zh-TW": "手動檢查 Key 健康度",
+    "en": "Manually check key health",
+    "ja": "Key の健全性を手動チェック"
+  },
+  "help.section.claw_key": {
+    "zh-TW": "Claw Key：",
+    "en": "Claw Key:",
+    "ja": "Claw Key："
+  },
+  "help.claw_key.set": {
+    "zh-TW": "設定Claw Key",
+    "en": "Set Claw Key",
+    "ja": "Claw Keyを設定"
+  },
+  "help.claw_key.show": {
+    "zh-TW": "查看Claw Key",
+    "en": "Show Claw Key",
+    "ja": "Claw Keyを表示"
+  },
+  "help.claw_key.remove": {
+    "zh-TW": "移除Claw Key",
+    "en": "Remove Claw Key",
+    "ja": "Claw Keyを削除"
+  },
+  "help.section.sub_keys": {
+    "zh-TW": "Sub-Key：",
+    "en": "Sub-Keys:",
+    "ja": "サブキー："
+  },
+  "help.sub_keys.issue": {
+    "zh-TW": "發行 Sub-Key",
+    "en": "Issue sub-key",
+    "ja": "サブキーを発行"
+  },
+  "help.sub_keys.list": {
+    "zh-TW": "列出 Sub-Key",
+    "en": "List sub-keys",
+    "ja": "サブキーを一覧表示"
+  },
+  "help.sub_keys.revoke": {
+    "zh-TW": "撤銷 Sub-Key",
+    "en": "Revoke sub-key",
+    "ja": "サブキーを取り消し"
+  },
+  "help.sub_keys.usage": {
+    "zh-TW": "查看用量",
+    "en": "View usage",
+    "ja": "使用量を確認"
+  },
+  "help.section.aid": {
+    "zh-TW": "互助：",
+    "en": "Mutual Aid:",
+    "ja": "相互援助："
+  },
+  "help.aid.config": {
+    "zh-TW": "設定互助",
+    "en": "Configure mutual aid",
+    "ja": "相互援助を設定"
+  },
+  "help.aid.stats": {
+    "zh-TW": "查看互助統計",
+    "en": "View mutual aid stats",
+    "ja": "相互援助の統計を確認"
+  },
+  "help.aid.donate": {
+    "zh-TW": "捐 Key 給 L0",
+    "en": "Donate key to L0",
+    "ja": "L0 に Key を寄付"
+  },
+  "help.section.adapters": {
+    "zh-TW": "Adapter：",
+    "en": "Adapters:",
+    "ja": "アダプター："
+  },
+  "help.adapters.list": {
+    "zh-TW": "列出 Adapter",
+    "en": "List adapters",
+    "ja": "アダプターを一覧表示"
+  },
+  "help.adapters.install": {
+    "zh-TW": "安裝社群 Adapter",
+    "en": "Install community adapter",
+    "ja": "コミュニティアダプターをインストール"
+  },
+  "help.adapters.remove": {
+    "zh-TW": "移除 Adapter",
+    "en": "Remove adapter",
+    "ja": "アダプターを削除"
+  },
+  "help.adapters.update": {
+    "zh-TW": "手動更新",
+    "en": "Update manually",
+    "ja": "手動で更新"
+  },
+  "help.section.telemetry": {
+    "zh-TW": "遙測：",
+    "en": "Telemetry:",
+    "ja": "テレメトリ："
+  },
+  "help.telemetry.show": {
+    "zh-TW": "查看待上報內容",
+    "en": "View pending telemetry data",
+    "ja": "送信待ちのテレメトリデータを確認"
+  },
+  "help.telemetry.toggle": {
+    "zh-TW": "開/關統計上報",
+    "en": "Toggle telemetry reporting",
+    "ja": "テレメトリ送信のオン/オフ"
+  },
+  "help.section.backup": {
+    "zh-TW": "備份：",
+    "en": "Backup:",
+    "ja": "バックアップ："
+  },
+  "help.backup.export": {
+    "zh-TW": "匯出加密備份",
+    "en": "Export encrypted backup",
+    "ja": "暗号化バックアップをエクスポート"
+  },
+  "help.backup.import": {
+    "zh-TW": "匯入備份",
+    "en": "Import backup",
+    "ja": "バックアップをインポート"
+  },
+  "help.section.misc": {
+    "zh-TW": "其他：",
+    "en": "Other:",
+    "ja": "その他："
+  },
+  "help.misc.logs": {
+    "zh-TW": "查看最近紀錄 (--service, --export csv)",
+    "en": "View recent logs (--service, --export csv)",
+    "ja": "最近のログを表示 (--service, --export csv)"
+  },
+  "help.misc.config_show": {
+    "zh-TW": "查看設定",
+    "en": "View config",
+    "ja": "設定を表示"
+  },
+  "help.misc.config_set": {
+    "zh-TW": "修改設定",
+    "en": "Set config",
+    "ja": "設定を変更"
+  },
+  "help.misc.migrate": {
+    "zh-TW": "執行 DB 遷移",
+    "en": "Run DB migration",
+    "ja": "DBマイグレーションを実行"
+  },
+  "help.misc.device_reset": {
+    "zh-TW": "重置裝置",
+    "en": "Reset device",
+    "ja": "デバイスをリセット"
+  },
+  "help.misc.version": {
+    "zh-TW": "查看版本",
+    "en": "View version",
+    "ja": "バージョンを表示"
+  },
+  "help.misc.setup": {
+    "zh-TW": "首次安裝引導",
+    "en": "First-time setup wizard",
+    "ja": "初回セットアップウィザード"
+  },
+  "help.misc.doctor": {
+    "zh-TW": "診斷工具",
+    "en": "Diagnostic tool",
+    "ja": "診断ツール"
+  },
+  "help.section.global_options": {
+    "zh-TW": "全域選項：",
+    "en": "Global Options:",
+    "ja": "グローバルオプション："
+  },
+  "help.options.plain": {
+    "zh-TW": "無色彩（CI 環境友好）",
+    "en": "No colors (CI-friendly)",
+    "ja": "色なし（CI環境向け）"
+  },
+  "help.options.json": {
+    "zh-TW": "JSON 輸出（機器可讀）",
+    "en": "JSON output (machine-readable)",
+    "ja": "JSON出力（マシンリーダブル）"
+  },
+  "help.options.locale": {
+    "zh-TW": "語言切換 (zh-TW|en|ja)",
+    "en": "Language switch (zh-TW|en|ja)",
+    "ja": "言語切替 (zh-TW|en|ja)"
+  },
+  "help.options.help": {
+    "zh-TW": "顯示幫助",
+    "en": "Show help",
+    "ja": "ヘルプを表示"
+  },
+  "common.unknown_subcommand": {
+    "zh-TW": "未知的子命令：{command}",
+    "en": "Unknown subcommand: {command}",
+    "ja": "不明なサブコマンドです：{command}"
+  },
+  "common.available_subcommands": {
+    "zh-TW": "可用的子命令：{list}",
+    "en": "Available subcommands: {list}",
+    "ja": "利用可能なサブコマンド：{list}"
+  },
+  "common.unknown_command": {
+    "zh-TW": "未知的命令：{command}",
+    "en": "Unknown command: {command}",
+    "ja": "不明なコマンドです：{command}"
+  },
+  "common.use_help": {
+    "zh-TW": "使用 clawapi --help 查看所有可用命令",
+    "en": "Run clawapi --help to see all available commands",
+    "ja": "clawapi --help で利用可能なコマンドを確認できます"
+  },
+  "cmd.start.port_invalid": {
+    "zh-TW": "無效的 port 值：{value}",
+    "en": "Invalid port value: {value}",
+    "ja": "無効なポート値です：{value}"
+  },
+  "cmd.start.already_running": {
+    "zh-TW": "引擎已在運行中 (PID: {pid})",
+    "en": "Engine is already running (PID: {pid})",
+    "ja": "エンジンは既に稼働中です (PID: {pid})"
+  },
+  "cmd.start.use_stop": {
+    "zh-TW": "使用 clawapi stop 停止現有引擎",
+    "en": "Use clawapi stop to stop the running engine",
+    "ja": "clawapi stop で現在のエンジンを停止してください"
+  },
+  "cmd.start.starting": {
+    "zh-TW": "啟動中...",
+    "en": "Starting...",
+    "ja": "起動中..."
+  },
+  "cmd.start.init_components": {
+    "zh-TW": "初始化引擎組件...",
+    "en": "Initializing engine components...",
+    "ja": "エンジンコンポーネントを初期化中..."
+  },
+  "cmd.start.http_started": {
+    "zh-TW": "HTTP Server 已啟動",
+    "en": "HTTP server started",
+    "ja": "HTTPサーバーが起動しました"
+  },
+  "cmd.start.engine_ready": {
+    "zh-TW": "引擎就緒",
+    "en": "Engine ready",
+    "ja": "エンジン準備完了"
+  },
+  "cmd.start.complete": {
+    "zh-TW": "引擎啟動完成！",
+    "en": "Engine started successfully!",
+    "ja": "エンジンの起動が完了しました！"
+  },
+  "cmd.start.address": {
+    "zh-TW": "位址：",
+    "en": "Address: ",
+    "ja": "アドレス："
+  },
+  "cmd.start.pid": {
+    "zh-TW": "PID：",
+    "en": "PID: ",
+    "ja": "PID："
+  },
+  "cmd.start.mode": {
+    "zh-TW": "模式：",
+    "en": "Mode: ",
+    "ja": "モード："
+  },
+  "cmd.start.offline": {
+    "zh-TW": "離線",
+    "en": "Offline",
+    "ja": "オフライン"
+  },
+  "cmd.start.online": {
+    "zh-TW": "線上",
+    "en": "Online",
+    "ja": "オンライン"
+  },
+  "cmd.start.ctrl_c": {
+    "zh-TW": "按 Ctrl+C 安全關機",
+    "en": "Press Ctrl+C to shut down gracefully",
+    "ja": "Ctrl+C で安全にシャットダウンできます"
+  },
+  "cmd.start.shutdown_signal": {
+    "zh-TW": "收到關機信號，開始優雅關機...",
+    "en": "Shutdown signal received, shutting down gracefully...",
+    "ja": "シャットダウン信号を受信しました。安全に停止中..."
+  },
+  "cmd.start.shutdown_complete": {
+    "zh-TW": "已安全關機",
+    "en": "Shut down safely",
+    "ja": "安全にシャットダウンしました"
+  },
+  "cmd.start.failed": {
+    "zh-TW": "引擎啟動失敗：{error}",
+    "en": "Engine failed to start: {error}",
+    "ja": "エンジンの起動に失敗しました：{error}"
+  },
+  "cmd.start.daemon_started": {
+    "zh-TW": "引擎已在背景啟動 (PID: {pid})",
+    "en": "Engine started in background (PID: {pid})",
+    "ja": "エンジンをバックグラウンドで起動しました (PID: {pid})"
+  },
+  "cmd.start.use_status": {
+    "zh-TW": "使用 clawapi status 查看狀態",
+    "en": "Use clawapi status to check the status",
+    "ja": "clawapi status でステータスを確認できます"
+  },
+  "cmd.stop.not_running": {
+    "zh-TW": "引擎未在運行",
+    "en": "Engine is not running",
+    "ja": "エンジンは稼働していません"
+  },
+  "cmd.stop.not_running_detail": {
+    "zh-TW": "引擎未在運行（找不到 PID 檔案）",
+    "en": "Engine is not running (PID file not found)",
+    "ja": "エンジンは稼働していません（PIDファイルが見つかりません）"
+  },
+  "cmd.stop.process_gone": {
+    "zh-TW": "引擎 process 已不存在，已清除 PID 檔案",
+    "en": "Engine process no longer exists, PID file cleaned up",
+    "ja": "エンジンプロセスは既に存在しません。PIDファイルを削除しました"
+  },
+  "cmd.stop.kill_failed": {
+    "zh-TW": "無法停止引擎 (PID: {pid}): {error}",
+    "en": "Failed to stop engine (PID: {pid}): {error}",
+    "ja": "エンジンを停止できませんでした (PID: {pid}): {error}"
+  },
+  "cmd.stop.stopped": {
+    "zh-TW": "引擎已停止 (PID: {pid})",
+    "en": "Engine stopped (PID: {pid})",
+    "ja": "エンジンを停止しました (PID: {pid})"
+  },
+  "cmd.stop.force_killed": {
+    "zh-TW": "優雅關機超時，已強制終止",
+    "en": "Graceful shutdown timed out, force killed",
+    "ja": "安全なシャットダウンがタイムアウトしました。強制終了しました"
+  },
+  "cmd.stop.force_killed_detail": {
+    "zh-TW": "優雅關機超時，已強制終止 (PID: {pid})",
+    "en": "Graceful shutdown timed out, force killed (PID: {pid})",
+    "ja": "安全なシャットダウンがタイムアウトしました。強制終了しました (PID: {pid})"
+  },
+  "cmd.status.title": {
+    "zh-TW": "ClawAPI 引擎狀態",
+    "en": "ClawAPI Engine Status",
+    "ja": "ClawAPI エンジンステータス"
+  },
+  "cmd.status.running": {
+    "zh-TW": "運行中",
+    "en": "Running",
+    "ja": "稼働中"
+  },
+  "cmd.status.stopped": {
+    "zh-TW": "已停止",
+    "en": "Stopped",
+    "ja": "停止中"
+  },
+  "cmd.status.label_status": {
+    "zh-TW": "狀態：",
+    "en": "Status: ",
+    "ja": "ステータス："
+  },
+  "cmd.status.label_pid": {
+    "zh-TW": "PID：",
+    "en": "PID: ",
+    "ja": "PID："
+  },
+  "cmd.status.label_version": {
+    "zh-TW": "版本：",
+    "en": "Version: ",
+    "ja": "バージョン："
+  },
+  "cmd.status.use_start": {
+    "zh-TW": "使用 clawapi start 啟動引擎",
+    "en": "Use clawapi start to start the engine",
+    "ja": "clawapi start でエンジンを起動できます"
+  }
+}

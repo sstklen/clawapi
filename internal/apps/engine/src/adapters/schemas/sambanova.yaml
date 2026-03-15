@@ -1,0 +1,63 @@
+schema_version: 1
+
+adapter:
+  id: sambanova
+  name: SambaNova
+  version: "1.0.0"
+  category: llm
+  requires_key: true
+  free_tier: false
+
+auth:
+  type: bearer
+  key_url: https://cloud.sambanova.ai/apis
+
+base_url: https://api.sambanova.ai
+
+endpoints:
+  chat:
+    method: POST
+    path: /v1/chat/completions
+    response_type: json
+    body:
+      model: "{{ model }}"
+      messages: "{{ messages }}"
+      temperature: "{{ temperature | default: 0.7 }}"
+      max_tokens: "{{ max_tokens | default: 4096 }}"
+      stream: false
+
+  chat_stream:
+    method: POST
+    path: /v1/chat/completions
+    response_type: sse
+    body:
+      model: "{{ model }}"
+      messages: "{{ messages }}"
+      temperature: "{{ temperature | default: 0.7 }}"
+      max_tokens: "{{ max_tokens | default: 4096 }}"
+      stream: true
+
+  models:
+    method: GET
+    path: /v1/models
+    response_type: json
+
+capabilities:
+  chat: true
+  streaming: true
+  embeddings: false
+  images: false
+  audio: false
+  models:
+    - id: Meta-Llama-3.1-405B-Instruct
+      name: Llama 3.1 405B Instruct
+      context_window: 131072
+      max_output_tokens: 16384
+    - id: Meta-Llama-3.1-70B-Instruct
+      name: Llama 3.1 70B Instruct
+      context_window: 131072
+      max_output_tokens: 16384
+
+rate_limits:
+  requests_per_minute: 30
+  cooldown_on_429: 60
