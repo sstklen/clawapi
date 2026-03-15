@@ -1,0 +1,45 @@
+# Dr. Claw 生產環境 — 連接 washin-api 的 Docker 網路（共用 Qdrant）
+#
+# 使用方式：
+#   docker compose -f docker-compose.prod.yml up -d --build
+#   docker compose -f docker-compose.prod.yml logs -f
+
+services:
+  drclaw:
+    build: .
+    container_name: drclaw
+    expose:
+      - "3200"
+    volumes:
+      - ./data:/app/data
+    env_file: .env
+    networks:
+      - washin-net
+    restart: unless-stopped
+    security_opt:
+      - "no-new-privileges:true"
+    cap_drop:
+      - ALL
+    tmpfs:
+      - /tmp:size=64M
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+    healthcheck:
+      test: ["CMD", "bun", "-e", "fetch('http://localhost:3200/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 60s
+      timeout: 5s
+      start_period: 10s
+      retries: 3
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+networks:
+  washin-net:
+    external: true
+    name: washin-api_default
