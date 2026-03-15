@@ -1,3 +1,5 @@
+[中文版](docs/README.zh.md) · [日本語版](docs/README.ja.md)
+
 <p align="center">
   <img src="https://img.shields.io/npm/v/@clawapi/engine?style=flat-square&color=E04040&label=npm" alt="npm version">
   <img src="https://img.shields.io/github/license/sstklen/clawapi?style=flat-square&color=4A90D9" alt="license">
