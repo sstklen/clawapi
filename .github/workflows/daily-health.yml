@@ -61,7 +61,7 @@ jobs:
       # ─── 建立 Issue 報告（僅在異常時）───
       - name: 建立異常報告 Issue
         if: steps.health.outputs.healthy == 'false'
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         with:
           script: |
             const date = new Date().toISOString().split('T')[0];
