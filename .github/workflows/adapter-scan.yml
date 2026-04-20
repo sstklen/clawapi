@@ -22,7 +22,7 @@ jobs:
     steps:
       # ─── 取得完整程式碼（需要 origin/main 做比較）───
       - name: 取得程式碼
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0  # 完整歷史，否則 origin/main 不存在
 
