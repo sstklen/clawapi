@@ -180,7 +180,9 @@ describe('整合測試：模組接縫', () => {
       // 執行請求 — 應該路由到 DuckDuckGo（免費服務）
       const result = await gateway.execute({
         model: 'default-model',
-        messages: [{ role: 'user', content: 'test' }],
+        params: {
+          messages: [{ role: 'user', content: 'test' }],
+        },
       });
 
       // 應該成功（executor 被呼叫了）
@@ -224,7 +226,9 @@ describe('整合測試：模組接縫', () => {
 
       const result = await gateway.execute({
         model: 'default-model',
-        messages: [{ role: 'user', content: 'test' }],
+        params: {
+          messages: [{ role: 'user', content: 'test' }],
+        },
       });
 
       expect(result.success).toBe(true);

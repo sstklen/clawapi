@@ -23,11 +23,12 @@ export interface SettingsPageProps {
       enabled: boolean;
     };
     routing: {
-      default_layer: string;
+      default_strategy?: 'fast' | 'smart' | 'cheap';
+      default_layer?: string;
     };
     advanced: {
       max_keys_per_service: number;
-      health_check_interval_ms: number;
+      health_check_interval_ms?: number;
     };
   };
 }
@@ -36,6 +37,16 @@ export interface SettingsPageProps {
  * 設定頁面
  */
 export const SettingsPage: FC<SettingsPageProps> = ({ settings }) => {
+  const defaultLayer = settings.routing.default_layer
+    ?? (
+      settings.routing.default_strategy === 'fast'
+        ? 'L1'
+        : settings.routing.default_strategy === 'cheap'
+          ? 'L3'
+          : 'L2'
+    );
+  const healthCheckIntervalMs = settings.advanced.health_check_interval_ms ?? 60000;
+
   return (
     <Layout title="設定" activeNav="settings">
       <div class="page-header">
@@ -70,7 +81,7 @@ export const SettingsPage: FC<SettingsPageProps> = ({ settings }) => {
             <label for="default_layer">預設路由層級</label>
             <select name="routing.default_layer" id="default_layer">
               {['L1', 'L2', 'L3', 'L4'].map((l) => (
-                <option value={l} selected={l === settings.routing.default_layer}>{l}</option>
+                <option value={l} selected={l === defaultLayer}>{l}</option>
               ))}
             </select>
             <div class="form-hint">L1=直轉 L2=智慧路由 L3=品質優先 L4=任務型</div>
@@ -137,7 +148,7 @@ export const SettingsPage: FC<SettingsPageProps> = ({ settings }) => {
                 type="number"
                 name="advanced.health_check_interval_ms"
                 id="health_interval"
-                value={String(settings.advanced.health_check_interval_ms)}
+                value={String(healthCheckIntervalMs)}
               />
             </div>
           </div>

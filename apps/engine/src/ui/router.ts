@@ -18,6 +18,7 @@
 
 import { Hono } from 'hono';
 import type { Context } from 'hono';
+import type { FC } from 'hono/jsx';
 
 /** 安全規則：Sub-Key token 只顯示前後綴遮罩 */
 function maskSubKeyToken(token: string): string {
@@ -34,8 +35,8 @@ function safeJsonParse<T>(json: string | null, fallback: T): T {
     return fallback;
   }
 }
-import type { KeyPool } from '../core/key-pool';
-import type { SubKeyManager } from '../sharing/sub-key';
+import type { KeyPool, KeyListItem } from '../core/key-pool';
+import type { SubKeyManager, SubKey } from '../sharing/sub-key';
 import type { AidClient } from '../sharing/mutual-aid';
 import type { AdapterConfig, AdapterLoader } from '../adapters/loader';
 import type { TelemetryCollector } from '../intelligence/telemetry';
@@ -75,10 +76,11 @@ export interface UIDeps {
 // ===== 輔助函式 =====
 
 /** 將 JSX 轉為完整 HTML Response（帶 DOCTYPE） */
-function renderPage(c: Context, jsx: JSX.Element): Response {
+async function renderPage(c: Context, jsx: ReturnType<FC>): Promise<Response> {
   // Hono 的 c.html() 會幫我們設定 Content-Type
   // 但我們要手動加上 DOCTYPE
-  return c.html('<!DOCTYPE html>' + jsx.toString());
+  const rendered = await Promise.resolve(jsx);
+  return c.html('<!DOCTYPE html>' + (rendered?.toString() ?? ''));
 }
 
 // ===== 路由器工廠 =====
@@ -162,17 +164,17 @@ export function createUIRouter(deps: UIDeps): Hono {
     const rawKeys = await keyPool.listKeys();
 
     // 轉換為 UI 用的格式
-    const keys = rawKeys.map((k: Record<string, unknown>) => ({
-      id: (k.id as number) ?? 0,
-      service_id: (k.service_id as string) ?? '',
-      masked_key: (k.masked_key as string) ?? '****',
-      pool_type: ((k.pool_type as string) ?? 'king') as 'king' | 'friend',
-      status: ((k.status as string) ?? 'active') as 'active' | 'rate_limited' | 'dead',
-      label: k.label as string | undefined,
-      pinned: (k.pinned as boolean) ?? false,
-      success_rate: (k.success_rate as number) ?? 100,
-      total_requests: (k.total_requests as number) ?? 0,
-      created_at: (k.created_at as string) ?? new Date().toISOString(),
+    const keys = rawKeys.map((k: KeyListItem) => ({
+      id: k.id,
+      service_id: k.service_id,
+      masked_key: k.key_masked,
+      pool_type: k.pool_type,
+      status: k.status,
+      label: k.label ?? undefined,
+      pinned: k.pinned,
+      success_rate: 100,
+      total_requests: 0,
+      created_at: k.created_at,
     }));
 
     return renderPage(c, KeysPage({ keys }));
@@ -218,17 +220,17 @@ export function createUIRouter(deps: UIDeps): Hono {
   app.get('/sub-keys', async (c: Context) => {
     const rawSubKeys = await subKeyManager.list();
 
-    const subKeys = rawSubKeys.map((sk: Record<string, unknown>) => ({
-      id: (sk.id as number) ?? 0,
-      label: (sk.label as string) ?? '',
+    const subKeys = rawSubKeys.map((sk: SubKey) => ({
+      id: sk.id,
+      label: sk.label,
       // 安全規則：UI 列表只顯示遮罩版 token，完整 token 僅在發行當下顯示一次
-      token: maskSubKeyToken((sk.token as string) ?? '****'),
-      is_active: (sk.is_active as boolean) ?? true,
-      daily_used: (sk.daily_used as number) ?? 0,
-      daily_limit: (sk.daily_limit as number | null) ?? null,
-      total_requests: (sk.total_requests as number) ?? 0,
-      created_at: (sk.created_at as string) ?? new Date().toISOString(),
-      expires_at: (sk.expires_at as string | null) ?? null,
+      token: maskSubKeyToken(sk.token),
+      is_active: sk.is_active,
+      daily_used: sk.daily_used,
+      daily_limit: sk.daily_limit,
+      total_requests: sk.total_requests,
+      created_at: sk.created_at,
+      expires_at: sk.expires_at,
     }));
 
     return renderPage(c, SubKeysPage({ subKeys }));
@@ -274,7 +276,12 @@ export function createUIRouter(deps: UIDeps): Hono {
     // 互助統計
     let stats = { total_given: 0, total_received: 0, karma_score: 0 };
     try {
-      stats = await aidClient.getStats() as typeof stats;
+      const aidStats = await aidClient.getStats();
+      stats = {
+        total_given: aidStats.given.all_time,
+        total_received: aidStats.received.all_time,
+        karma_score: aidStats.given.all_time - aidStats.received.all_time,
+      };
     } catch {
       // 互助未啟用時 getStats 可能丟錯
     }

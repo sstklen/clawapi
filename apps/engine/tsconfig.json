@@ -4,9 +4,12 @@
     "outDir": "dist",
     "jsx": "react-jsx",
     "jsxImportSource": "hono/jsx",
+    "declaration": false,
+    "declarationMap": false,
+    "rootDir": "../..",
     "paths": {
       "@clawapi/protocol": ["../../packages/protocol/src/index.ts"]
     }
   },
-  "include": ["src/**/*", "../../packages/protocol/src/**/*"]
+  "include": ["src/**/*"]
 }
