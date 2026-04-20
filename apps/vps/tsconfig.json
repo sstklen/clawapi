@@ -2,9 +2,12 @@
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "outDir": "dist",
+    "declaration": false,
+    "declarationMap": false,
+    "rootDir": "../..",
     "paths": {
       "@clawapi/protocol": ["../../packages/protocol/src/index.ts"]
     }
   },
-  "include": ["src/**/*", "../../packages/protocol/src/**/*"]
+  "include": ["src/**/*"]
 }
