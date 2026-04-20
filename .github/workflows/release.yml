@@ -84,7 +84,7 @@ jobs:
 
       # 下載所有平台的構建產物
       - name: 下載所有構建產物
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           path: artifacts/
 
