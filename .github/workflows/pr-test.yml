@@ -24,7 +24,7 @@ jobs:
     steps:
       # ─── 取得程式碼 ───
       - name: 取得程式碼
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       # ─── 安裝 Bun ───
       - name: 安裝 Bun
