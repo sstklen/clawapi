@@ -65,7 +65,7 @@ jobs:
 
       # 上傳構建產物
       - name: 上傳構建產物
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: clawapi-${{ matrix.target }}
           path: clawapi-${{ matrix.target }}${{ matrix.target == 'win-x64' && '.exe' || '' }}
