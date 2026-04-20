@@ -162,7 +162,7 @@ async function keysList(args: ParsedArgs): Promise<void> {
       { header: t('cmd.keys.header_status'), key: 'status', minWidth: 8 },
       { header: t('cmd.keys.header_daily_usage'), key: 'daily_used', minWidth: 8, align: 'right' },
     ],
-    keys
+    keys.map((key) => ({ ...key }))
   );
 
   blank();

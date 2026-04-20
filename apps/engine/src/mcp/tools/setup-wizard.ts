@@ -435,7 +435,7 @@ async function handleAuto(
     try {
       const phase = await deps.growthEngine.getPhase();
       if (phase === 'scaling') currentLevel = 3;
-      if (phase === 'thriving') currentLevel = 4;
+      if (phase === 'mastery') currentLevel = 4;
     } catch { /* 不影響主流程 */ }
   }
 

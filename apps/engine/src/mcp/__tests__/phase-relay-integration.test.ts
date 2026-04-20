@@ -130,7 +130,15 @@ function createMockAdapters(): Map<string, AdapterConfig> {
         path: '/openai/v1/models',
       },
     },
-  } as AdapterConfig);
+    capabilities: {
+      chat: true,
+      streaming: false,
+      embeddings: false,
+      images: false,
+      audio: false,
+      models: [{ id: 'llama3', name: 'LLaMA 3' }],
+    },
+  });
   return adapters;
 }
 
