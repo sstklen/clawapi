@@ -132,7 +132,7 @@ jobs:
 
       # 構建並推送 VPS 映像
       - name: 構建並推送 Docker 映像
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: .
           file: apps/vps/Dockerfile.vps
